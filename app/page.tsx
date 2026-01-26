@@ -123,18 +123,15 @@ const Home: React.FC = () => {
                     <LiuYaoView />
                   </motion.div>
                 ) : (
-                  <div className="h-[calc(100vh-12rem)] min-h-[420px] w-full flex flex-col">
-                    <motion.div
-                      key="liuji-content"
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full h-full min-h-0 flex flex-col"
-                    >
-                      <LiuJiView />
-                    </motion.div>
-                  </div>
+                  <motion.div
+                    key="liuji-content"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <LiuJiView />
+                  </motion.div>
                 )}
               </AnimatePresence>
             </div>

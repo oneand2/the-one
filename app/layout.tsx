@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
+import { GetCoinsModalLayer } from "@/components/GetCoinsModalLayer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,6 +45,7 @@ export default function RootLayout({
         <div className="fixed top-6 right-6 z-50">
           <AuthButton />
         </div>
+        <GetCoinsModalLayer />
         {children}
       </body>
     </html>

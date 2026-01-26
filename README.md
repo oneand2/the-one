@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## 「我的古典排盘」与「我的八维结果」所用表
+
+后端统一使用 **`daoyoushuju`** 一张表，通过 **`type`** 区分类型（`classical_bazi` 八字排盘、`mbti` 八维结果），详情存入 **`input_data`**（JSONB）。请确保该表存在且含字段：`id`、`user_id`、`type`、`input_data`、`created_at`。
+
 ## Getting Started
 
 First, run the development server:

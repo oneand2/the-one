@@ -46,8 +46,24 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   if (error) {
     return { error: '注册失败：' + error.message };
   }
-  return {
-    redirectUrl:
-      '/login?message=注册成功！请检查邮箱并点击验证链接&next=' + encodeURIComponent(nextUrl),
-  };
+  // 注册成功，返回成功标志（不跳转，等待用户输入验证码）
+  return {};
+}
+
+export async function verifyOtp(formData: FormData): Promise<AuthResult> {
+  const email = formData.get('email') as string;
+  const token = formData.get('token') as string;
+  const nextUrl = (formData.get('next') as string) || '/';
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'signup',
+  });
+
+  if (error) {
+    return { error: '验证码错误或已过期，请重新输入' };
+  }
+  return { redirectUrl: nextUrl };
 }

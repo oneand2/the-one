@@ -208,7 +208,7 @@ export function AuthButton() {
         >
           <button
             onClick={() => router.push('/login')}
-            className="px-4 py-2 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors"
+            className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
           >
             登录
           </button>

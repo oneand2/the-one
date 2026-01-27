@@ -3,6 +3,44 @@ import { Lunar } from 'lunar-typescript';
 // @ts-ignore
 import { Solar, Lunar as LunarJS, EightChar, LunarUtil, SixtyCycle } from 'lunar-javascript';
 
+const TRUE_SOLAR_BASE_LONGITUDE = 120;
+
+const applyTrueSolarCorrection = (solar: any, longitude?: number) => {
+  if (typeof longitude !== 'number' || Number.isNaN(longitude)) {
+    return solar;
+  }
+  const longitudeDiff = longitude - TRUE_SOLAR_BASE_LONGITUDE;
+  if (Math.abs(longitudeDiff) < 0.0001) {
+    return solar;
+  }
+  // 每15度经度对应1小时，转换为分钟
+  return solar.next((longitudeDiff / 15) * 60);
+};
+
+const getBaziFromSolar = (solar: any, longitude?: number) => {
+  const baseBazi = solar.getLunar().getEightChar();
+  let timeGan = baseBazi.getTimeGan();
+  let timeZhi = baseBazi.getTimeZhi();
+
+  if (typeof longitude === 'number' && !Number.isNaN(longitude)) {
+    const correctedSolar = applyTrueSolarCorrection(solar, longitude);
+    const correctedBazi = correctedSolar.getLunar().getEightChar();
+    timeGan = correctedBazi.getTimeGan();
+    timeZhi = correctedBazi.getTimeZhi();
+  }
+
+  return {
+    yearGan: baseBazi.getYearGan(),
+    yearZhi: baseBazi.getYearZhi(),
+    monthGan: baseBazi.getMonthGan(),
+    monthZhi: baseBazi.getMonthZhi(),
+    dayGan: baseBazi.getDayGan(),
+    dayZhi: baseBazi.getDayZhi(),
+    hourGan: timeGan,
+    hourZhi: timeZhi
+  };
+};
+
 /**
  * 验证lunar-typescript库的基本功能
  */
@@ -267,32 +305,9 @@ export function analyzeBazi(input: BaziInput): BaziResult {
   // 分支 B: 日期计算模式
   else {
     // 真太阳时校正
-    let solarTime = Solar.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute || 0, 0);
-
-    // 如果提供了出生地点，进行真太阳时校正
-    if (input.location?.longitude) {
-      // 计算时差（每15度经度对应1小时）
-      const longitudeDiff = input.location.longitude - 120; // 以北京经度120°为基准
-      const timeDiffHours = longitudeDiff / 15;
-
-      // 将平太阳时转换为真太阳时
-      solarTime = solarTime.next(timeDiffHours * 60); // 转换为分钟
-    }
-
-    // 使用校正后的时间进行八字计算
-    const lunar = solarTime.getLunar();
-    const bazi = lunar.getEightChar();
-
-    // 正确提取8个汉字：4个天干 + 4个地支
-    const yearGan = bazi.getYearGan();    // 年干
-    const monthGan = bazi.getMonthGan();  // 月干
-    const dayGan = bazi.getDayGan();      // 日干
-    const hourGan = bazi.getTimeGan();    // 时干
-
-    const yearZhi = bazi.getYearZhi();    // 年支
-    const monthZhi = bazi.getMonthZhi();  // 月支
-    const dayZhi = bazi.getDayZhi();      // 日支
-    const hourZhi = bazi.getTimeZhi();    // 时支
+    const solarTime = Solar.fromYmdHms(input.year, input.month, input.day, input.hour, input.minute || 0, 0);
+    const { yearGan, monthGan, dayGan, hourGan, yearZhi, monthZhi, dayZhi, hourZhi } =
+      getBaziFromSolar(solarTime, input.location?.longitude);
 
     // 构建gans和zhis数组，与Python原代码期望的格式完全一致
     gans = [yearGan, monthGan, dayGan, hourGan];  // ['甲', '乙', '丙', '丁']
@@ -1427,42 +1442,32 @@ export function generateClassicalBaziData(input: BaziInput): ClassicalBaziData {
       input.minute || 0,
       0
     );
-
-    // 如果有经度，进行真太阳时校正
-    let correctedSolar = solar;
-    if (input.location?.longitude && input.location.longitude !== 116.4) {
-      // 简化的经度校正（每15度对应1小时）
-      const longitudeDiff = input.location.longitude - 116.4;
-      const timeDiffHours = longitudeDiff / 15;
-      correctedSolar = solar.next(timeDiffHours * 60); // 转换为分钟
-    }
-
-    const bazi = correctedSolar.getLunar().getEightChar();
+    const { yearGan, monthGan, dayGan, hourGan, yearZhi, monthZhi, dayZhi, hourZhi } =
+      getBaziFromSolar(solar, input.location?.longitude);
     
     pillars = {
       year: {
-        gan: bazi.getYearGan(),
-        zhi: bazi.getYearZhi(),
-        wuxing: getWuxingForGanZhi(bazi.getYearGan() + bazi.getYearZhi())
+        gan: yearGan,
+        zhi: yearZhi,
+        wuxing: getWuxingForGanZhi(yearGan + yearZhi)
       },
       month: {
-        gan: bazi.getMonthGan(),
-        zhi: bazi.getMonthZhi(),
-        wuxing: getWuxingForGanZhi(bazi.getMonthGan() + bazi.getMonthZhi())
+        gan: monthGan,
+        zhi: monthZhi,
+        wuxing: getWuxingForGanZhi(monthGan + monthZhi)
       },
       day: {
-        gan: bazi.getDayGan(),
-        zhi: bazi.getDayZhi(),
-        wuxing: getWuxingForGanZhi(bazi.getDayGan() + bazi.getDayZhi())
+        gan: dayGan,
+        zhi: dayZhi,
+        wuxing: getWuxingForGanZhi(dayGan + dayZhi)
       },
       hour: {
-        gan: bazi.getTimeGan(),
-        zhi: bazi.getTimeZhi(),
-        wuxing: getWuxingForGanZhi(bazi.getTimeGan() + bazi.getTimeZhi())
+        gan: hourGan,
+        zhi: hourZhi,
+        wuxing: getWuxingForGanZhi(hourGan + hourZhi)
       }
     };
-    
-    dayMasterGan = bazi.getDayGan();
+    dayMasterGan = dayGan;
   }
 
   // 日主

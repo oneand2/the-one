@@ -435,7 +435,15 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
 
         {/* 滑动提示 - 放在下方 */}
         <div className="text-center mt-6">
-          <span className="text-base text-stone-300 font-semibold tracking-wider">◀ 左右滑动查看更多 ▶</span>
+          <span className="inline-flex items-center gap-2 text-base text-stone-300 font-semibold tracking-wider">
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M9.5 3.5L5.5 8L9.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            左右滑动查看更多
+            <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M6.5 3.5L10.5 8L6.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
         </div>
 
         {/* 隐藏滚动条的CSS */}

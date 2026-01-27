@@ -182,8 +182,8 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
   };
 
   return (
-    <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-3 md:p-8 mt-8">
-      <div className="mb-3 md:mb-6">
+    <div className="bg-white/40 backdrop-blur-sm rounded-2xl px-3 py-1 md:px-8 md:py-3 mt-4 mb-6 md:mb-10">
+      <div className="mb-1 md:mb-2">
         <h3 className="text-sm md:text-lg font-serif text-[#44403C] text-center tracking-wider">
           八字关系图谱
         </h3>
@@ -193,14 +193,14 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
       </div>
       
       {/* 主图居中 - 移动端自适应缩放 */}
-      <div className="flex justify-center w-full -mx-2 md:mx-0">
+      <div className="flex justify-center w-full overflow-hidden md:overflow-visible">
         <svg 
           width="100%" 
           height="auto" 
-          className="overflow-visible max-w-full"
+          className="overflow-visible w-[140%] max-w-none md:w-full md:max-w-full"
           viewBox="0 0 800 450"
           preserveAspectRatio="xMidYMid meet"
-          style={{ minHeight: '300px' }}
+          style={{ minHeight: '260px' }}
         >
           {/* 定义箭头标记 */}
           <defs>

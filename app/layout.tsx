@@ -55,8 +55,8 @@ export default function RootLayout({
         <div
           className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
           style={{
-            paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
-            paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
+            paddingTop: 'max(4px, env(safe-area-inset-top, 0px))',
+            paddingRight: 'max(8px, env(safe-area-inset-right, 0px))',
           }}
         >
           <AuthButton />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
+import InstallPrompt from "@/components/InstallPrompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,8 +27,20 @@ const maShanZheng = Ma_Shan_Zheng({
 });
 
 export const metadata: Metadata = {
-  title: "八字命理 - 探索内在能量",
-  description: "基于八字命理的性格分析与能量分布洞察",
+  // 👇 网页标签页显示的标题
+  title: "二 - 让自己 让世界变得更好",
+  description: "相信终有一天，人与人之间会彼此理解。",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-icon.png",
+  },
+  themeColor: "#ffffff",
+  appleWebApp: {
+    // 👇 关键：这是 iPhone 桌面上显示的 App 名字，必须改成 "二"
+    title: "二",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
@@ -51,6 +64,7 @@ export default function RootLayout({
           <AuthButton />
         </div>
         {children}
+        <InstallPrompt />
       </body>
     </html>
   );

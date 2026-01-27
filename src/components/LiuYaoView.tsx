@@ -649,7 +649,7 @@ export const LiuYaoView: React.FC = () => {
         )}
 
         <p className="text-center text-xs text-stone-400 font-sans py-6">
-          注：一切卦象归根究底都是心象，请勿将本网站用于封建迷信活动。
+          注：一切卦象归根究底都是心象，勿将本网站用于封建迷信活动。
         </p>
       </motion.div>
 

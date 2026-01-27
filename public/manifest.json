@@ -1,0 +1,21 @@
+{
+  "name": "二 - 让自己 让世界变得更好",
+  "short_name": "二",
+  "description": "相信终有一天，人与人之间会彼此理解。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

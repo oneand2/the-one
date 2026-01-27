@@ -352,35 +352,35 @@ export function analyzeBazi(input: BaziInput): BaziResult {
   // 八字→MBTI 运行参数（测算 MBTI 时使用，冲合补偿在 PART 2 即用到）
   const BAZI_MBTI_PARAMS = {
     ss_mbti_weights: {
-      "比肩": { Fi: 0.6272976009264932, Si: 0.0863814102337426, Te: 0.028233847020994463, Ti: 0.02619025142351841, Fe: 0.5063539735489445, Se: 0.04750643927511244, Ne: 0.6288940331477292, Ni: 0.04914244442346482 },
-      "劫财": { Fe: 0.6339904239001248, Se: 0.06029630481607141, Te: 0.1130032077342419, Ti: 0.25798032519810626, Fi: 0.19419929116536636, Si: 0.4362482447450704, Ne: 0.012221296472533116, Ni: 0.10981074479289557 },
+      "比肩": { Fi: 1.1272976009264932, Si: 0.1863814102337426, Te: 0.028233847020994463, Ti: 0.12619025142351841, Fe: 0.5063539735489445, Se: 0.04750643927511244, Ne: 0.2288940331477292, Ni: 0.04914244442346482 },
+      "劫财": { Fe: 0.8339904239001248, Se: 0.06029630481607141, Te: 1.0130032077342419, Ti: 0.05798032519810626, Fi: 0.19419929116536636, Si: 0.2362482447450704, Ne: 0.012221296472533116, Ni: 0.10981074479289557 },
       "食神": { Fi: 0.1029270997261323, Ne: 1.221423597947489, Te: 0.04766758744569931, Ti: 0.05280170002818327, Fe: 0.04766758744569931, Se: 0.1319447873943418, Si: 0.04766758744569931, Ni: 0.34790005256675566 },
-      "伤官": { Ne: 0.19796184802047398, Ti: 0.28655711351256824, Te: 0.2818667704815759, Fe: 0.14872303509699475, Fi: 0.21097103135364315, Se: 0.275566927839208, Si: 0.31410779346566536, Ni: 0.28424548022987056 },
-      "正财": { Si: 0.024871628298928253, Te: 0.03509236761285633, Ti: 0.06691772068474677, Fe: 0.07818821086778849, Fi: 0.3338385057178014, Se: 0.30552734730653086, Ne: 0.012054959274314703, Ni: 0.38132758954048074 },
-      "偏财": { Se: 0.03587249683594573, Te: 0.05819893761991663, Ti: 0.2037534413146295, Fe: 0.2885894448223746, Fi: 0.38539252468549157, Si: 0.392482885691753, Ne: 0.27890853876984056, Ni: 0.35680173026004824 },
-      "正官": { Te: 0.1551263704367319, Si: 0.08258775257666712, Ti: 0.17380419949607714, Fe: 0.12062779895453588, Fi: 0.30291872466162323, Se: 0.17155420488198786, Ne: 0.4293404928680672, Ni: 0.5640404561243095 },
-      "七杀": { Te: 0.0981982935867653, Ni: 0.27345584792093314, Ti: 0.20382434748257502, Fe: 0.1154865347587994, Fi: 0.3834705261339111, Se: 0.27971544615187427, Si: 0.3695817306275623, Ne: 0.27626727333757944 },
-      "正印": { Fe: 0.023119860391175234, Si: 0.01, Te: 0.01, Ti: 0.46249674766753607, Fi: 0.46824057318480844, Se: 0.0574045921798849, Ne: 0.5142061485396071, Ni: 0.4546286479879464 },
-      "偏印": { Ni: 0.4805814560431654, Ti: 0.22394974063064682, Te: 0.38310783939831905, Fe: 0.07846294257978004, Fi: 0.01, Se: 0.04011878709778267, Si: 0.021715675876722566, Ne: 0.28555030011239435 },
-      "枭神": { Ni: 0.18635681486845135, Ti: 0.30653056793881817, Te: 0.17557265582184295, Fe: 0.23260374691260582, Fi: 0.39208527021925743, Se: 0.1907372166472286, Si: 0.12731811769642984, Ne: 0.36986605626648905 },
+      "伤官": { Ne: 0.79796184802047398, Ti: 0.28655711351256824, Te: 0.2818667704815759, Fe: 0.14872303509699475, Fi: 0.21097103135364315, Se: 0.275566927839208, Si: 0.01410779346566536, Ni: 0.28424548022987056 },
+      "正财": { Si: 0.024871628298928253, Te: 0.03509236761285633, Ti: 0.06691772068474677, Fe: 0.97818821086778849, Fi: 0.3338385057178014, Se: 0.30552734730653086, Ne: 0.012054959274314703, Ni: 0.38132758954048074 },
+      "偏财": { Se: 0.03587249683594573, Te: 0.05819893761991663, Ti: 0.2037534413146295, Fe: 0.8885894448223746, Fi: 0.38539252468549157, Si: 0.392482885691753, Ne: 0.27890853876984056, Ni: 0.25680173026004824 },
+      "正官": { Te: 0.1551263704367319, Si: 0.08258775257666712, Ti: 0.47380419949607714, Fe: 0.12062779895453588, Fi: 0.30291872466162323, Se: 0.17155420488198786, Ne: 0.1293404928680672, Ni: 0.2640404561243095 },
+      "七杀": { Te: 1.1981982935867653, Ni: 0.27345584792093314, Ti: 0.20382434748257502, Fe: 0.1154865347587994, Fi: 0.3834705261339111, Se: 0.27971544615187427, Si: 0.0695817306275623, Ne: 0.27626727333757944 },
+      "正印": { Fe: 0.323119860391175234, Si: 0.901, Te: 0.01, Ti: 0.46249674766753607, Fi: 0.46824057318480844, Se: 0.0574045921798849, Ne: 0.5142061485396071, Ni: 0.4546286479879464 },
+      "偏印": { Ni: 1.1805814560431654, Ti: 0.42394974063064682, Te: 0.38310783939831905, Fe: 0.07846294257978004, Fi: 0.01, Se: 0.04011878709778267, Si: 0.021715675876722566, Ne: 0.08555030011239435 },
+      "枭神": { Ni: 1.08635681486845135, Ti: 0.70653056793881817, Te: 0.37557265582184295, Fe: 0.23260374691260582, Fi: 0.29208527021925743, Se: 0.1907372166472286, Si: 0.12731811769642984, Ne: 0.06986605626648905 },
       "偏官": { Te: 0.3655983972900388, Ni: 0.22532898641572194, Ti: 0.03953476103120464, Fe: 0.07253845811981734, Fi: 0.317999603683743, Se: 0.35598394857604154, Si: 0.32809227137502583, Ne: 0.01 }
     } as Record<string, Record<string, number>>,
     mbti_map: {
-      "甲": { Te: 0.23443572403728782, Fi: 0.11558796533816014, Ti: 0.4705620975440448, Fe: 0.39039223063983824, Se: 0.13461286964025437, Si: 0.42334614852425073, Ne: 0.06316765745248096, Ni: 0.1678953068236827 },
-      "乙": { Fe: 0.019109492919350074, Ne: 0.44997368212982486, Te: 0.019109492919350074, Ti: 0.019109492919350074, Fi: 0.9293462356642604, Se: 0.5251326176091642, Si: 0.019109492919350074, Ni: 0.019109492919350074 },
-      "丙": { Se: 0.3385567918127332, Fe: 0.1932900260388142, Te: 0.1357445326217361, Ti: 0.35005209408935034, Fi: 0.19134510715211622, Si: 0.25764531259723134, Ne: 0.24882441702507285, Ni: 0.2845417186629456 },
-      "丁": { Ni: 0.5323136404142509, Ti: 0.24844479540108608, Te: 0.42193120919253135, Fe: 0.21713693915072724, Fi: 0.05294770841273588, Se: 0.13390283848689524, Si: 0.17571483747196412, Ne: 0.217608031469809 },
-      "戊": { Si: 0.1646142330072045, Fi: 0.23352232958956973, Te: 0.01, Ti: 0.6738253677436321, Fe: 0.029956046665663438, Se: 0.777169585895979, Ne: 0.1009124370979512, Ni: 0.01 },
+      "甲": { Te: 1.23443572403728782, Fi: 0.11558796533816014, Ti: 0.4705620975440448, Fe: 0.39039223063983824, Se: 0.13461286964025437, Si: 0.42334614852425073, Ne: 0.06316765745248096, Ni: 0.1678953068236827 },
+      "乙": { Fe: 0.019109492919350074, Ne: 0.84997368212982486, Te: 0.019109492919350074, Ti: 0.019109492919350074, Fi: 0.4293462356642604, Se: 0.5251326176091642, Si: 0.019109492919350074, Ni: 0.019109492919350074 },
+      "丙": { Se: 0.3385567918127332, Fe: 0.932900260388142, Te: 0.1357445326217361, Ti: 0.35005209408935034, Fi: 0.19134510715211622, Si: 0.25764531259723134, Ne: 0.24882441702507285, Ni: 0.2845417186629456 },
+      "丁": { Ni: 0.8323136404142509, Ti: 0.34844479540108608, Te: 0.42193120919253135, Fe: 0.21713693915072724, Fi: 0.05294770841273588, Se: 0.13390283848689524, Si: 0.17571483747196412, Ne: 0.217608031469809 },
+      "戊": { Si: 0.1646142330072045, Fi: 0.23352232958956973, Te: 0.01, Ti: 0.0738253677436321, Fe: 0.029956046665663438, Se: 0.777169585895979, Ne: 0.1009124370979512, Ni: 0.01 },
       "己": { Fe: 0.35376642945774667, Si: 0.011410580113885635, Te: 0.20044601524216302, Ti: 0.01, Fi: 0.23514572700265327, Se: 0.01, Ne: 0.7918762834307395, Ni: 0.38740775000610733 },
-      "庚": { Te: 0.07824165322191358, Se: 0.11822277122885805, Ti: 0.045576763108743874, Fe: 0.02122859430813045, Fi: 0.03568392486829501, Si: 0.13897162832005802, Ne: 0.13507411483174242, Ni: 0.22700055011225867 },
+      "庚": { Te: 0.07824165322191358, Se: 0.11822277122885805, Ti: 0.045576763108743874, Fe: 0.32122859430813045, Fi: 0.03568392486829501, Si: 0.13897162832005802, Ne: 0.13507411483174242, Ni: 0.22700055011225867 },
       "辛": { Fi: 0.012163335020735355, Se: 0.2033122035640154, Te: 0.37347197450292086, Ti: 0.3312058990673226, Fe: 0.3706127341175688, Si: 0.04050120842915505, Ne: 0.3273704302101597, Ni: 0.3413622150881224 },
-      "壬": { Ne: 0.01, Te: 0.7403790152254841, Ti: 0.01, Fe: 0.011488081163630292, Fi: 0.08487703714549497, Se: 0.1932207156040188, Si: 0.22656173822587852, Ni: 0.7234828444663765 },
-      "癸": { Ni: 0.01, Fi: 0.01, Te: 0.07630995265459674, Ti: 0.5181176253833563, Fe: 0.01, Se: 0.6370981307431082, Si: 0.4438727233693656, Ne: 0.29460156784957303 }
+      "壬": { Ne: 0.01, Te: 0.1403790152254841, Ti: 0.41, Fe: 0.011488081163630292, Fi: 0.08487703714549497, Se: 0.1932207156040188, Si: 0.22656173822587852, Ni: 0.3234828444663765 },
+      "癸": { Ni: 0.31, Fi: 0.01, Te: 0.07630995265459674, Ti: 1.2181176253833563, Fe: 0.2, Se: 0.6370981307431082, Si: 0.4438727233693656, Ne: 0.29460156784957303 }
     } as Record<string, Record<string, number>>,
     fitness: 50.0,
-    compensation_params: { adjacent_clash_boost: 30.0, remote_clash_boost: 15.0, full_clash_boost: 180.0, six_combine_boost: 6.658452162258187, full_combine_boost: 180.0 },
-    contribution_params: { phys_contribution_ratio: 0.38442442849570757, ss_contribution_ratio: 0.6155755715042924, activation_base: 8.322594297471033 },
-    multiplier_params: { geju_mult: 2.075067010340313, day_master_mult: 4.5 },
+    compensation_params: { adjacent_clash_boost: 30.0, remote_clash_boost: 5.0, full_clash_boost: 130.0, six_combine_boost: 6.658452162258187, full_combine_boost: 100.0 },
+    contribution_params: { phys_contribution_ratio: 0.50042442849570757, ss_contribution_ratio: 0.6155755715042924, activation_base: 8.322594297471033 },
+    multiplier_params: { geju_mult: 2.075067010340313, day_master_mult: 2.5 },
     defense_params: { weak_defense_threshold: 23.254319515436514, strong_attack_threshold: 97.0, weak_defense_weights: { Fi: 0.9091873223445278 }, weak_defense_mult: 0.4615850087516475, strong_attack_weights: { Fi: 2.8162545768225424 }, strong_attack_mult: 1.2000000000000002 }
   };
 
@@ -992,13 +992,76 @@ export function analyzeBazi(input: BaziInput): BaziResult {
     decisionLog += " | 依强弱/喜忌定用";
   }
 
+  // ================= PART 3.5: 传统能量基准（古典排盘） =================
+  const classicalData = generateClassicalBaziData(input);
+  const classicalProfile = calculateEnergyProfile(classicalData);
+  const mbtiBaseScores = classicalProfile.core.finalScores;
+  const mbtiBaseTotalEnergy = classicalProfile.core.totalEnergy;
+  const mbtiPeerPct = classicalProfile.core.peerPct;
+  const mbtiPatternBaseSs = classicalProfile.core.patternBaseSs;
+  const mbtiTrueSeason = classicalProfile.core.trueSeason || trueSeason;
+  const mbtiIsBureau = classicalProfile.core.isBureau;
+  const {
+    adjacent_clash_boost,
+    remote_clash_boost,
+    full_clash_boost,
+    six_combine_boost,
+    full_combine_boost
+  } = BAZI_MBTI_PARAMS.compensation_params;
+
+  const calcMbtiInteractionBoosts = (inputZhis: string[], group: Set<string>) => {
+    const liuHe = new Map([
+      ['子丑', '土'], ['寅亥', '木'], ['卯戌', '火'], ['辰酉', '金'], ['午未', '土'], ['巳申', '水']
+    ]);
+    const chongs = [
+      new Set(['子', '午']), new Set(['丑', '未']), new Set(['寅', '申']),
+      new Set(['卯', '酉']), new Set(['辰', '戌']), new Set(['巳', '亥'])
+    ];
+
+    const combinedIndices = new Set<number>();
+    let tempNiBoostSum = 0.0;
+    for (let i = 0; i < 3; i++) {
+      const pair = inputZhis[i] + inputZhis[i + 1];
+      if (liuHe.has(pair)) {
+        combinedIndices.add(i);
+        combinedIndices.add(i + 1);
+        tempNiBoostSum += six_combine_boost;
+      }
+    }
+
+    const combineNiBoost = combinedIndices.size === 4 ? full_combine_boost : tempNiBoostSum;
+
+    const clashedIndices = new Set<number>();
+    let tempBoostSum = 0.0;
+    for (let i = 0; i < 4; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        const pairSet = new Set([inputZhis[i], inputZhis[j]]);
+        const isClash = chongs.some(chong => [...chong].every(c => pairSet.has(c)));
+        if (isClash) {
+          clashedIndices.add(i);
+          clashedIndices.add(j);
+          if (!group.has(inputZhis[i]) && !group.has(inputZhis[j])) {
+            const dist = j - i;
+            tempBoostSum += dist === 1 ? adjacent_clash_boost : remote_clash_boost;
+          }
+        }
+      }
+    }
+
+    const clashNeBoost = clashedIndices.size === 4 ? full_clash_boost : tempBoostSum;
+    return { clashNeBoost, combineNiBoost };
+  };
+
+  const { clashNeBoost: mbtiClashNeBoost, combineNiBoost: mbtiCombineNiBoost } =
+    calcMbtiInteractionBoosts(zhis, structureGroup);
+
   // ================= PART 4: 初始化与显化模式设定 =================
-  const sortedStemsByEnergy = Object.entries(finalScores).sort(([, a], [, b]) => b - a);
+  const sortedStemsByEnergy = Object.entries(mbtiBaseScores).sort(([, a], [, b]) => b - a);
   const domStemGlobal = sortedStemsByEnergy[0][0];
 
   const forcedModes: Record<string, number> = {};
-  for (const [sName, sVal] of Object.entries(finalScores)) {
-    const sPct = totalEnergy > 0 ? (sVal / totalEnergy) * 100 : 0;
+  for (const [sName, sVal] of Object.entries(mbtiBaseScores)) {
+    const sPct = mbtiBaseTotalEnergy > 0 ? (sVal / mbtiBaseTotalEnergy) * 100 : 0;
     if (sName === domStemGlobal) {
       forcedModes[sName] = 0; // 强显
     } else if (sPct < 10) {
@@ -1009,7 +1072,7 @@ export function analyzeBazi(input: BaziInput): BaziResult {
   }
 
   // 初始化能量池
-  const mbtiWeightScores = { ...finalScores };
+  const mbtiWeightScores = { ...mbtiBaseScores };
   if (dayMaster in mbtiWeightScores) {
     mbtiWeightScores[dayMaster] *= mult.day_master_mult;
   }
@@ -1033,7 +1096,7 @@ export function analyzeBazi(input: BaziInput): BaziResult {
     const pct = mbtiTotalEnergy > 0 ? (v / mbtiTotalEnergy) * 100 : 0;
 
     // 确定显化模式与变性基础判定
-    const isTransformed = isBureau && stemWuxing[s] === trueSeason;
+    const isTransformed = mbtiIsBureau && stemWuxing[s] === mbtiTrueSeason;
     const targetIdx = isTransformed ? 1 : forcedModes[s];
 
     // 十神变性逻辑
@@ -1053,14 +1116,14 @@ export function analyzeBazi(input: BaziInput): BaziResult {
     let ssWeights: Record<string, number> = { ...(ssMbtiWeights[rawSs] || {}) };
 
     // 判定 A：身弱下的防御机制（参数：weak_defense_threshold / weak_defense_weights / weak_defense_mult）
-    if (peerPct < defense.weak_defense_threshold && ["七杀", "偏官", "伤官"].includes(rawSs)) {
+    if (mbtiPeerPct < defense.weak_defense_threshold && ["七杀", "偏官", "伤官"].includes(rawSs)) {
       ssWeights = { ...defense.weak_defense_weights };
       for (const [func, weight] of Object.entries(ssMbtiWeights[rawSs] || {})) {
         ssWeights[func] = (ssWeights[func] || 0) + weight * defense.weak_defense_mult;
       }
     }
     // 判定 B：专旺下的内化机制（参数：strong_attack_threshold / strong_attack_weights / strong_attack_mult）
-    else if (peerPct > defense.strong_attack_threshold && ["偏印", "枭神", "劫财"].includes(rawSs)) {
+    else if (mbtiPeerPct > defense.strong_attack_threshold && ["偏印", "枭神", "劫财"].includes(rawSs)) {
       ssWeights = { ...defense.strong_attack_weights };
       for (const [func, weight] of Object.entries(ssMbtiWeights[rawSs] || {})) {
         ssWeights[func] = (ssWeights[func] || 0) + weight * defense.strong_attack_mult;
@@ -1069,7 +1132,7 @@ export function analyzeBazi(input: BaziInput): BaziResult {
 
     // 核心权重解耦逻辑（contrib.phys_contribution_ratio / ss_contribution_ratio，格局用 geju_mult）
     const physContributionBase = pct;
-    const ssContributionBase = rawSs === patternBaseSs ?
+    const ssContributionBase = rawSs === mbtiPatternBaseSs ?
       Math.max(pct, activationBase) * mult.geju_mult : pct;
 
     // 填充八维：物理部分按 mbti_map 八维权重 * phys_contribution_ratio；社会部分按 ss_contribution_ratio
@@ -1105,8 +1168,8 @@ export function analyzeBazi(input: BaziInput): BaziResult {
   }
 
   // ================= PART 6: 归一化与 MBTI 判定 =================
-  eightFunctions['Ne'] += clashNeBoost;
-  eightFunctions['Ni'] += combineNiBoost;
+  eightFunctions['Ne'] += mbtiClashNeBoost;
+  eightFunctions['Ni'] += mbtiCombineNiBoost;
 
   const totalMbtiScore = Object.values(eightFunctions).reduce((sum, v) => sum + v, 0);
   if (totalMbtiScore > 0) {
@@ -1163,11 +1226,11 @@ export function analyzeBazi(input: BaziInput): BaziResult {
 
   const domCandidates = Object.keys(stemModes).filter(s => stemModes[s].func === domFuncResult);
   const domStem = domCandidates.length > 0 ?
-    domCandidates.reduce((a, b) => finalScores[a] > finalScores[b] ? a : b) : "混合";
+    domCandidates.reduce((a, b) => mbtiBaseScores[a] > mbtiBaseScores[b] ? a : b) : "混合";
 
   const auxCandidates = Object.keys(stemModes).filter(s => stemModes[s].func === auxFunc);
   const auxStem = auxCandidates.length > 0 ?
-    auxCandidates.reduce((a, b) => finalScores[a] > finalScores[b] ? a : b) : "混合";
+    auxCandidates.reduce((a, b) => mbtiBaseScores[a] > mbtiBaseScores[b] ? a : b) : "混合";
 
   // ================= PART 7: 报告生成 =================
   const ssDistribution: Record<string, number> = {};
@@ -3058,6 +3121,22 @@ export interface EnergyProfile {
     final: string;      // 最终真神
     reason: string;     // 裁定理由
   };
+  core: {
+    gans: string[];
+    zhis: string[];
+    dayMaster: string;
+    trueSeason: string | null;
+    isBureau: boolean;
+    monthMainStem: string;
+    finalScores: { [key: string]: number };
+    totalEnergy: number;
+    peerPct: number;
+    patternBaseSs: string;
+  };
+  interactionBoosts: {
+    combineNiBoost: number;
+    clashNeBoost: number;
+  };
   maxEnergy: number;    // 最大能量值（用于图表归一化）
   logs: string[];       // 计算日志
 }
@@ -3794,6 +3873,22 @@ export function calculateEnergyProfile(baziData: ClassicalBaziData): EnergyProfi
       balance: balanceGod,
       final: yongshen,
       reason: decisionLog
+    },
+    core: {
+      gans,
+      zhis,
+      dayMaster,
+      trueSeason,
+      isBureau,
+      monthMainStem,
+      finalScores,
+      totalEnergy,
+      peerPct,
+      patternBaseSs
+    },
+    interactionBoosts: {
+      combineNiBoost,
+      clashNeBoost
     },
     maxEnergy,
     logs

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { analyzeBazi, BaziInput, BaziResult } from '@/utils/baziLogic';
+import { analyzeBazi, BaziInput, BaziResult, generateClassicalBaziData, calculateEnergyProfile } from '@/utils/baziLogic';
 
 export const BaZiView: React.FC = () => {
   const router = useRouter();
@@ -47,6 +47,7 @@ export const BaZiView: React.FC = () => {
   });
 
   const [result, setResult] = useState<BaziResult | null>(null);
+  const [lastCalculatedInput, setLastCalculatedInput] = useState<BaziInput | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeSelectId, setActiveSelectId] = useState<string | null>(null);
@@ -54,6 +55,12 @@ export const BaZiView: React.FC = () => {
   const [selectedProvince, setSelectedProvince] = useState('北京市');
   const [selectedCity, setSelectedCity] = useState('北京市');
   const [quickInputText, setQuickInputText] = useState('');
+  const classicalProfile = lastCalculatedInput
+    ? (() => {
+        const classicalData = generateClassicalBaziData(lastCalculatedInput);
+        return calculateEnergyProfile(classicalData);
+      })()
+    : null;
 
   const getDaysInMonth = (year: number, month: number): number => {
     return new Date(year, month, 0).getDate();
@@ -226,6 +233,7 @@ export const BaZiView: React.FC = () => {
 
         const baziResult = analyzeBazi(input);
         setResult(baziResult);
+        setLastCalculatedInput(input);
       } catch (error) {
         console.error('计算失败:', error);
       }
@@ -854,6 +862,15 @@ export const BaZiView: React.FC = () => {
 
             <div className="mt-16 pt-4 space-y-4">
               <motion.button
+                onClick={handleClassicalReport}
+                className="w-full py-3 px-6 bg-transparent text-stone-600 font-sans text-sm border border-stone-400 rounded-lg hover:bg-stone-50 active:bg-stone-100 transition-colors duration-300 shadow-sm"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                古典排盘
+              </motion.button>
+
+              <motion.button
                 onClick={handleCalculate}
                 disabled={isCalculating}
                 className="w-full py-4 px-6 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -862,15 +879,10 @@ export const BaZiView: React.FC = () => {
               >
                 {isCalculating ? '推算中...' : '测算 MBTI'}
               </motion.button>
-
-              <motion.button
-                onClick={handleClassicalReport}
-                className="w-full py-3 px-6 bg-transparent text-stone-600 font-sans text-sm border border-stone-400 rounded-lg hover:bg-stone-50 active:bg-stone-100 transition-colors duration-300 shadow-sm"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                古典排盘
-              </motion.button>
+              
+              <p className="text-xs text-stone-500 text-center mt-2">
+                测算MBTI功能仍在开发中，目前准确率相当有限，不代表最终效果
+              </p>
             </div>
           </div>
         </div>
@@ -975,16 +987,47 @@ export const BaZiView: React.FC = () => {
                 十神能量分布
               </div>
               <div className="space-y-2 text-sm text-[#333333] font-sans">
-                {Object.entries(result.ssDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span>{key}</span>
-                      <span>{value.toFixed(1)}%</span>
-                    </div>
-                  ))}
+                {(() => {
+                  const shishenPct =
+                    classicalProfile != null
+                      ? classicalProfile.percentages.shishenDetailed
+                      : result.ssDistribution;
+                  return Object.entries(shishenPct ?? {})
+                    .filter(([, v]) => (v as number) > 0)
+                    .sort(([, a], [, b]) => (b as number) - (a as number))
+                    .map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span>{key}</span>
+                        <span>{(value as number).toFixed(1)}%</span>
+                      </div>
+                    ));
+                })()}
               </div>
             </motion.div>
+
+            {classicalProfile && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 2.2 }}
+                className="space-y-4"
+              >
+                <div className="text-xs text-[#666666] font-sans uppercase tracking-wider text-center">
+                  十天干能量分布
+                </div>
+                <div className="space-y-2 text-sm text-[#333333] font-sans">
+                  {Object.entries(classicalProfile.percentages.ganDetailed)
+                    .filter(([, v]) => v > 0)
+                    .sort(([, a], [, b]) => b - a)
+                    .map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span>{key}</span>
+                        <span>{value.toFixed(1)}%</span>
+                      </div>
+                    ))}
+                </div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

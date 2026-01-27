@@ -1,8 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #fbf9f4;
   --foreground: #171717;
+  /* 移动端底部导航总高度（主栏 + 安全区），内容区 pb 用此值避免被挡住 */
+  --mobile-nav-height: calc(60px + env(safe-area-inset-bottom, 0px));
+  --mobile-nav-height-with-sub: calc(94px + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {
@@ -30,4 +33,28 @@ body {
 /* 八字干支书法字体 */
 .font-calligraphy {
   font-family: var(--font-ma-shan-zheng), serif;
+}
+
+/* 移动端主内容底部留白，避免被底部导航挡住 */
+.mobile-content-bottom {
+  padding-bottom: calc(var(--mobile-nav-height, 60px) + 64px);
+}
+@media (min-width: 768px) {
+  .mobile-content-bottom {
+    padding-bottom: 5rem;
+  }
+}
+
+/* 六济输入区：仅移动端加大底部留白，避免被底部导航挡住 */
+@media (max-width: 767px) {
+  .liuji-input-bottom {
+    padding-bottom: max(2rem, calc(var(--mobile-nav-height, 60px) + 40px)) !important;
+  }
+}
+
+/* 六济容器：移动端为底部导航预留空间 */
+@media (max-width: 767px) {
+  .liuji-shell {
+    height: calc(100vh - 12rem - var(--mobile-nav-height, 60px) - 24px);
+  }
 }

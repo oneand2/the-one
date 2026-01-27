@@ -7,7 +7,7 @@ import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
 import { LiuJiView } from '@/components/LiuJiView';
 import { MbtiTestView } from '@/components/MbtiTestView';
-type TabType = 'bazi' | 'mbti' | 'liuyao' | 'liuji';
+type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),
@@ -30,7 +30,7 @@ const Home: React.FC = () => {
       />
 
       {/* 主内容区 - 占据全屏，内容居中 */}
-      <main className="min-h-screen flex items-start justify-center overflow-y-auto">
+      <main className="min-h-screen flex items-start justify-center">
         <div className="w-full max-w-4xl">
           {/* Header */}
           <motion.header
@@ -45,28 +45,30 @@ const Home: React.FC = () => {
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                {(activeTab === 'liuyao' || activeTab === 'liuji') ? (
+                {activeTab === 'guanshi' ? (
+                  // 老阳 - 两条实心横杠（仅两实线，无虚）
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto mb-4" style={{ color: '#2c2c2c' }}>
+                    <rect x="0" y="22" width="100" height="20" fill="currentColor" />
+                    <rect x="0" y="58" width="100" height="20" fill="currentColor" />
+                  </svg>
+                ) : activeTab === 'wendao' ? (
+                  // 老阴 - 两条虚杠（两虚线，中间断）
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="14" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto mb-4" style={{ color: '#2c2c2c' }}>
+                    <line x1="0" y1="34" x2="38" y2="34" />
+                    <line x1="62" y1="34" x2="100" y2="34" />
+                    <line x1="0" y1="66" x2="38" y2="66" />
+                    <line x1="62" y1="66" x2="100" y2="66" />
+                  </svg>
+                ) : (activeTab === 'liuyao' || activeTab === 'liuji') ? (
                   // 少阳 - 上实下虚
-                  <svg 
-                    viewBox="0 0 100 100" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="currentColor" 
-                    preserveAspectRatio="xMidYMid meet" 
-                    className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4"
-                  >
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="100" height="20" />
                     <rect x="0" y="60" width="44" height="20" />
                     <rect x="56" y="60" width="44" height="20" />
                   </svg>
                 ) : (
                   // 少阴 - 上虚下实
-                  <svg 
-                    viewBox="0 0 100 100" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="currentColor" 
-                    preserveAspectRatio="xMidYMid meet" 
-                    className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4"
-                  >
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="44" height="20" />
                     <rect x="56" y="20" width="44" height="20" />
                     <rect x="0" y="60" width="100" height="20" />
@@ -74,10 +76,14 @@ const Home: React.FC = () => {
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '六济问津'}
+                {activeTab === 'guanshi' ? '观世' : activeTab === 'wendao' ? '问道' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '六济问津'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
-                {activeTab === 'bazi' 
+                {activeTab === 'guanshi' 
+                  ? '观天下事，待续'
+                  : activeTab === 'wendao'
+                  ? '观点广场，待续'
+                  : activeTab === 'bazi' 
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'mbti'
                   ? '知己即知天，请成为自己的答案'
@@ -92,7 +98,37 @@ const Home: React.FC = () => {
           <div className="px-6 pb-20">
             <div className="max-w-md mx-auto">
               <AnimatePresence mode="wait">
-                {activeTab === 'bazi' ? (
+                {activeTab === 'guanshi' ? (
+                  <motion.div
+                    key="guanshi-content"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.3 }}
+                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
+                  >
+                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
+                    <p className="text-stone-500 text-sm font-serif tracking-wide text-center" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
+                      感谢您的支持<br />观世功能正在开发中
+                    </p>
+                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                  </motion.div>
+                ) : activeTab === 'wendao' ? (
+                  <motion.div
+                    key="wendao-content"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.3 }}
+                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
+                  >
+                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
+                    <p className="text-stone-500 text-sm font-serif tracking-wide text-center" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
+                      感谢您的支持<br />问道功能正在开发中
+                    </p>
+                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                  </motion.div>
+                ) : activeTab === 'bazi' ? (
                   <motion.div
                     key="bazi-content"
                     initial={{ opacity: 0, x: -20 }}
@@ -123,14 +159,14 @@ const Home: React.FC = () => {
                     <LiuYaoView />
                   </motion.div>
                 ) : (
-                  <div className="h-[calc(100vh-12rem)] min-h-[420px] w-full flex flex-col">
+                  <div className="w-full flex flex-col">
                     <motion.div
                       key="liuji-content"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ duration: 0.3 }}
-                      className="w-full h-full min-h-0 flex flex-col"
+                      className="w-full flex flex-col"
                     >
                       <LiuJiView />
                     </motion.div>

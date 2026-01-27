@@ -38,10 +38,16 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${crimsonText.variable} ${maShanZheng.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${crimsonText.variable} ${maShanZheng.variable} antialiased relative`}
       >
-        {/* 右上角登录入口，全站显示 */}
-        <div className="fixed top-6 right-6 z-50">
+        {/* 登录入口：定位在页面右上角，随页面滚动 */}
+        <div
+          className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
+          style={{
+            paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
+            paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
+          }}
+        >
           <AuthButton />
         </div>
         {children}

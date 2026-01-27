@@ -7,7 +7,8 @@ import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
 import { LiuJiView } from '@/components/LiuJiView';
 import { MbtiTestView } from '@/components/MbtiTestView';
-type TabType = 'bazi' | 'mbti' | 'liuyao' | 'liuji';
+import { MobileNav } from '@/components/MobileNav';
+type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),
@@ -20,17 +21,19 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">
-      {/* 左侧侧边栏 */}
-      <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab}
-        isCollapsed={isCollapsed}
-        onMouseEnter={() => setIsCollapsed(false)}
-        onMouseLeave={() => setIsCollapsed(true)}
-      />
+      {/* 左侧侧边栏 - 仅桌面端显示，移动端用底部导航 */}
+      <div className="hidden md:block">
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          isCollapsed={isCollapsed}
+          onMouseEnter={() => setIsCollapsed(false)}
+          onMouseLeave={() => setIsCollapsed(true)}
+        />
+      </div>
 
-      {/* 主内容区 - 占据全屏，内容居中 */}
-      <main className="min-h-screen flex items-start justify-center overflow-y-auto">
+      {/* 主内容区：移动端底部留出导航高度，避免被挡住 */}
+      <main className="min-h-screen flex items-start justify-center">
         <div className="w-full max-w-4xl">
           {/* Header */}
           <motion.header
@@ -44,29 +47,29 @@ const Home: React.FC = () => {
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
+                className="mx-auto mb-4 flex justify-center"
               >
-                {(activeTab === 'liuyao' || activeTab === 'liuji') ? (
-                  // 少阳 - 上实下虚
-                  <svg 
-                    viewBox="0 0 100 100" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="currentColor" 
-                    preserveAspectRatio="xMidYMid meet" 
-                    className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4"
-                  >
+                {/* 统一规格：viewBox 0 0 100 100，杠粗 20、上杠 y=20 下杠 y=60，断口 44/56，尺寸 w-8 h-8 */}
+                {activeTab === 'guanshi' ? (
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 text-[#2c2c2c]">
+                    <rect x="0" y="20" width="100" height="20" />
+                    <rect x="0" y="60" width="100" height="20" />
+                  </svg>
+                ) : activeTab === 'wendao' ? (
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 text-[#2c2c2c]">
+                    <rect x="0" y="20" width="44" height="20" />
+                    <rect x="56" y="20" width="44" height="20" />
+                    <rect x="0" y="60" width="44" height="20" />
+                    <rect x="56" y="60" width="44" height="20" />
+                  </svg>
+                ) : (activeTab === 'liuyao' || activeTab === 'liuji') ? (
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 text-[#2c2c2c]">
                     <rect x="0" y="20" width="100" height="20" />
                     <rect x="0" y="60" width="44" height="20" />
                     <rect x="56" y="60" width="44" height="20" />
                   </svg>
                 ) : (
-                  // 少阴 - 上虚下实
-                  <svg 
-                    viewBox="0 0 100 100" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="currentColor" 
-                    preserveAspectRatio="xMidYMid meet" 
-                    className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4"
-                  >
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 text-[#2c2c2c]">
                     <rect x="0" y="20" width="44" height="20" />
                     <rect x="56" y="20" width="44" height="20" />
                     <rect x="0" y="60" width="100" height="20" />
@@ -74,10 +77,14 @@ const Home: React.FC = () => {
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '六济问津'}
+                {activeTab === 'guanshi' ? '观世' : activeTab === 'wendao' ? '问道' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '六济问津'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
-                {activeTab === 'bazi' 
+                {activeTab === 'guanshi'
+                  ? '观天下事，待续'
+                  : activeTab === 'wendao'
+                  ? '观点广场，待续'
+                  : activeTab === 'bazi'
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'mbti'
                   ? '知己即知天，请成为自己的答案'
@@ -88,11 +95,53 @@ const Home: React.FC = () => {
             </div>
           </motion.header>
 
-          {/* 内容区域 */}
-          <div className="px-6 pb-20">
+          {/* 内容区域：移动端预留底部导航高度，桌面端保持 pb-20 */}
+          <div className="px-6 mobile-content-bottom">
             <div className="max-w-md mx-auto">
               <AnimatePresence mode="wait">
-                {activeTab === 'bazi' ? (
+                {activeTab === 'guanshi' ? (
+                  <motion.div
+                    key="guanshi-content"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.3 }}
+                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
+                  >
+                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
+                    <p
+                      className="text-stone-500 text-sm font-serif tracking-wide text-center"
+                      style={{
+                        fontFamily:
+                          '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
+                      }}
+                    >
+                      感谢您的支持<br />观世功能正在开发中
+                    </p>
+                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                  </motion.div>
+                ) : activeTab === 'wendao' ? (
+                  <motion.div
+                    key="wendao-content"
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -12 }}
+                    transition={{ duration: 0.3 }}
+                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
+                  >
+                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
+                    <p
+                      className="text-stone-500 text-sm font-serif tracking-wide text-center"
+                      style={{
+                        fontFamily:
+                          '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
+                      }}
+                    >
+                      感谢您的支持<br />问道功能正在开发中
+                    </p>
+                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                  </motion.div>
+                ) : activeTab === 'bazi' ? (
                   <motion.div
                     key="bazi-content"
                     initial={{ opacity: 0, x: -20 }}
@@ -123,21 +172,27 @@ const Home: React.FC = () => {
                     <LiuYaoView />
                   </motion.div>
                 ) : (
-                  <motion.div
-                    key="liuji-content"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <LiuJiView />
-                  </motion.div>
+                  <div className="liuji-shell h-[calc(100vh-12rem)] min-h-[420px] w-full flex flex-col">
+                    <motion.div
+                      key="liuji-content"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="w-full h-full min-h-0 flex flex-col"
+                    >
+                      <LiuJiView />
+                    </motion.div>
+                  </div>
                 )}
               </AnimatePresence>
             </div>
           </div>
         </div>
       </main>
+
+      {/* 移动端底部导航栏 */}
+      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };

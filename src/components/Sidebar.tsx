@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const SUBMENU_LEAVE_DELAY_MS = 180;
 
-type TabType = 'bazi' | 'mbti' | 'liuyao' | 'liuji';
+type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -16,8 +16,8 @@ interface SidebarProps {
 }
 
 type TabItem = 
-  | { id: 'neiguan' | 'wentus'; label: string; subTabs: Array<{ id: TabType; label: string }> }
-  | { id: TabType; label: string };
+  | { id: 'guanshi' | 'wendao'; label: string; subTabs?: never }
+  | { id: 'guanxin' | 'wentus'; label: string; subTabs: Array<{ id: TabType; label: string }> };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, onMouseEnter, onMouseLeave }) => {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
@@ -41,9 +41,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
   }, [clearLeaveTimer]);
 
   const tabs: TabItem[] = [
+    { id: 'guanshi' as const, label: '观世' },
     { 
-      id: 'neiguan' as const, 
-      label: '内观',
+      id: 'guanxin' as const, 
+      label: '观心',
       subTabs: [
         { id: 'bazi' as TabType, label: '八字' },
         { id: 'mbti' as TabType, label: '八维' },
@@ -57,6 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
         { id: 'liuji' as TabType, label: '六济' },
       ]
     },
+    { id: 'wendao' as const, label: '问道' },
   ];
 
   return (
@@ -152,7 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
           }}
         >
           {/* Top Section: 上联 - 世界即道场 人生是修行 */}
-          <div className="w-full flex justify-center flex-shrink-0" style={{ marginBottom: '40px' }}>
+          <div className="hidden md:flex w-full justify-center flex-shrink-0" style={{ marginBottom: '40px' }}>
             <div className="flex items-center justify-center gap-3">
               {/* 第一行：世界即道场 */}
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
@@ -225,11 +227,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                 >
                   <button
                     onClick={() => {
-                      if ('subTabs' in tab) {
+                      if ('subTabs' in tab && tab.subTabs) {
                         // 如果有子菜单，点击时切换到第一个子选项
                         onTabChange(tab.subTabs[0].id);
                       } else {
-                        onTabChange(tab.id);
+                        // 无子菜单，直接切换（guanshi 或 wendao）
+                        const tabId = tab.id;
+                        if (tabId === 'guanshi' || tabId === 'wendao') {
+                          onTabChange(tabId);
+                        }
                       }
                     }}
                     className="relative flex items-center justify-center"
@@ -239,7 +245,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                       style={{
                         fontSize: '15px',
                         letterSpacing: '0.35em',
-                        color: ('subTabs' in tab && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id 
+                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id 
                           ? '#57534e' 
                           : '#a8a29e',
                         fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
@@ -252,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                     </span>
                     
                     {/* 选中指示器 */}
-                    {(('subTabs' in tab && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id) && (
+                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id) && (
                       <motion.div
                         layoutId="activeIndicator"
                         style={{
@@ -275,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                   </button>
 
                   {/* 子菜单 - 优雅的垂直布局 */}
-                  {'subTabs' in tab && (
+                  {'subTabs' in tab && tab.subTabs && (
                     <AnimatePresence>
                       {hoveredTab === tab.id && (
                         <motion.div
@@ -313,7 +319,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                             
                             {/* 选项列表 */}
                             <div className="flex flex-col" style={{ gap: '20px' }}>
-                              {tab.subTabs.map((subTab, index) => (
+                              {tab.subTabs?.map((subTab, index) => (
                                 <button
                                   key={subTab.id}
                                   onClick={() => onTabChange(subTab.id)}
@@ -391,7 +397,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
           <div style={{ flex: '1 1 auto', minHeight: '40px' }} />
 
           {/* Bottom Section: 下联 + 装饰线条 */}
-          <div className="w-full flex flex-col items-center flex-shrink-0" style={{ gap: '24px' }}>
+          <div className="hidden md:flex w-full flex-col items-center flex-shrink-0" style={{ gap: '24px' }}>
             {/* 下联：一一如孤镜 忘二空恋影 */}
             <div className="flex items-center justify-center gap-3">
               {/* 第一行：一一如孤镜 */}

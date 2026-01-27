@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { InsufficientCoinsModal } from './InsufficientCoinsModal';
+import { CopperCoinIcon } from './CopperCoinIcon';
 
 interface Message {
   id: string;
@@ -19,7 +20,7 @@ export const LiuJiView: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isReasoningMode, setIsReasoningMode] = useState(false);
+  const [mindMode, setMindMode] = useState<'none' | 'deep' | 'meditation'>('none');
   const [useSearch, setUseSearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -94,7 +95,8 @@ export const LiuJiView: React.FC = () => {
             role: m.role,
             content: m.content,
           })),
-          useReasoning: isReasoningMode,
+          useReasoning: mindMode === 'deep',
+          useMeditation: mindMode === 'meditation',
           useSearch,
         }),
       });
@@ -121,7 +123,7 @@ export const LiuJiView: React.FC = () => {
         id: nextId(),
         role: 'assistant',
         content: '',
-        isReasoning: isReasoningMode,
+        isReasoning: mindMode !== 'none',
         timestamp: new Date(),
       };
 
@@ -155,17 +157,11 @@ export const LiuJiView: React.FC = () => {
     }
   };
 
-  const toggleReasoningMode = () => {
-    setIsReasoningMode(!isReasoningMode);
-  };
-
-  const handleClear = () => {
-    setMessages([]);
-    setInput('');
-  };
+  const isDeep = mindMode === 'deep';
+  const isMeditation = mindMode === 'meditation';
 
   return (
-    <div className="w-full h-full min-h-0 flex flex-col relative bg-[#fbf9f4]">
+    <div className="w-full flex flex-col relative bg-[#fbf9f4]">
       {/* 背景纹理层 - 宣纸质感 */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.015]" 
         style={{
@@ -205,95 +201,108 @@ export const LiuJiView: React.FC = () => {
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="pt-12 pb-8 border-b border-stone-200"
+          className="pt-8 sm:pt-10 pb-4 sm:pb-5"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-baseline gap-4">
-              {/* 主标题 */}
-              <h1 className="text-[28px] font-serif text-[#333333] tracking-[0.15em] font-light">
-                叩问本心
-              </h1>
-              {/* 副标题 */}
-              <span className="text-[11px] text-stone-500 tracking-[0.3em] font-light">
-                迷途问津
-              </span>
-            </div>
-
-            {/* 右侧控制：深思在上、联网在下 */}
-            <div className="flex flex-col items-end gap-3">
-              {/* 深思模式切换 */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={toggleReasoningMode}
-                  className="group relative"
-                >
-                  <div className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full
-                    transition-all duration-700 ease-out
-                    ${isReasoningMode 
-                      ? 'bg-[#2c2c2c] text-white' 
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-150'
-                    }
-                  `}>
-                    <div className={`
-                      w-1.5 h-1.5 rounded-full transition-colors duration-700
-                      ${isReasoningMode ? 'bg-white' : 'bg-stone-500'}
-                    `} />
-                    <span className="text-[11px] tracking-[0.2em] font-light">
-                      {isReasoningMode ? '深思已启' : '深思'}
-                    </span>
-                  </div>
-                </button>
-                <span className="text-[9px] text-amber-700/70 tracking-wider font-light">+2 铜币</span>
+          {/* 按钮组 */}
+          <div className="flex items-center justify-center gap-4 sm:gap-5 mb-4 sm:mb-5">
+            {/* 深思按钮 */}
+            <button
+              onClick={() => setMindMode(isDeep ? 'none' : 'deep')}
+              className="group relative"
+            >
+              <div className={`
+                flex items-center gap-2.5 px-6 py-2 rounded-full
+                transition-all duration-700 ease-out
+                ${isDeep 
+                  ? 'bg-[#2c2c2c] text-white shadow-md shadow-stone-900/10' 
+                  : 'bg-[#f5f2ed] text-stone-700 hover:bg-[#ebe7e0] hover:shadow-sm'
+                }
+              `}>
+                <div className={`
+                  w-1.5 h-1.5 rounded-full transition-colors duration-700
+                  ${isDeep ? 'bg-white' : 'bg-stone-500'}
+                `} />
+                <span className="text-[11px] tracking-[0.2em] font-light">
+                  深思
+                </span>
+                <span className={`flex items-center gap-0.5 ml-1 ${
+                  isDeep ? 'text-white/70' : 'text-amber-700/75'
+                }`}>
+                  <CopperCoinIcon className={`w-2.5 h-2.5 ${
+                    isDeep ? 'text-white/70' : 'text-amber-700/75'
+                  }`} />
+                  <span className="text-[9px] tracking-wider font-light">2</span>
+                </span>
               </div>
+            </button>
 
-              {/* 联网搜索开关 */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setUseSearch((v) => !v)}
-                  className="group relative"
-                >
-                  <div className={`
-                    flex items-center gap-2 px-4 py-2 rounded-full
-                    transition-all duration-700 ease-out
-                    ${useSearch 
-                      ? 'bg-[#2c2c2c] text-white' 
-                      : 'bg-stone-100 text-stone-600 hover:bg-stone-150'
-                    }
-                  `}>
-                    <div className={`
-                      w-1.5 h-1.5 rounded-full transition-colors duration-700
-                      ${useSearch ? 'bg-white' : 'bg-stone-500'}
-                    `} />
-                    <span className="text-[11px] tracking-[0.2em] font-light">
-                      {useSearch ? '联网已启' : '联网'}
-                    </span>
-                  </div>
-                </button>
-                <span className="text-[9px] text-amber-700/70 tracking-wider font-light">+3 铜币</span>
+            {/* 联网按钮 */}
+            <button
+              onClick={() => setUseSearch((v) => !v)}
+              className="group relative"
+            >
+              <div className={`
+                flex items-center gap-2.5 px-6 py-2 rounded-full
+                transition-all duration-700 ease-out
+                ${useSearch 
+                  ? 'bg-[#2c2c2c] text-white shadow-md shadow-stone-900/10' 
+                  : 'bg-[#f5f2ed] text-stone-700 hover:bg-[#ebe7e0] hover:shadow-sm'
+                }
+              `}>
+                <div className={`
+                  w-1.5 h-1.5 rounded-full transition-colors duration-700
+                  ${useSearch ? 'bg-white' : 'bg-stone-500'}
+                `} />
+                <span className="text-[11px] tracking-[0.2em] font-light">
+                  联网
+                </span>
+                <span className={`flex items-center gap-0.5 ml-1 ${
+                  useSearch ? 'text-white/70' : 'text-amber-700/75'
+                }`}>
+                  <CopperCoinIcon className={`w-2.5 h-2.5 ${
+                    useSearch ? 'text-white/70' : 'text-amber-700/75'
+                  }`} />
+                  <span className="text-[9px] tracking-wider font-light">3</span>
+                </span>
               </div>
+            </button>
+          </div>
 
-              {/* 清空按钮 */}
-              {messages.length > 0 && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  onClick={handleClear}
-                  className="text-[11px] text-stone-500 hover:text-[#333333] 
-                    transition-colors duration-500 tracking-[0.25em] font-light"
-                >
-                  清空
-                </motion.button>
-              )}
-            </div>
+          {/* 分隔线 */}
+          <div className="w-full h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent" />
+
+          {/* 底部提示区域 */}
+          <div className="mt-4 sm:mt-5 flex flex-col items-center gap-2">
+            <span className="text-[10px] sm:text-[10.5px] text-stone-500 tracking-[0.18em] font-light">
+              每问基础消耗 <span className="text-amber-700/80 font-normal">5</span> 铜币
+            </span>
+            
+            {/* 入定提示 */}
+            {!isMeditation && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="flex items-center gap-1.5"
+              >
+                <span className="text-[9px] text-stone-400 tracking-[0.15em] font-light">
+                  点击中心圆球可开启
+                </span>
+                <span className="flex items-center gap-1 text-[9px] text-amber-700/70 tracking-[0.15em] font-light">
+                  入定模式
+                  <CopperCoinIcon className="w-2.5 h-2.5 text-amber-700/70" />
+                  <span>50</span>
+                </span>
+              </motion.div>
+            )}
           </div>
         </motion.div>
 
-        {/* 消息区域：仅此区域可滚动，不带动整页 */}
+        {/* 消息区域 */}
         <div
           ref={scrollContainerRef}
           onScroll={handleScrollContainerScroll}
-          className="flex-1 min-h-0 overflow-y-auto py-10 space-y-10"
+          className="py-10 space-y-10"
         >
           <AnimatePresence mode="popLayout">
             {messages.length === 0 ? (
@@ -305,27 +314,32 @@ export const LiuJiView: React.FC = () => {
                 transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                 className="flex flex-col items-center justify-center h-full min-h-[400px]"
               >
-                {/* 禅意图形 - 三个同心圆 */}
-                <div className="relative w-32 h-32 mb-12">
+                {/* 禅意图形 - 三个同心圆（可点击进入入定模式）*/}
+                <button
+                  onClick={() => setMindMode(isMeditation ? 'none' : 'meditation')}
+                  className="relative w-32 h-32 mb-12 group cursor-pointer"
+                >
                   {/* 外圆 */}
                   <motion.div
                     animate={{ 
                       scale: [1, 1.08, 1],
-                      opacity: [0.15, 0.3, 0.15]
+                      opacity: isMeditation ? [0.3, 0.5, 0.3] : [0.15, 0.3, 0.15]
                     }}
                     transition={{ 
                       duration: 5, 
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
-                    className="absolute inset-0 rounded-full border border-stone-300"
+                    className={`absolute inset-0 rounded-full border transition-colors duration-700 ${
+                      isMeditation ? 'border-amber-400/60' : 'border-stone-300 group-hover:border-stone-400'
+                    }`}
                   />
                   
                   {/* 中圆 */}
                   <motion.div
                     animate={{ 
                       scale: [1, 1.05, 1],
-                      opacity: [0.2, 0.35, 0.2]
+                      opacity: isMeditation ? [0.35, 0.55, 0.35] : [0.2, 0.35, 0.2]
                     }}
                     transition={{ 
                       duration: 4, 
@@ -333,14 +347,16 @@ export const LiuJiView: React.FC = () => {
                       ease: "easeInOut",
                       delay: 0.5
                     }}
-                    className="absolute inset-4 rounded-full border border-stone-300"
+                    className={`absolute inset-4 rounded-full border transition-colors duration-700 ${
+                      isMeditation ? 'border-amber-400/70' : 'border-stone-300 group-hover:border-stone-400'
+                    }`}
                   />
 
                   {/* 内圆 */}
                   <motion.div
                     animate={{ 
                       scale: [1, 1.03, 1],
-                      opacity: [0.25, 0.45, 0.25]
+                      opacity: isMeditation ? [0.4, 0.65, 0.4] : [0.25, 0.45, 0.25]
                     }}
                     transition={{ 
                       duration: 3.5, 
@@ -348,32 +364,59 @@ export const LiuJiView: React.FC = () => {
                       ease: "easeInOut",
                       delay: 1
                     }}
-                    className="absolute inset-8 rounded-full border border-stone-400"
+                    className={`absolute inset-8 rounded-full border transition-colors duration-700 ${
+                      isMeditation ? 'border-amber-500/80' : 'border-stone-400 group-hover:border-stone-500'
+                    }`}
                   />
 
                   {/* 中心点 */}
                   <motion.div 
                     initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
-                      w-3 h-3 rounded-full bg-stone-400"
+                    animate={{ 
+                      scale: 1,
+                      boxShadow: isMeditation 
+                        ? ['0 0 0px rgba(251, 191, 36, 0)', '0 0 20px rgba(251, 191, 36, 0.4)', '0 0 0px rgba(251, 191, 36, 0)']
+                        : '0 0 0px transparent'
+                    }}
+                    transition={{ 
+                      scale: { delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] },
+                      boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                    }}
+                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 
+                      w-3 h-3 rounded-full transition-all duration-700 ${
+                        isMeditation 
+                          ? 'bg-amber-500 scale-110' 
+                          : 'bg-stone-400 group-hover:bg-stone-500 group-hover:scale-110'
+                      }`}
                   />
 
                   {/* 水墨晕染 */}
                   <motion.div
                     animate={{ 
                       scale: [1, 1.8, 1],
-                      opacity: [0, 0.08, 0]
+                      opacity: isMeditation ? [0, 0.15, 0] : [0, 0.08, 0]
                     }}
                     transition={{ 
                       duration: 4.5, 
                       repeat: Infinity,
                       ease: "easeInOut"
                     }}
-                    className="absolute inset-0 rounded-full bg-stone-300 blur-2xl"
+                    className={`absolute inset-0 rounded-full blur-2xl transition-colors duration-700 ${
+                      isMeditation ? 'bg-amber-300' : 'bg-stone-300'
+                    }`}
                   />
-                </div>
+
+                  {/* Hover 提示 */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
+                  >
+                    <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
+                      {isMeditation ? '退出入定' : '点击入定'}
+                    </span>
+                  </motion.div>
+                </button>
 
                 {/* 标题文字 */}
                 <motion.div
@@ -383,13 +426,26 @@ export const LiuJiView: React.FC = () => {
                   className="text-center space-y-5"
                 >
                   <h2 className="text-[16px] text-[#333333] tracking-[0.4em] font-light">
-                    怀虚待问
+                    {isMeditation ? '入定问心' : '怀虚待问'}
                   </h2>
                   
                   <p className="text-[12px] text-stone-500 tracking-[0.15em] 
                     font-light leading-loose max-w-sm">
-                    心有所惑，不妨问之<br/>
-                    因果澄明，未来自现
+                    {isMeditation ? (
+                      <>
+                        深入禅定，觉察本心<br/>
+                        <span className="flex items-center justify-center gap-1 text-[10px] text-amber-700/80">
+                          入定模式
+                          <CopperCoinIcon className="w-3 h-3 text-amber-700/80" />
+                          <span>50</span>
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        心有所惑，不妨问之<br/>
+                        因果澄明，未来自现
+                      </>
+                    )}
                   </p>
                 </motion.div>
 
@@ -494,7 +550,7 @@ export const LiuJiView: React.FC = () => {
           {(() => {
             const last = messages[messages.length - 1];
             const assistantAlreadyStreaming = last?.role === 'assistant' && (last?.content?.length ?? 0) > 0;
-            return isLoading && isReasoningMode && !assistantAlreadyStreaming;
+            return isLoading && mindMode !== 'none' && !assistantAlreadyStreaming;
           })() && (
             <motion.div
               initial={{ opacity: 0 }}
@@ -546,12 +602,12 @@ export const LiuJiView: React.FC = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* 输入区域 - 极简设计 */}
+        {/* 输入区域 - 极简设计；移动端加大底部留白，避免被底部导航挡住 */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="pb-8 pt-6 border-t border-stone-200"
+          className="pt-6 border-t border-stone-200 liuji-input-bottom md:!pb-8"
         >
           <div className="relative">
             {/* 输入框容器 */}
@@ -619,10 +675,6 @@ export const LiuJiView: React.FC = () => {
               <div className="w-px h-2 bg-stone-300 hidden sm:block" />
               <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
                 Shift + 回车换行
-              </span>
-              <div className="w-px h-2 bg-stone-300 hidden sm:block" />
-              <span className="text-[10px] text-amber-700/80 tracking-[0.15em] font-light" title="深度思考 +2 铜币，联网 +3 铜币">
-                每问 5 铜币
               </span>
             </div>
           </div>

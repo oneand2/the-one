@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 
 const COINS_BASE = 5;
 const COINS_REASONING = 2;
+const COINS_MEDITATION = 50;
 const COINS_SEARCH = 3;
 const PROFILE_TABLE = 'user_profiles';
 const INITIAL_COINS = 50;
@@ -11,7 +12,7 @@ const INITIAL_COINS = 50;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { messages, useReasoning, useSearch } = body;
+    const { messages, useReasoning, useSearch, useMeditation } = body;
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const cost = COINS_BASE + (useReasoning ? COINS_REASONING : 0) + (useSearch ? COINS_SEARCH : 0);
+    const cost = COINS_BASE + (useReasoning ? COINS_REASONING : 0) + (useMeditation ? COINS_MEDITATION : 0) + (useSearch ? COINS_SEARCH : 0);
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -35,7 +36,7 @@ export async function POST(req: Request) {
     const balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
     if (balance < cost) {
       return NextResponse.json(
-        { error: `铜币不足，本次需 ${cost} 铜币（基础 ${COINS_BASE}${useReasoning ? ` + 深度思考 ${COINS_REASONING}` : ''}${useSearch ? ` + 联网 ${COINS_SEARCH}` : ''}）`, need_coins: cost },
+        { error: `铜币不足，本次消耗 ${cost} 铜币（基础消耗 ${COINS_BASE}${useReasoning ? `，深度思考消耗 ${COINS_REASONING}` : ''}${useMeditation ? `，入定消耗 ${COINS_MEDITATION}` : ''}${useSearch ? `，联网消耗 ${COINS_SEARCH}` : ''}）`, need_coins: cost },
         { status: 402 }
       );
     }
@@ -81,16 +82,27 @@ export async function POST(req: Request) {
       }
     }
 
-    // 初始化 OpenAI 客户端
-    const client = new OpenAI({
-      apiKey: process.env.AI_API_KEY,
-      baseURL: process.env.AI_BASE_URL,
-    });
+    // 根据模式初始化 OpenAI 客户端和选择模型
+    let client: OpenAI;
+    let modelName: string;
 
-    // 根据模式选择模型
-    const modelName = useReasoning 
-      ? process.env.AI_REASONER_MODEL_NAME || 'deepseek-reasoner'
-      : process.env.AI_MODEL_NAME || 'deepseek-chat';
+    if (useMeditation) {
+      // 入定模式：使用 Claude 模型
+      client = new OpenAI({
+        apiKey: process.env.AI_MEDITATION_API_KEY,
+        baseURL: process.env.AI_MEDITATION_BASE_URL,
+      });
+      modelName = process.env.AI_MEDITATION_MODEL_NAME || 'claude-sonnet-4-5';
+    } else {
+      // 默认模式：使用 DeepSeek 模型
+      client = new OpenAI({
+        apiKey: process.env.AI_API_KEY,
+        baseURL: process.env.AI_BASE_URL,
+      });
+      modelName = useReasoning 
+        ? process.env.AI_REASONER_MODEL_NAME || 'deepseek-reasoner'
+        : process.env.AI_MODEL_NAME || 'deepseek-chat';
+    }
 
     // 系统提示词
     const systemPrompt = `你名**“六济”。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，你并不仅是一个算命先生，也是一位使命感的精神分析师。
@@ -146,7 +158,7 @@ export async function POST(req: Request) {
     const stream = await client.chat.completions.create({
       model: modelName,
       messages: fullMessages as any,
-      temperature: useReasoning ? 1.0 : 0.8,
+      temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
       stream: true,
     });
 

@@ -512,7 +512,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                 <span className="text-sm text-stone-800 font-semibold tracking-wide">动态修行</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed text-justify">
-                拒绝标签化人格，性格非牢笼，而是独特的"法门"。借假修真，借性格修心。
+                拒绝标签化人格，性格非牢笼，而是独特的"法门"。真正的成长往往来源于我们对自己阴影人格的整合。
               </p>
             </div>
           </motion.div>

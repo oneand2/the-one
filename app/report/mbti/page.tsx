@@ -1,1 +1,1 @@
-export { default } from '@/app/report/mbti/page';
+export { default } from '../../../src/app/report/mbti/page';

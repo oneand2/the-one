@@ -1,1 +1,1 @@
-export { POST } from '@/app/api/user/invite-code/route';
+export { POST } from '../../../../src/app/api/user/invite-code/route';

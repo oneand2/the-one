@@ -53,10 +53,10 @@ const Pillar = ({
   getWuxingColor: (char: string) => string;
 }) => {
   return (
-    <div className="flex flex-col items-center space-y-3">
+    <div className="flex flex-col items-center space-y-1.5 md:space-y-3">
       {/* 地支汉字 */}
       <span
-        className="text-4xl font-serif tracking-wider"
+        className="text-2xl md:text-4xl font-serif tracking-wider"
         style={{ color: getWuxingColor(zhi) }}
       >
         {zhi}
@@ -64,11 +64,11 @@ const Pillar = ({
 
       {/* 神煞列表 */}
       {shenSha.length > 0 && (
-        <div className="flex flex-col items-center space-y-0.5 min-h-[40px]">
+        <div className="flex flex-col items-center space-y-0.5 min-h-[24px] md:min-h-[40px]">
           {shenSha.map((sha, index) => (
             <span
               key={index}
-              className="text-xs font-sans text-stone-400 leading-tight tracking-wider px-2 py-0.5 bg-stone-50/30 rounded-full"
+              className="text-[8px] md:text-xs font-sans text-stone-400 leading-tight tracking-wider px-1 md:px-2 py-0.5 bg-stone-50/30 rounded-full"
             >
               {sha}
             </span>
@@ -78,7 +78,7 @@ const Pillar = ({
 
       {/* 当没有神煞时，保持占位空间 */}
       {shenSha.length === 0 && (
-        <div className="min-h-[40px]"></div>
+        <div className="min-h-[24px] md:min-h-[40px]"></div>
       )}
     </div>
   );
@@ -267,12 +267,12 @@ const ClassicalReportContent: React.FC = () => {
   const pillarNames = ['年柱', '月柱', '日柱', '时柱'];
 
   return (
-    <div className="min-h-screen bg-[#FBF9F4] px-6 py-12">
+    <div className="min-h-screen bg-[#FBF9F4] px-4 md:px-6 py-8 md:py-12">
       {/* 头部信息卡片 - 传统名帖风格 */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl mx-auto mb-16"
+        className="max-w-5xl mx-auto mb-12 md:mb-16"
       >
         {/* 主容器 - 信笺质感 */}
         <div className="bg-[#FAF8F5] border-t-2 border-b-2 border-stone-300 relative">
@@ -282,52 +282,52 @@ const ClassicalReportContent: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-200 mb-[3px]"></div>
 
           {/* 内容区 */}
-          <div className="py-10 px-8">
+          <div className="py-8 md:py-10 px-4 md:px-8">
             {/* 第一行：身份区 (The Identity) */}
-            <div className="flex items-center justify-center mb-6">
+            <div className="flex items-center justify-center mb-5 md:mb-6">
               {/* 姓名 (The Name) - 视觉焦点 */}
-              <h1 className="text-5xl font-serif text-[#4A403A] tracking-wide leading-none">
+              <h1 className="text-3xl md:text-5xl font-serif text-[#4A403A] tracking-wide leading-none">
                 {displayInfo.name}
               </h1>
               {/* 分隔符 - 垂直细线 */}
-              <div className="mx-4 h-6 w-px bg-stone-300"></div>
+              <div className="mx-3 md:mx-4 h-5 md:h-6 w-px bg-stone-300"></div>
               {/* 造式 (乾造/坤造) - 纯文字 */}
-              <span className="text-xl font-serif text-stone-500 tracking-wide">
+              <span className="text-lg md:text-xl font-serif text-stone-500 tracking-wide">
                 {displayInfo.gender}
               </span>
             </div>
 
             {/* 分割线 (The Divider) */}
-            <div className="flex justify-center my-6">
+            <div className="flex justify-center my-5 md:my-6">
               <div className="w-10 h-px bg-stone-300"></div>
             </div>
 
             {/* 第二行：时间区 (The Timeline) */}
             {(displayInfo.solarDate || displayInfo.lunarDate) && displayInfo.solarDate !== '未知日期' && (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {/* 推测日期标签（如果需要） */}
                 {displayInfo.isInferred && (
                   <div className="flex items-center justify-center">
-                    <span className="text-[10px] font-sans text-[#B09F73] tracking-[0.3em] px-2 py-0.5 border border-[#B09F73]/30 rounded-sm">
+                    <span className="text-[9px] md:text-[10px] font-sans text-[#B09F73] tracking-[0.3em] px-2 py-0.5 border border-[#B09F73]/30 rounded-sm">
                       推测日期
                     </span>
                   </div>
                 )}
                 
                 {/* 日期信息 */}
-                <div className="flex flex-col items-center space-y-2">
+                <div className="flex flex-col items-center space-y-1.5 md:space-y-2">
                   {/* 阳历 */}
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-xs font-sans text-stone-400 tracking-wider">阳历</span>
-                    <span className="text-base font-sans text-stone-600 tracking-wide">
+                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider">阳历</span>
+                    <span className="text-sm md:text-base font-sans text-stone-600 tracking-wide">
                       {displayInfo.solarDate}
                     </span>
                   </div>
                   
                   {/* 农历 */}
                   <div className="flex items-baseline space-x-2">
-                    <span className="text-xs font-sans text-stone-400 tracking-wider">农历</span>
-                    <span className="text-base font-serif text-stone-600 tracking-wide">
+                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider">农历</span>
+                    <span className="text-sm md:text-base font-serif text-stone-600 tracking-wide">
                       {(() => {
                         // 将农历日期转换为完全汉字格式
                         const lunarText = displayInfo.lunarDate;
@@ -356,7 +356,7 @@ const ClassicalReportContent: React.FC = () => {
             {/* 未知日期提示 */}
             {displayInfo.solarDate === '未知日期' && (
               <div className="text-center">
-                <div className="text-sm font-sans text-stone-400 tracking-wider">
+                <div className="text-xs md:text-sm font-sans text-stone-400 tracking-wider">
                   未找到匹配的日期（1960-2030）
                 </div>
               </div>
@@ -364,8 +364,8 @@ const ClassicalReportContent: React.FC = () => {
 
             {/* 底部提示 (免责声明) */}
             {displayInfo.isInferred && displayInfo.solarDate !== '未知日期' && (
-              <div className="text-center mt-6">
-                <p className="text-[9px] font-sans text-stone-300 tracking-wide">
+              <div className="text-center mt-4 md:mt-6">
+                <p className="text-[8px] md:text-[9px] font-sans text-stone-300 tracking-wide">
                   注：此日期为根据八字反推的最近匹配日期（1960-2030范围内）
                 </p>
               </div>
@@ -381,30 +381,30 @@ const ClassicalReportContent: React.FC = () => {
         transition={{ delay: 0.2 }}
         className="max-w-5xl mx-auto"
       >
-        <div className="bg-white/40 backdrop-blur-sm rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-white/40 backdrop-blur-sm rounded-2xl shadow-sm">
           {/* 表头 - 极淡背景 */}
-          <div className="bg-stone-50/50 py-6 px-8">
-            <div className="grid grid-cols-5 gap-6">
+          <div className="bg-stone-50/50 py-3 md:py-6 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E] tracking-widest">日期</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E] tracking-wider md:tracking-widest">日期</span>
               </div>
               {pillarNames.map((name, index) => (
                 <div key={index} className="text-center">
-                  <span className="text-sm font-serif text-[#44403C] tracking-wider">{name}</span>
+                  <span className="text-xs md:text-sm font-serif text-[#44403C] tracking-wide md:tracking-wider">{name}</span>
                 </div>
               ))}
             </div>
           </div>
 
           {/* 1. 主星（十神） */}
-          <div className="py-4 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="py-2 md:py-4 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">主星</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">主星</span>
               </div>
               {pillars.map((pillar) => (
                 <div key={pillar} className="text-center">
-                  <span className="text-sm font-sans text-[#57534E]">
+                  <span className="text-[10px] md:text-sm font-sans text-[#57534E]">
                     {pillar === 'day' ? '日主' : baziData.tenGods.stems[baziData.pillars[pillar].gan]}
                   </span>
                 </div>
@@ -413,17 +413,17 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 2. 天干 - 重点突出 */}
-          <div className="bg-stone-50/30 py-6 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="bg-stone-50/30 py-3 md:py-6 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">天干</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">天干</span>
               </div>
               {pillars.map((pillar) => {
                 const gan = baziData.pillars[pillar].gan;
                 return (
                   <div key={pillar} className="text-center">
                     <span 
-                      className="text-4xl font-serif tracking-wider"
+                      className="text-2xl md:text-4xl font-serif tracking-wider"
                       style={{ color: getWuxingColor(gan) }}
                     >
                       {gan}
@@ -435,10 +435,10 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 3. 地支 - 重点突出 */}
-          <div className="py-8 px-8">
-            <div className="grid grid-cols-5 gap-6 items-start">
-              <div className="text-center pt-2">
-                <span className="text-xs font-sans text-[#A8A29E]">地支</span>
+          <div className="py-4 md:py-8 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-start">
+              <div className="text-center pt-1 md:pt-2">
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">地支</span>
               </div>
               {pillars.map((pillar) => (
                 <Pillar
@@ -453,10 +453,10 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 4. 藏干 - 垂直堆叠，精致排版 */}
-          <div className="bg-stone-50/30 py-6 px-8">
-            <div className="grid grid-cols-5 gap-6">
-              <div className="text-center self-start pt-2">
-                <span className="text-xs font-sans text-[#A8A29E]">藏干</span>
+          <div className="bg-stone-50/30 py-3 md:py-6 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6">
+              <div className="text-center self-start pt-1 md:pt-2">
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">藏干</span>
               </div>
               {pillars.map((pillar) => {
                 const zhi = baziData.pillars[pillar].zhi;
@@ -464,16 +464,16 @@ const ClassicalReportContent: React.FC = () => {
                 const tenGods = baziData.tenGods.hidden[zhi] || [];
                 
                 return (
-                  <div key={pillar} className="flex flex-col items-center space-y-3">
+                  <div key={pillar} className="flex flex-col items-center space-y-1.5 md:space-y-3">
                     {hiddenStems.map((stem, index) => (
-                      <div key={index} className="flex items-center space-x-2">
+                      <div key={index} className="flex items-center space-x-1 md:space-x-2">
                         {/* 副星在左 */}
-                        <span className="text-[10px] font-sans text-[#A8A29E] w-12 text-right">
+                        <span className="text-[8px] md:text-[10px] font-sans text-[#A8A29E] w-8 md:w-12 text-right">
                           {tenGods[index]}
                         </span>
                         {/* 天干在右 */}
                         <span 
-                          className="text-lg font-serif"
+                          className="text-sm md:text-lg font-serif"
                           style={{ color: getWuxingColor(stem.gan) }}
                         >
                           {stem.gan}
@@ -487,16 +487,16 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 5. 星运 */}
-          <div className="py-4 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="py-2 md:py-4 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">星运</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">星运</span>
               </div>
               {pillars.map((pillar) => {
                 const zhi = baziData.pillars[pillar].zhi;
                 return (
                   <div key={pillar} className="text-center">
-                    <span className="text-xs font-sans text-[#57534E]">
+                    <span className="text-[10px] md:text-xs font-sans text-[#57534E]">
                       {baziData.lifeCycle[zhi]}
                     </span>
                   </div>
@@ -506,16 +506,16 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 6. 自坐 */}
-          <div className="bg-stone-50/30 py-4 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="bg-stone-50/30 py-2 md:py-4 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">自坐</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">自坐</span>
               </div>
               {pillars.map((pillar) => {
                 const zhi = baziData.pillars[pillar].zhi;
                 return (
                   <div key={pillar} className="text-center">
-                    <span className="text-xs font-sans text-[#57534E]">
+                    <span className="text-[10px] md:text-xs font-sans text-[#57534E]">
                       {baziData.selfSeat[zhi]}
                     </span>
                   </div>
@@ -525,14 +525,14 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 7. 空亡 */}
-          <div className="py-4 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="py-2 md:py-4 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">空亡</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">空亡</span>
               </div>
               {pillars.map((pillar) => (
                 <div key={pillar} className="text-center">
-                  <span className="text-xs font-sans text-[#57534E]">
+                  <span className="text-[10px] md:text-xs font-sans text-[#57534E]">
                     {baziData.kongWang[pillar]}
                   </span>
                 </div>
@@ -541,21 +541,20 @@ const ClassicalReportContent: React.FC = () => {
           </div>
 
           {/* 8. 纳音 */}
-          <div className="bg-stone-50/30 py-4 px-8">
-            <div className="grid grid-cols-5 gap-6 items-center">
+          <div className="bg-stone-50/30 py-2 md:py-4 px-2 md:px-8">
+            <div className="grid grid-cols-5 gap-2 md:gap-6 items-center">
               <div className="text-center">
-                <span className="text-xs font-sans text-[#A8A29E]">纳音</span>
+                <span className="text-[9px] md:text-xs font-sans text-[#A8A29E]">纳音</span>
               </div>
               {pillars.map((pillar) => (
                 <div key={pillar} className="text-center">
-                  <span className="text-xs font-sans text-[#57534E]">
+                  <span className="text-[10px] md:text-xs font-sans text-[#57534E]">
                     {baziData.nayin[pillar]}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
       </motion.div>
 
@@ -577,12 +576,12 @@ const ClassicalReportContent: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="max-w-5xl mx-auto mt-16 mb-12"
+        className="max-w-5xl mx-auto mt-12 md:mt-16 mb-10 md:mb-12"
       >
         {/* 分割标题 */}
-        <div className="flex items-center justify-center mb-8">
+        <div className="flex items-center justify-center mb-6 md:mb-8">
           <div className="flex-1 h-px bg-gradient-to-r from-transparent to-stone-300"></div>
-          <h2 className="px-6 text-2xl font-serif text-[#4A403A] tracking-wider">
+          <h2 className="px-4 md:px-6 text-xl md:text-2xl font-serif text-[#4A403A] tracking-wider">
             大运 · 流年
           </h2>
           <div className="flex-1 h-px bg-gradient-to-l from-transparent to-stone-300"></div>
@@ -597,14 +596,14 @@ const ClassicalReportContent: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="max-w-5xl mx-auto mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
+        className="max-w-5xl mx-auto mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <button
             type="button"
             onClick={handleSaveBazi}
             disabled={saveStatus === 'saving'}
-            className="px-6 py-3 text-sm font-sans text-white bg-[#44403C] hover:bg-[#57534E] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#44403C] hover:bg-[#57534E] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : '保存该八字'}
           </button>
@@ -615,7 +614,7 @@ const ClassicalReportContent: React.FC = () => {
         <button
           type="button"
           onClick={() => window.history.back()}
-          className="px-8 py-3 text-sm font-sans text-[#57534E] bg-transparent hover:bg-stone-100/50 rounded-full transition-all duration-300"
+          className="w-full sm:w-auto px-8 py-3 text-sm font-sans text-[#57534E] bg-transparent hover:bg-stone-100/50 rounded-full transition-all duration-300"
         >
           ← 返回
         </button>

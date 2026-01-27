@@ -182,22 +182,25 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
   };
 
   return (
-    <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-8 mt-8">
-      <div className="mb-6">
-        <h3 className="text-lg font-serif text-[#44403C] text-center tracking-wider">
+    <div className="bg-white/40 backdrop-blur-sm rounded-2xl p-3 md:p-8 mt-8">
+      <div className="mb-3 md:mb-6">
+        <h3 className="text-sm md:text-lg font-serif text-[#44403C] text-center tracking-wider">
           八字关系图谱
         </h3>
-        <p className="text-xs font-sans text-[#A8A29E] text-center mt-2">
+        <p className="text-[9px] md:text-xs font-sans text-[#A8A29E] text-center mt-1 md:mt-2">
           气 韵 流 转 · 听 见 内 在 生 命 的 呼 吸
         </p>
       </div>
       
-      {/* 主图居中 */}
-      <div className="flex justify-center">
+      {/* 主图居中 - 移动端自适应缩放 */}
+      <div className="flex justify-center w-full -mx-2 md:mx-0">
         <svg 
-          width={width} 
-          height={height} 
-          className="overflow-visible"
+          width="100%" 
+          height="auto" 
+          className="overflow-visible max-w-full"
+          viewBox="0 0 800 450"
+          preserveAspectRatio="xMidYMid meet"
+          style={{ minHeight: '300px' }}
         >
           {/* 定义箭头标记 */}
           <defs>
@@ -376,28 +379,28 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
       </div>
       
       {/* 图例 - 放在关系图和断语之间 */}
-      <div className="mt-8 flex flex-wrap justify-center gap-6 text-[10px] font-sans text-[#A8A29E]">
-        <div className="flex items-center gap-2">
-          <svg width="24" height="12">
-            <line x1="0" y1="6" x2="24" y2="6" stroke="#7FA68A" strokeWidth="1.5" />
+      <div className="mt-4 md:mt-8 flex flex-wrap justify-center gap-3 md:gap-6 text-[10px] md:text-[10px] font-sans text-[#A8A29E]">
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <svg width="20" height="10" className="md:w-6 md:h-3">
+            <line x1="0" y1="5" x2="20" y2="5" stroke="#7FA68A" strokeWidth="1.5" />
           </svg>
           <span>合</span>
         </div>
-        <div className="flex items-center gap-2">
-          <svg width="24" height="12">
-            <line x1="0" y1="6" x2="24" y2="6" stroke="#BA5D4F" strokeWidth="1.5" strokeDasharray="4,3" />
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <svg width="20" height="10" className="md:w-6 md:h-3">
+            <line x1="0" y1="5" x2="20" y2="5" stroke="#BA5D4F" strokeWidth="1.5" strokeDasharray="4,3" />
           </svg>
           <span>冲</span>
         </div>
-        <div className="flex items-center gap-2">
-          <svg width="24" height="12">
-            <line x1="0" y1="6" x2="24" y2="6" stroke="#9B8E78" strokeWidth="1.2" strokeDasharray="2,2" />
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <svg width="20" height="10" className="md:w-6 md:h-3">
+            <line x1="0" y1="5" x2="20" y2="5" stroke="#9B8E78" strokeWidth="1.2" strokeDasharray="2,2" />
           </svg>
           <span>刑</span>
         </div>
-        <div className="flex items-center gap-2">
-          <svg width="24" height="12">
-            <line x1="0" y1="6" x2="24" y2="6" stroke="#7FA68A" strokeWidth="1.2" markerEnd="url(#arrow-sheng-legend)" />
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <svg width="20" height="10" className="md:w-6 md:h-3">
+            <line x1="0" y1="5" x2="20" y2="5" stroke="#7FA68A" strokeWidth="1.2" markerEnd="url(#arrow-sheng-legend)" />
             <defs>
               <marker id="arrow-sheng-legend" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                 <path d="M0,0 L0,6 L6,3 z" fill="#7FA68A" />
@@ -406,9 +409,9 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
           </svg>
           <span>生</span>
         </div>
-        <div className="flex items-center gap-2">
-          <svg width="24" height="12">
-            <line x1="0" y1="6" x2="24" y2="6" stroke="#BA5D4F" strokeWidth="1.2" strokeDasharray="3,2" markerEnd="url(#arrow-ke-legend)" />
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <svg width="20" height="10" className="md:w-6 md:h-3">
+            <line x1="0" y1="5" x2="20" y2="5" stroke="#BA5D4F" strokeWidth="1.2" strokeDasharray="3,2" markerEnd="url(#arrow-ke-legend)" />
             <defs>
               <marker id="arrow-ke-legend" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
                 <path d="M0,0 L0,6 L6,3 z" fill="#BA5D4F" />
@@ -420,14 +423,14 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
       </div>
       
       {/* 原局断语列表 */}
-      <div className="mt-8 pt-8 border-t border-stone-200 space-y-4">
+      <div className="mt-4 md:mt-8 pt-4 md:pt-8 border-t border-stone-200 space-y-2 md:space-y-4">
         {/* 原局天干 */}
         {textualAnalysis.stems.length > 0 && (
-          <div className="flex items-baseline">
-            <span className="text-base font-serif font-bold text-[#B09F73] mr-2 whitespace-nowrap">
+          <div className="flex flex-col md:flex-row md:items-baseline">
+            <span className="text-xs md:text-base font-serif font-bold text-[#B09F73] mb-1 md:mb-0 md:mr-2 whitespace-nowrap">
               原局天干：
             </span>
-            <div className="text-sm font-sans text-stone-600 leading-relaxed">
+            <div className="text-[11px] md:text-sm font-sans text-stone-600 leading-relaxed">
               {textualAnalysis.stems.join(' | ')}
             </div>
           </div>
@@ -435,11 +438,11 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
 
         {/* 原局地支 */}
         {textualAnalysis.branches.length > 0 && (
-          <div className="flex items-baseline">
-            <span className="text-base font-serif font-bold text-[#B09F73] mr-2 whitespace-nowrap">
+          <div className="flex flex-col md:flex-row md:items-baseline">
+            <span className="text-xs md:text-base font-serif font-bold text-[#B09F73] mb-1 md:mb-0 md:mr-2 whitespace-nowrap">
               原局地支：
             </span>
-            <div className="text-sm font-sans text-stone-600 leading-relaxed">
+            <div className="text-[11px] md:text-sm font-sans text-stone-600 leading-relaxed">
               {textualAnalysis.branches.join(' | ')}
             </div>
           </div>
@@ -447,11 +450,11 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
 
         {/* 原局整柱 */}
         {textualAnalysis.pillars.length > 0 && (
-          <div className="flex items-baseline">
-            <span className="text-base font-serif font-bold text-[#B09F73] mr-2 whitespace-nowrap">
+          <div className="flex flex-col md:flex-row md:items-baseline">
+            <span className="text-xs md:text-base font-serif font-bold text-[#B09F73] mb-1 md:mb-0 md:mr-2 whitespace-nowrap">
               原局整柱：
             </span>
-            <div className="text-sm font-sans text-stone-600 leading-relaxed">
+            <div className="text-[11px] md:text-sm font-sans text-stone-600 leading-relaxed">
               {textualAnalysis.pillars.join(' | ')}
             </div>
           </div>
@@ -461,7 +464,7 @@ const CircuitGraph: React.FC<CircuitGraphProps> = ({ baziData }) => {
         {textualAnalysis.stems.length === 0 && 
          textualAnalysis.branches.length === 0 && 
          textualAnalysis.pillars.length === 0 && (
-          <div className="text-center text-sm font-sans text-stone-400 py-4">
+          <div className="text-center text-xs md:text-sm font-sans text-stone-400 py-3 md:py-4">
             无特殊关系
           </div>
         )}

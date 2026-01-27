@@ -252,6 +252,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [result, setResult] = useState<TestResult | null>(initialResult ?? null);
+  const [showOverLimitWarning, setShowOverLimitWarning] = useState(false);
 
   // 随机化题目和选项（只在开始测试时初始化一次）
   const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
@@ -284,23 +285,29 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
   }, [currentWeights]);
 
   // 剩余可用分数
-  const remainingPoints = 5 - totalAllocated;
+  const remainingPoints = 10 - totalAllocated;
 
   // 是否可以进入下一题
-  const canProceed = totalAllocated === 5;
+  const canProceed = totalAllocated === 10;
+
+  const triggerOverLimitWarning = () => {
+    setShowOverLimitWarning(true);
+    setTimeout(() => setShowOverLimitWarning(false), 2000);
+  };
 
   // 更新当前题目的某个选项的权重（支持直接设置）
   const updateWeight = (optionId: string, newWeight: number) => {
-    // 确保权重在0-5之间
+    // 确保权重在0-5之间（每个选项最多5分）
     newWeight = Math.max(0, Math.min(5, newWeight));
     
-    // 检查总分是否超过5
+    // 检查总分是否超过10
     const otherWeightsSum = Object.entries(currentWeights)
       .filter(([id]) => id !== optionId)
       .reduce((sum, [, w]) => sum + w, 0);
     
-    if (otherWeightsSum + newWeight > 5) {
-      return; // 不允许超过5分
+    if (otherWeightsSum + newWeight > 10) {
+      triggerOverLimitWarning();
+      return; // 不允许超过10分
     }
 
     const newWeights = { ...currentWeights, [optionId]: newWeight };
@@ -625,13 +632,44 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         transition={{ duration: 0.3 }}
         className="space-y-6"
       >
+        <AnimatePresence>
+          {showOverLimitWarning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4"
+              onClick={() => setShowOverLimitWarning(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.98, y: 4 }}
+                transition={{ duration: 0.2 }}
+                className="w-full max-w-xs rounded-2xl border border-stone-200 bg-white/90 p-4 text-center shadow-lg backdrop-blur"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-sm text-stone-700">一共只有10分哦，请合理分配</p>
+                <button
+                  type="button"
+                  onClick={() => setShowOverLimitWarning(false)}
+                  className="mt-3 inline-flex items-center justify-center rounded-full border border-stone-200 bg-white/70 px-4 py-1.5 text-xs text-stone-600 hover:bg-white"
+                >
+                  知道了
+                </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         {/* 进度条 */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs text-stone-500">
             <span>问题 {currentQuestionIndex + 1} / {shuffledQuestions.length}</span>
-            <span className={remainingPoints === 0 ? 'text-stone-700 font-medium' : 'text-amber-600'}>
-              剩余 {remainingPoints} 分
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={remainingPoints === 0 ? 'text-stone-700 font-medium' : remainingPoints < 0 ? 'text-red-600 font-medium' : 'text-amber-600'}>
+                剩余 {remainingPoints} 分
+              </span>
+            </div>
           </div>
           <div className="h-1 bg-stone-200 rounded-full overflow-hidden">
             <motion.div
@@ -696,8 +734,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                             .filter(([id]) => id !== option.id)
                             .reduce((sum, [, w]) => sum + w, 0);
                           
-                          if (otherWeightsSum + newValue <= 5) {
+                          if (otherWeightsSum + newValue <= 10) {
                             updateWeight(option.id, newValue);
+                          } else {
+                            triggerOverLimitWarning();
                           }
                         }}
                       >
@@ -723,8 +763,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                                   .filter(([id]) => id !== option.id)
                                   .reduce((sum, [, w]) => sum + w, 0);
                                 
-                                if (otherWeightsSum + n <= 5) {
+                                if (otherWeightsSum + n <= 10) {
                                   updateWeight(option.id, n);
+                                } else {
+                                  triggerOverLimitWarning();
                                 }
                               }}
                               className="relative z-10 w-3 h-3 rounded-full transition-all duration-200 hover:scale-125"

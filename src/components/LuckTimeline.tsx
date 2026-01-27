@@ -47,8 +47,8 @@ const getTenGod = (gan: string, dayGan: string): string => {
 // 竖排神煞列表组件 - 朱砂印与水墨批风格
 const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?: number }) => {
   if (!tags || tags.length === 0) {
-    return <div className="min-h-[20px] flex items-center justify-center">
-      <span className="text-[9px] text-stone-300" style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}>无</span>
+    return <div className="min-h-[16px] md:min-h-[20px] flex items-center justify-center">
+      <span className="text-[8px] md:text-[9px] text-stone-300" style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}>无</span>
     </div>;
   }
 
@@ -66,7 +66,7 @@ const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?
   const displayTags = sortedTags.slice(0, maxItems);
 
   return (
-    <div className="flex flex-col items-center gap-1 min-h-[20px]">
+    <div className="flex flex-col items-center gap-0.5 md:gap-1 min-h-[16px] md:min-h-[20px]">
       {displayTags.map((tag: string, idx: number) => {
         const isGood = auspicious.some(k => tag.includes(k));
         const isEmpty = tag === '空亡';
@@ -76,7 +76,7 @@ const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?
           return (
             <div
               key={idx}
-              className="text-sm tracking-widest px-2 py-1 border-[0.5px] border-[#A84848] bg-transparent text-[#A84848] rounded-[2px] hover:bg-red-50 transition-colors duration-200 text-center w-full"
+              className="text-[9px] md:text-sm tracking-widest px-1 md:px-2 py-0.5 md:py-1 border-[0.5px] border-[#A84848] bg-transparent text-[#A84848] rounded-[2px] hover:bg-red-50 transition-colors duration-200 text-center w-full"
               style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}
             >
               {tag}
@@ -87,7 +87,7 @@ const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?
           return (
             <div
               key={idx}
-              className="text-sm tracking-widest px-2 py-1 border-[0.5px] border-dashed border-stone-300 text-stone-400 bg-transparent text-center w-full"
+              className="text-[9px] md:text-sm tracking-widest px-1 md:px-2 py-0.5 md:py-1 border-[0.5px] border-dashed border-stone-300 text-stone-400 bg-transparent text-center w-full"
               style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}
             >
               {tag}
@@ -98,7 +98,7 @@ const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?
           return (
             <div
               key={idx}
-              className="text-sm tracking-widest px-2 py-1 text-[#57534E] bg-transparent text-center w-full"
+              className="text-[9px] md:text-sm tracking-widest px-1 md:px-2 py-0.5 md:py-1 text-[#57534E] bg-transparent text-center w-full"
               style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}
             >
               {tag}
@@ -166,122 +166,122 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mb-8 mx-4 md:mx-0"
+            className="mb-6 md:mb-8 mx-0"
           >
-            <div className="bg-[#FDFBF7]/80 backdrop-blur-sm rounded-xl p-8 shadow-sm border border-stone-200/30">
+            <div className="bg-[#FDFBF7]/80 backdrop-blur-sm rounded-xl p-3 md:p-8 shadow-sm border border-stone-200/30">
               {/* 年份和年龄信息 */}
-              <div className="text-center mb-6">
-                <div className="flex items-center justify-center gap-4">
-                  <span className="text-2xl font-serif text-stone-700 font-bold">
+              <div className="text-center mb-3 md:mb-6">
+                <div className="flex items-center justify-center gap-2 md:gap-4">
+                  <span className="text-lg md:text-2xl font-serif text-stone-700 font-bold">
                     {selectedYear.year}
                   </span>
                   <span className="text-stone-400">·</span>
-                  <span className="text-base text-stone-500">
+                  <span className="text-sm md:text-base text-stone-500">
                     {selectedYear.age}岁
                   </span>
                 </div>
               </div>
 
-              {/* 六柱水平排列 - 舒适间距 */}
-              <div className="grid grid-cols-7 gap-6 items-start py-4">
+              {/* 七柱水平排列 */}
+              <div className="grid grid-cols-7 gap-1.5 md:gap-6 items-start py-2 md:py-4">
                 {/* 流年 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">流年</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedYear.ganZhi[0]]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">流年</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedYear.ganZhi[0]]}`}>
                       {selectedYear.ganZhi[0]}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedYear.ganZhi[1]]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedYear.ganZhi[1]]}`}>
                       {selectedYear.ganZhi[1]}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={selectedYear?.shensha || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={selectedYear?.shensha || []} maxItems={2} />
                   </div>
                 </div>
 
                 {/* 大运 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">大运</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedDaYun?.gan]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">大运</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedDaYun?.gan]}`}>
                       {selectedDaYun?.gan}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedDaYun?.zhi]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[selectedDaYun?.zhi]}`}>
                       {selectedDaYun?.zhi}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={selectedDaYun?.shensha || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={selectedDaYun?.shensha || []} maxItems={2} />
                   </div>
                 </div>
 
                 {/* 分割线 */}
-                <div className="flex items-start justify-center pt-6">
-                  <div className="w-px h-32 bg-stone-300"></div>
+                <div className="flex items-start justify-center pt-2 md:pt-6">
+                  <div className="w-px h-20 md:h-32 bg-stone-300"></div>
                 </div>
 
                 {/* 年柱 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">年柱</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.year?.gan]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">年柱</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.year?.gan]}`}>
                       {baziData?.pillars?.year?.gan}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.year?.zhi]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.year?.zhi]}`}>
                       {baziData?.pillars?.year?.zhi}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.year || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={baziData?.shenSha?.year || []} maxItems={2} />
                   </div>
                 </div>
 
                 {/* 月柱 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">月柱</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.month?.gan]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">月柱</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.month?.gan]}`}>
                       {baziData?.pillars?.month?.gan}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.month?.zhi]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.month?.zhi]}`}>
                       {baziData?.pillars?.month?.zhi}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.month || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={baziData?.shenSha?.month || []} maxItems={2} />
                   </div>
                 </div>
 
                 {/* 日柱 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">日柱</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.day?.gan]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">日柱</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.day?.gan]}`}>
                       {baziData?.pillars?.day?.gan}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.day?.zhi]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.day?.zhi]}`}>
                       {baziData?.pillars?.day?.zhi}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.day || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={baziData?.shenSha?.day || []} maxItems={2} />
                   </div>
                 </div>
 
                 {/* 时柱 */}
-                <div className="text-center space-y-3">
-                  <div className="text-base text-stone-500 font-serif tracking-wider font-medium">时柱</div>
-                  <div className="space-y-1">
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.hour?.gan]}`}>
+                <div className="text-center space-y-1.5 md:space-y-3">
+                  <div className="text-[10px] md:text-base text-stone-500 font-serif tracking-wider font-medium">时柱</div>
+                  <div className="space-y-0.5 md:space-y-1">
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.hour?.gan]}`}>
                       {baziData?.pillars?.hour?.gan}
                     </span>
-                    <span className={`text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.hour?.zhi]}`}>
+                    <span className={`text-2xl md:text-5xl font-calligraphy font-bold leading-none block ${wuxingColors[baziData?.pillars?.hour?.zhi]}`}>
                       {baziData?.pillars?.hour?.zhi}
                     </span>
                   </div>
-                  <div className="pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.hour || []} maxItems={3} />
+                  <div className="pt-1 md:pt-2">
+                    <VerticalShenshaList tags={baziData?.shenSha?.hour || []} maxItems={2} />
                   </div>
                 </div>
               </div>
@@ -295,7 +295,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
       <div className="relative w-full">
         {/* 横向滚动容器 - 完全隐藏滚动条 + 边缘墨韵渐隐 */}
         <div
-          className="overflow-x-scroll pb-8"
+          className="overflow-x-scroll pb-4 md:pb-8"
           style={{
             maskImage: 'linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 15%, rgba(255, 255, 255, 1) 85%, rgba(255, 255, 255, 0) 100%)',
             WebkitMaskImage: 'linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 1) 15%, rgba(255, 255, 255, 1) 85%, rgba(255, 255, 255, 0) 100%)',
@@ -304,11 +304,11 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
           }}
         >
           {/* 内容区 */}
-          <div className="flex gap-5 px-8 py-4">
+          <div className="flex gap-3 md:gap-5 px-4 md:px-8 py-2 md:py-4">
             {data.map((cycle, cIdx) => (
               <div 
                 key={cIdx} 
-                className={`flex-shrink-0 ${cycle.isPreLuck ? 'w-[120px]' : 'w-[160px]'}`}
+                className={`flex-shrink-0 ${cycle.isPreLuck ? 'w-[90px] md:w-[120px]' : 'w-[120px] md:w-[160px]'}`}
               >
                 {/* 书签式卡片 - 淡雅渐变：无印良品风格 */}
                 <div 
@@ -322,46 +322,46 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                   }}
                 >
                   {/* 大运头部 */}
-                  <div className="px-5 py-6 text-center border-b border-stone-200/30">
+                  <div className="px-3 md:px-5 py-3 md:py-6 text-center border-b border-stone-200/30">
                     {cycle.isPreLuck ? (
                       <>
-                        <div className="text-[11px] text-stone-400 mb-2">
+                        <div className="text-[9px] md:text-[11px] text-stone-400 mb-1 md:mb-2">
                           {cycle.startAge}岁起运
                         </div>
-                        <div className="text-xs text-stone-300 mb-4">
+                        <div className="text-[10px] md:text-xs text-stone-300 mb-2 md:mb-4">
                           {cycle.years[0]?.year || cycle.startYear}-{cycle.years[cycle.years.length - 1]?.year || cycle.endYear}
                         </div>
-                        <div className="text-base font-serif text-stone-400/70 tracking-widest">
+                        <div className="text-sm md:text-base font-serif text-stone-400/70 tracking-widest">
                           小运期
                         </div>
                       </>
                     ) : (
                       <>
-                        <div className="text-[11px] text-stone-400 mb-1">
+                        <div className="text-[9px] md:text-[11px] text-stone-400 mb-0.5 md:mb-1">
                           {cycle.startAge}岁起运
                         </div>
-                        <div className="text-xs text-stone-300 mb-6">
+                        <div className="text-[10px] md:text-xs text-stone-300 mb-3 md:mb-6">
                           {cycle.years[0]?.year || cycle.startYear}-{cycle.years[cycle.years.length - 1]?.year || cycle.endYear}
                         </div>
                         
                         {/* 大运干支 - 横排，适中字体 */}
-                        <div className="flex justify-center items-start gap-6 mb-3">
+                        <div className="flex justify-center items-start gap-3 md:gap-6 mb-2 md:mb-3">
                           {/* 天干 */}
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`text-4xl font-calligraphy font-bold leading-none ${wuxingColors[cycle.gan]}`}>
+                          <div className="flex flex-col items-center gap-0.5 md:gap-1">
+                            <span className={`text-2xl md:text-4xl font-calligraphy font-bold leading-none ${wuxingColors[cycle.gan]}`}>
                               {cycle.gan}
                             </span>
-                            <span className="text-[10px] text-stone-400">
+                            <span className="text-[8px] md:text-[10px] text-stone-400">
                               {getTenGod(cycle.gan, dayGan)}
                             </span>
                           </div>
 
                           {/* 地支 */}
-                          <div className="flex flex-col items-center gap-1">
-                            <span className={`text-4xl font-calligraphy font-bold leading-none ${wuxingColors[cycle.zhi]}`}>
+                          <div className="flex flex-col items-center gap-0.5 md:gap-1">
+                            <span className={`text-2xl md:text-4xl font-calligraphy font-bold leading-none ${wuxingColors[cycle.zhi]}`}>
                               {cycle.zhi}
                             </span>
-                            <span className="text-[10px] text-stone-400">
+                            <span className="text-[8px] md:text-[10px] text-stone-400">
                               {getTenGod(getZhiMainGan(cycle.zhi), dayGan)}
                             </span>
                           </div>
@@ -372,7 +372,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                   </div>
 
                   {/* 流年列表 */}
-                  <div className="px-3 py-4 space-y-2.5">
+                  <div className="px-2 md:px-3 py-2 md:py-4 space-y-1.5 md:space-y-2.5">
                     {cycle.years.map((year: any, yIdx: number) => {
                       const isSelected = selectedYear?.year === year.year;
                       const isCurrent = year.year === currentYear;
@@ -384,39 +384,39 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                           key={yIdx}
                           onClick={() => { setSelectedDaYun(cycle); setSelectedYear(year); }}
                           className={`
-                            px-3 py-2 rounded cursor-pointer transition-all
+                            px-2 md:px-3 py-1.5 md:py-2 rounded cursor-pointer transition-all
                             ${isSelected ? 'bg-[#F5F0E8] ring-1 ring-[#D4C5B0]' : ''}
                             ${isCurrent && !isSelected ? 'bg-stone-100/40 border border-stone-200/50' : ''}
                             ${!isSelected && !isCurrent ? 'hover:bg-white/60' : ''}
                           `}
                         >
                           {/* 年份 + 岁数 */}
-                          <div className="flex justify-between items-center mb-1.5">
-                            <span className={`text-xs ${isCurrent ? 'text-stone-600 font-medium' : 'text-stone-500'}`}>
+                          <div className="flex justify-between items-center mb-1 md:mb-1.5">
+                            <span className={`text-[10px] md:text-xs ${isCurrent ? 'text-stone-600 font-medium' : 'text-stone-500'}`}>
                               {year.year}
                             </span>
-                            <span className={`text-xs ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>{year.age}岁</span>
+                            <span className={`text-[10px] md:text-xs ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>{year.age}岁</span>
                           </div>
 
                           {/* 干支 + 十神 */}
                           <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2 md:gap-4">
                               {/* 天干 + 十神 */}
                               <div className="flex flex-col items-center gap-0.5">
-                                <span className={`text-xl font-calligraphy font-bold ${wuxingColors[gan]}`}>
+                                <span className={`text-base md:text-xl font-calligraphy font-bold ${wuxingColors[gan]}`}>
                                   {gan}
                                 </span>
-                                <span className={`text-[9px] ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>
+                                <span className={`text-[8px] md:text-[9px] ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>
                                   {getTenGod(gan, dayGan)}
                                 </span>
                               </div>
 
                               {/* 地支 + 十神 */}
                               <div className="flex flex-col items-center gap-0.5">
-                                <span className={`text-xl font-calligraphy font-bold ${wuxingColors[zhi]}`}>
+                                <span className={`text-base md:text-xl font-calligraphy font-bold ${wuxingColors[zhi]}`}>
                                   {zhi}
                                 </span>
-                                <span className={`text-[9px] ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>
+                                <span className={`text-[8px] md:text-[9px] ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>
                                   {getTenGod(getZhiMainGan(zhi), dayGan)}
                                 </span>
                               </div>

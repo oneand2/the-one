@@ -7,6 +7,7 @@ import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
 import { LiuJiView } from '@/components/LiuJiView';
 import { MbtiTestView } from '@/components/MbtiTestView';
+import { MobileNav } from '@/components/MobileNav';
 import { useSearchParams } from 'next/navigation';
 type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
@@ -31,13 +32,15 @@ const HomeContent: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">
       {/* 左侧侧边栏 */}
-      <Sidebar 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab}
-        isCollapsed={isCollapsed}
-        onMouseEnter={() => setIsCollapsed(false)}
-        onMouseLeave={() => setIsCollapsed(true)}
-      />
+      <div className="hidden md:block">
+        <Sidebar 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab}
+          isCollapsed={isCollapsed}
+          onMouseEnter={() => setIsCollapsed(false)}
+          onMouseLeave={() => setIsCollapsed(true)}
+        />
+      </div>
 
       {/* 主内容区 - 占据全屏，内容居中 */}
       <main className="min-h-screen flex items-start justify-center">
@@ -187,6 +190,8 @@ const HomeContent: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaZiView } from '@/components/BaZiView';
@@ -15,7 +15,7 @@ const Sidebar = dynamic(
   { ssr: false }
 );
 
-const Home: React.FC = () => {
+const HomeContent: React.FC = () => {
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('mbti');
   const [isCollapsed, setIsCollapsed] = useState(true);
@@ -190,5 +190,11 @@ const Home: React.FC = () => {
     </div>
   );
 };
+
+const Home: React.FC = () => (
+  <Suspense fallback={<div className="min-h-screen bg-[#fbf9f4]" />}>
+    <HomeContent />
+  </Suspense>
+);
 
 export default Home;

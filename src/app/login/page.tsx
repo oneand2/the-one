@@ -25,7 +25,7 @@ export default async function LoginPage({
         {/* 标题区 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif text-stone-800 tracking-wider mb-3">
-            登录
+            注册
           </h1>
           <p className="text-sm text-stone-500 font-sans">
             世界即道场，让我们一起修行

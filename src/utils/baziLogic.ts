@@ -13,21 +13,30 @@ const applyTrueSolarCorrection = (solar: any, longitude?: number) => {
   if (Math.abs(longitudeDiff) < 0.0001) {
     return solar;
   }
-  // 每15度经度对应1小时，转换为分钟
-  return solar.next((longitudeDiff / 15) * 60);
+  // 先计算与北京时间的分钟差，再把分钟差加到用户输入时间上
+  const offsetMinutes = (longitudeDiff / 15) * 60;
+  const baseDate = new Date(
+    solar.getYear(),
+    solar.getMonth() - 1,
+    solar.getDay(),
+    solar.getHour(),
+    solar.getMinute(),
+    typeof solar.getSecond === 'function' ? solar.getSecond() : 0
+  );
+  const adjustedDate = new Date(baseDate.getTime() + offsetMinutes * 60_000);
+  return Solar.fromYmdHms(
+    adjustedDate.getFullYear(),
+    adjustedDate.getMonth() + 1,
+    adjustedDate.getDate(),
+    adjustedDate.getHours(),
+    adjustedDate.getMinutes(),
+    adjustedDate.getSeconds()
+  );
 };
 
 const getBaziFromSolar = (solar: any, longitude?: number) => {
-  const baseBazi = solar.getLunar().getEightChar();
-  let timeGan = baseBazi.getTimeGan();
-  let timeZhi = baseBazi.getTimeZhi();
-
-  if (typeof longitude === 'number' && !Number.isNaN(longitude)) {
-    const correctedSolar = applyTrueSolarCorrection(solar, longitude);
-    const correctedBazi = correctedSolar.getLunar().getEightChar();
-    timeGan = correctedBazi.getTimeGan();
-    timeZhi = correctedBazi.getTimeZhi();
-  }
+  const correctedSolar = applyTrueSolarCorrection(solar, longitude);
+  const baseBazi = correctedSolar.getLunar().getEightChar();
 
   return {
     yearGan: baseBazi.getYearGan(),
@@ -36,8 +45,8 @@ const getBaziFromSolar = (solar: any, longitude?: number) => {
     monthZhi: baseBazi.getMonthZhi(),
     dayGan: baseBazi.getDayGan(),
     dayZhi: baseBazi.getDayZhi(),
-    hourGan: timeGan,
-    hourZhi: timeZhi
+    hourGan: baseBazi.getTimeGan(),
+    hourZhi: baseBazi.getTimeZhi()
   };
 };
 

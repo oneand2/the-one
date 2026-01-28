@@ -26,7 +26,7 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   const password = formData.get('password') as string;
   const confirmPassword = formData.get('confirmPassword') as string;
   const nickname = (formData.get('nickname') as string)?.trim() ?? '';
-  const inviteCode = (formData.get('invite_code') as string)?.trim() ?? '';
+  const inviteCode = (formData.get('invite_code') as string)?.trim().toUpperCase() ?? '';
   const nextUrl = (formData.get('next') as string) || '/';
 
   if (password !== confirmPassword) {

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
 import { LiuJiView } from '@/components/LiuJiView';
 import { MbtiTestView } from '@/components/MbtiTestView';
+import { useSearchParams } from 'next/navigation';
 type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 const Sidebar = dynamic(
@@ -15,8 +16,17 @@ const Sidebar = dynamic(
 );
 
 const Home: React.FC = () => {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('mbti');
   const [isCollapsed, setIsCollapsed] = useState(true);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType | null;
+    const validTabs: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'liuji', 'wendao'];
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">

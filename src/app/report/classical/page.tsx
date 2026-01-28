@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { generateClassicalBaziData, ClassicalBaziData, BaziInput, inferDateFromBazi, calculateLuckCycles, LuckCycle } from '@/utils/baziLogic';
 import CircuitGraph from '@/components/CircuitGraph';
@@ -86,6 +86,7 @@ const Pillar = ({
 
 const ClassicalReportContent: React.FC = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [baziData, setBaziData] = useState<ClassicalBaziData | null>(null);
   const [luckCycles, setLuckCycles] = useState<LuckCycle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -613,7 +614,7 @@ const ClassicalReportContent: React.FC = () => {
         </div>
         <button
           type="button"
-          onClick={() => window.history.back()}
+          onClick={() => router.push('/?tab=bazi')}
           className="w-full sm:w-auto px-8 py-3 text-sm font-sans text-[#57534E] bg-transparent hover:bg-stone-100/50 rounded-full transition-all duration-300"
         >
           ← 返回

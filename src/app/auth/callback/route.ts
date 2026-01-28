@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       const uid = data.user.id;
       const meta = data.user.user_metadata || {};
       const nickname = (meta.nickname as string)?.trim()?.slice(0, 50) ?? '';
-      const inviteCode = (meta.invite_code as string)?.trim();
+      const inviteCode = (meta.invite_code as string)?.trim()?.toUpperCase();
 
       const { error: insertErr } = await supabase
         .from(PROFILE_TABLE)
@@ -34,13 +34,25 @@ export async function GET(request: NextRequest) {
       if (!insertErr && inviteCode) {
         try {
           const admin = createAdminClient();
-          const { data: inviter } = await admin.from(PROFILE_TABLE).select('user_id, coins_balance').eq('invite_code', inviteCode).single();
-          if (inviter) {
+          const { data: inviter, error: inviterErr } = await admin
+            .from(PROFILE_TABLE)
+            .select('user_id, coins_balance')
+            .eq('invite_code', inviteCode)
+            .single();
+          if (inviterErr) {
+            console.error('Invite reward: failed to find inviter', inviterErr);
+          } else if (inviter) {
             const cur = (inviter as { coins_balance?: number }).coins_balance ?? 0;
-            await admin.from(PROFILE_TABLE).update({ coins_balance: cur + INVITE_REWARD }).eq('user_id', (inviter as { user_id: string }).user_id);
+            const { error: updateErr } = await admin
+              .from(PROFILE_TABLE)
+              .update({ coins_balance: cur + INVITE_REWARD })
+              .eq('user_id', (inviter as { user_id: string }).user_id);
+            if (updateErr) {
+              console.error('Invite reward: failed to update inviter coins', updateErr);
+            }
           }
-        } catch (_) {
-          // 奖励失败不影响登录，仅记日志
+        } catch (err) {
+          console.error('Invite reward: unexpected error', err);
         }
       }
       return NextResponse.redirect(`${origin}${next}`);

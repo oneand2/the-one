@@ -1,44 +1,61 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { analyzeBazi, BaziInput, BaziResult, generateClassicalBaziData, calculateEnergyProfile } from '@/utils/baziLogic';
 
+type LocationInfo = {
+  province: string;
+  city: string;
+  longitude: number;
+};
+
+type DateInputState = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  location?: LocationInfo;
+};
+
+type LunarDateInputState = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  isLeapMonth: boolean;
+  location?: LocationInfo;
+};
+
 export const BaZiView: React.FC = () => {
   const router = useRouter();
+  const hasLoadedCacheRef = useRef(false);
+  const cacheKey = 'bazi-input-cache-v1';
   const [inputMode, setInputMode] = useState<'date' | 'bazi'>('date');
   const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar');
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<'乾造' | '坤造'>('乾造');
 
-  const [dateInput, setDateInput] = useState({
+  const [dateInput, setDateInput] = useState<DateInputState>({
     year: 2000,
     month: 1,
     day: 1,
     hour: 12,
-    minute: 0,
-    location: {
-      province: '北京市',
-      city: '北京市',
-      longitude: 116.4
-    }
+    minute: 0
   });
 
-  const [lunarDateInput, setLunarDateInput] = useState({
+  const [lunarDateInput, setLunarDateInput] = useState<LunarDateInputState>({
     year: 2000,
     month: 1,
     day: 1,
     hour: 12,
     minute: 0,
-    isLeapMonth: false,
-    location: {
-      province: '北京市',
-      city: '北京市',
-      longitude: 116.4
-    }
+    isLeapMonth: false
   });
 
   const [baziInput, setBaziInput] = useState({
@@ -52,15 +69,76 @@ export const BaZiView: React.FC = () => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeSelectId, setActiveSelectId] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
-  const [selectedProvince, setSelectedProvince] = useState('北京市');
-  const [selectedCity, setSelectedCity] = useState('北京市');
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   const [quickInputText, setQuickInputText] = useState('');
+  const [quickDateInputText, setQuickDateInputText] = useState('');
   const classicalProfile = lastCalculatedInput
     ? (() => {
         const classicalData = generateClassicalBaziData(lastCalculatedInput);
         return calculateEnergyProfile(classicalData);
       })()
     : null;
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (!cached) {
+        hasLoadedCacheRef.current = true;
+        return;
+      }
+      const parsed = JSON.parse(cached);
+      if (parsed?.inputMode) setInputMode(parsed.inputMode);
+      if (parsed?.calendarType) setCalendarType(parsed.calendarType);
+      if (typeof parsed?.name === 'string') setName(parsed.name);
+      if (parsed?.gender) setGender(parsed.gender);
+      if (parsed?.dateInput) setDateInput(parsed.dateInput);
+      if (parsed?.lunarDateInput) setLunarDateInput(parsed.lunarDateInput);
+      if (parsed?.baziInput) setBaziInput(parsed.baziInput);
+      if (typeof parsed?.selectedProvince === 'string') setSelectedProvince(parsed.selectedProvince);
+      if (typeof parsed?.selectedCity === 'string') setSelectedCity(parsed.selectedCity);
+      if (typeof parsed?.quickInputText === 'string') setQuickInputText(parsed.quickInputText);
+      if (typeof parsed?.quickDateInputText === 'string') setQuickDateInputText(parsed.quickDateInputText);
+    } catch (error) {
+      console.warn('读取本地缓存失败:', error);
+    } finally {
+      hasLoadedCacheRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedCacheRef.current) return;
+    try {
+      const payload = {
+        inputMode,
+        calendarType,
+        name,
+        gender,
+        dateInput,
+        lunarDateInput,
+        baziInput,
+        selectedProvince,
+        selectedCity,
+        quickInputText,
+        quickDateInputText
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(payload));
+    } catch (error) {
+      console.warn('写入本地缓存失败:', error);
+    }
+  }, [
+    inputMode,
+    calendarType,
+    name,
+    gender,
+    dateInput,
+    lunarDateInput,
+    baziInput,
+    selectedProvince,
+    selectedCity,
+    quickInputText,
+    quickDateInputText
+  ]);
 
   const getDaysInMonth = (year: number, month: number): number => {
     return new Date(year, month, 0).getDate();
@@ -215,6 +293,67 @@ export const BaZiView: React.FC = () => {
     });
   };
 
+  const parseDateQuickInput = (text: string) => {
+    if (!text.trim()) return;
+    const cleanText = text.replace(/\s+/g, '');
+
+    let year: number | null = null;
+    let month: number | null = null;
+    let day: number | null = null;
+    let hour: number | null = null;
+    let minute: number | null = null;
+
+    const yearMatch = cleanText.match(/(\d{4})年/);
+    const monthMatch = cleanText.match(/(\d{1,2})月/);
+    const dayMatch = cleanText.match(/(\d{1,2})日/);
+    const hourMatch = cleanText.match(/(\d{1,2})(?:时|点)/);
+    const minuteMatch = cleanText.match(/(\d{1,2})分/);
+
+    if (yearMatch && monthMatch && dayMatch) {
+      year = parseInt(yearMatch[1], 10);
+      month = parseInt(monthMatch[1], 10);
+      day = parseInt(dayMatch[1], 10);
+      if (hourMatch) hour = parseInt(hourMatch[1], 10);
+      if (minuteMatch) minute = parseInt(minuteMatch[1], 10);
+    } else {
+      const dateMatch = cleanText.match(
+        /(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})(?:日)?(?:[T\s](\d{1,2})(?::|时)?(\d{1,2})?)?/
+      );
+      if (dateMatch) {
+        year = parseInt(dateMatch[1], 10);
+        month = parseInt(dateMatch[2], 10);
+        day = parseInt(dateMatch[3], 10);
+        if (dateMatch[4]) hour = parseInt(dateMatch[4], 10);
+        if (dateMatch[5]) minute = parseInt(dateMatch[5], 10);
+      }
+    }
+
+    if (!year || !month || !day) return;
+
+    const nextHour = hour ?? (calendarType === 'solar' ? dateInput.hour : lunarDateInput.hour);
+    const nextMinute = minute ?? (calendarType === 'solar' ? dateInput.minute : lunarDateInput.minute);
+
+    if (calendarType === 'solar') {
+      setDateInput({
+        ...dateInput,
+        year,
+        month,
+        day,
+        hour: nextHour,
+        minute: nextMinute
+      });
+    } else {
+      setLunarDateInput({
+        ...lunarDateInput,
+        year,
+        month,
+        day,
+        hour: nextHour,
+        minute: nextMinute
+      });
+    }
+  };
+
   React.useEffect(() => {
     const maxDays = getDaysInMonth(dateInput.year, dateInput.month);
     if (dateInput.day > maxDays) {
@@ -225,6 +364,12 @@ export const BaZiView: React.FC = () => {
   const handleLocationSelect = (province: string, city: string) => {
     setSelectedProvince(province);
     setSelectedCity(city);
+    if (!province || !city) {
+      setDateInput({ ...dateInput, location: undefined });
+      setLunarDateInput({ ...lunarDateInput, location: undefined });
+      setShowLocationPicker(false);
+      return;
+    }
     const longitude = getCityLongitude(city);
     setDateInput({
       ...dateInput,
@@ -242,6 +387,14 @@ export const BaZiView: React.FC = () => {
         longitude
       }
     });
+    setShowLocationPicker(false);
+  };
+
+  const handleLocationClear = () => {
+    setSelectedProvince('');
+    setSelectedCity('');
+    setDateInput({ ...dateInput, location: undefined });
+    setLunarDateInput({ ...lunarDateInput, location: undefined });
     setShowLocationPicker(false);
   };
 
@@ -312,7 +465,7 @@ export const BaZiView: React.FC = () => {
         params.set('day', solar.getDay().toString());
         params.set('hour', lunarDateInput.hour.toString());
         params.set('minute', lunarDateInput.minute.toString());
-        if (lunarDateInput.location.province && lunarDateInput.location.city) {
+        if (lunarDateInput.location?.province && lunarDateInput.location?.city) {
           params.set('province', lunarDateInput.location.province);
           params.set('city', lunarDateInput.location.city);
           params.set('longitude', lunarDateInput.location.longitude.toString());
@@ -323,7 +476,7 @@ export const BaZiView: React.FC = () => {
         params.set('day', dateInput.day.toString());
         params.set('hour', dateInput.hour.toString());
         params.set('minute', dateInput.minute.toString());
-        if (dateInput.location.province && dateInput.location.city) {
+        if (dateInput.location?.province && dateInput.location?.city) {
           params.set('province', dateInput.location.province);
           params.set('city', dateInput.location.city);
           params.set('longitude', dateInput.location.longitude.toString());
@@ -517,6 +670,7 @@ export const BaZiView: React.FC = () => {
                       }}
                       className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans focus:outline-none focus:ring-0"
                     >
+                      <option value="">不填写</option>
                       {provinces.map(province => (
                         <option key={province} value={province}>
                           {province}
@@ -542,6 +696,12 @@ export const BaZiView: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-3 mt-6">
+                  <button
+                    onClick={handleLocationClear}
+                    className="flex-1 py-2 px-4 text-[#666666] font-sans border border-[#e8e3d8] rounded-md hover:bg-[#f0ede6] transition-colors duration-200"
+                  >
+                    不填写地点
+                  </button>
                   <button
                     onClick={() => setShowLocationPicker(false)}
                     className="flex-1 py-2 px-4 text-[#666666] font-sans border border-[#e8e3d8] rounded-md hover:bg-[#f0ede6] transition-colors duration-200"
@@ -684,6 +844,22 @@ export const BaZiView: React.FC = () => {
                     </div>
                   </div>
 
+                  <div className="my-2">
+                    <input
+                      type="text"
+                      value={quickDateInputText}
+                      onChange={(e) => {
+                        setQuickDateInputText(e.target.value);
+                        parseDateQuickInput(e.target.value);
+                      }}
+                      placeholder="快捷输入：2001年7月28日19时27分 / 2001-07-28 19:27"
+                      className="w-full text-center text-base text-stone-600 font-serif border-b border-stone-200 bg-transparent focus:border-stone-400 focus:outline-none placeholder:text-stone-300"
+                    />
+                    <div className="text-xs text-stone-400 font-serif text-center mt-2">
+                      支持自动解析年月日时分并填充
+                    </div>
+                  </div>
+
                   {calendarType === 'solar' && (
                     <div className="grid grid-cols-2 gap-6">
                       <CustomSelect
@@ -732,7 +908,7 @@ export const BaZiView: React.FC = () => {
                           <span>
                             {selectedProvince && selectedCity
                               ? `${selectedProvince} ${selectedCity}`
-                              : '请选择地点 >'
+                              : '未填写地点'
                             }
                           </span>
                           <motion.div
@@ -816,7 +992,7 @@ export const BaZiView: React.FC = () => {
                           <span>
                             {selectedProvince && selectedCity
                               ? `${selectedProvince} ${selectedCity}`
-                              : '请选择地点 >'
+                              : '未填写地点'
                             }
                           </span>
                           <motion.div
@@ -918,7 +1094,10 @@ export const BaZiView: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {inputMode === 'date' && dateInput.location && Math.abs(dateInput.location.longitude - 120) > 0.0001 && (
+            {(() => {
+              const activeLocation = calendarType === 'lunar' ? lunarDateInput.location : dateInput.location;
+              return inputMode === 'date' && activeLocation && Math.abs(activeLocation.longitude - 120) > 0.0001;
+            })() && (
               <div className="text-center mt-8 mb-4">
                 <p className="text-xs text-stone-400 font-sans">
                   已自动校正真太阳时

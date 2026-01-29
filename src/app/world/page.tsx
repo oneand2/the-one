@@ -405,7 +405,7 @@ export default function WorldPage() {
               见天地
             </h1>
             <p className="text-sm text-stone-600 font-sans">
-              观天下事，知进退时
+              世界会越来越好，你也是
             </p>
           </div>
         </div>

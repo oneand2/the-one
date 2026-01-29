@@ -13,30 +13,21 @@ const applyTrueSolarCorrection = (solar: any, longitude?: number) => {
   if (Math.abs(longitudeDiff) < 0.0001) {
     return solar;
   }
-  // 先计算与北京时间的分钟差，再把分钟差加到用户输入时间上
-  const offsetMinutes = (longitudeDiff / 15) * 60;
-  const baseDate = new Date(
-    solar.getYear(),
-    solar.getMonth() - 1,
-    solar.getDay(),
-    solar.getHour(),
-    solar.getMinute(),
-    typeof solar.getSecond === 'function' ? solar.getSecond() : 0
-  );
-  const adjustedDate = new Date(baseDate.getTime() + offsetMinutes * 60_000);
-  return Solar.fromYmdHms(
-    adjustedDate.getFullYear(),
-    adjustedDate.getMonth() + 1,
-    adjustedDate.getDate(),
-    adjustedDate.getHours(),
-    adjustedDate.getMinutes(),
-    adjustedDate.getSeconds()
-  );
+  // 每15度经度对应1小时，转换为分钟
+  return solar.next((longitudeDiff / 15) * 60);
 };
 
 const getBaziFromSolar = (solar: any, longitude?: number) => {
-  const correctedSolar = applyTrueSolarCorrection(solar, longitude);
-  const baseBazi = correctedSolar.getLunar().getEightChar();
+  const baseBazi = solar.getLunar().getEightChar();
+  let timeGan = baseBazi.getTimeGan();
+  let timeZhi = baseBazi.getTimeZhi();
+
+  if (typeof longitude === 'number' && !Number.isNaN(longitude)) {
+    const correctedSolar = applyTrueSolarCorrection(solar, longitude);
+    const correctedBazi = correctedSolar.getLunar().getEightChar();
+    timeGan = correctedBazi.getTimeGan();
+    timeZhi = correctedBazi.getTimeZhi();
+  }
 
   return {
     yearGan: baseBazi.getYearGan(),
@@ -45,8 +36,8 @@ const getBaziFromSolar = (solar: any, longitude?: number) => {
     monthZhi: baseBazi.getMonthZhi(),
     dayGan: baseBazi.getDayGan(),
     dayZhi: baseBazi.getDayZhi(),
-    hourGan: baseBazi.getTimeGan(),
-    hourZhi: baseBazi.getTimeZhi()
+    hourGan: timeGan,
+    hourZhi: timeZhi
   };
 };
 
@@ -378,7 +369,7 @@ export function analyzeBazi(input: BaziInput): BaziResult {
     ss_mbti_weights: {
       "比肩": { Fi: 1.1272976009264932, Si: 0.1863814102337426, Te: 0.028233847020994463, Ti: 0.12619025142351841, Fe: 0.5063539735489445, Se: 0.04750643927511244, Ne: 0.2288940331477292, Ni: 0.04914244442346482 },
       "劫财": { Fe: 0.8339904239001248, Se: 0.06029630481607141, Te: 1.0130032077342419, Ti: 0.05798032519810626, Fi: 0.19419929116536636, Si: 0.2362482447450704, Ne: 0.012221296472533116, Ni: 0.10981074479289557 },
-      "食神": { Fi: 0.1029270997261323, Ne: 1.221423597947489, Te: 0.04766758744569931, Ti: 0.05280170002818327, Fe: 0.04766758744569931, Se: 0.1319447873943418, Si: 0.04766758744569931, Ni: 0.34790005256675566 },
+      "食神": { Fi: 0.1029270997261323, Ne: 1.221423597947489, Te: 0.04766758744569931, Ti: 0.05280170002818327, Fe: 0.04766758744569931, Se: 0.4319447873943418, Si: 0.04766758744569931, Ni: 0.34790005256675566 },
       "伤官": { Ne: 0.79796184802047398, Ti: 0.28655711351256824, Te: 0.2818667704815759, Fe: 0.14872303509699475, Fi: 0.21097103135364315, Se: 0.275566927839208, Si: 0.01410779346566536, Ni: 0.28424548022987056 },
       "正财": { Si: 0.024871628298928253, Te: 0.03509236761285633, Ti: 0.06691772068474677, Fe: 0.97818821086778849, Fi: 0.3338385057178014, Se: 0.30552734730653086, Ne: 0.012054959274314703, Ni: 0.38132758954048074 },
       "偏财": { Se: 0.03587249683594573, Te: 0.05819893761991663, Ti: 0.2037534413146295, Fe: 0.8885894448223746, Fi: 0.38539252468549157, Si: 0.392482885691753, Ne: 0.27890853876984056, Ni: 0.25680173026004824 },
@@ -394,7 +385,7 @@ export function analyzeBazi(input: BaziInput): BaziResult {
       "乙": { Fe: 0.019109492919350074, Ne: 0.84997368212982486, Te: 0.019109492919350074, Ti: 0.019109492919350074, Fi: 0.4293462356642604, Se: 0.5251326176091642, Si: 0.019109492919350074, Ni: 0.019109492919350074 },
       "丙": { Se: 0.3385567918127332, Fe: 0.932900260388142, Te: 0.1357445326217361, Ti: 0.35005209408935034, Fi: 0.19134510715211622, Si: 0.25764531259723134, Ne: 0.24882441702507285, Ni: 0.2845417186629456 },
       "丁": { Ni: 0.8323136404142509, Ti: 0.34844479540108608, Te: 0.42193120919253135, Fe: 0.21713693915072724, Fi: 0.05294770841273588, Se: 0.13390283848689524, Si: 0.17571483747196412, Ne: 0.217608031469809 },
-      "戊": { Si: 0.1646142330072045, Fi: 0.23352232958956973, Te: 0.01, Ti: 0.0738253677436321, Fe: 0.029956046665663438, Se: 0.777169585895979, Ne: 0.1009124370979512, Ni: 0.01 },
+      "戊": { Si: 0.1646142330072045, Fi: 0.43352232958956973, Te: 0.01, Ti: 0.0738253677436321, Fe: 0.029956046665663438, Se: 0.777169585895979, Ne: 0.1009124370979512, Ni: 0.01 },
       "己": { Fe: 0.35376642945774667, Si: 0.011410580113885635, Te: 0.20044601524216302, Ti: 0.01, Fi: 0.23514572700265327, Se: 0.01, Ne: 0.7918762834307395, Ni: 0.38740775000610733 },
       "庚": { Te: 0.07824165322191358, Se: 0.11822277122885805, Ti: 0.045576763108743874, Fe: 0.32122859430813045, Fi: 0.03568392486829501, Si: 0.13897162832005802, Ne: 0.13507411483174242, Ni: 0.22700055011225867 },
       "辛": { Fi: 0.012163335020735355, Se: 0.2033122035640154, Te: 0.37347197450292086, Ti: 0.3312058990673226, Fe: 0.3706127341175688, Si: 0.04050120842915505, Ne: 0.3273704302101597, Ni: 0.3413622150881224 },
@@ -2951,7 +2942,7 @@ export function calculateLuckCycles(
       : getShenSha;
 
     // ==========================================
-    // A. 构建"小运" (Xiao Yun)
+    // A. 构建“小运” (Xiao Yun)
     // ==========================================
     const preLuckYears = [];
     for (let age = 1; age < startAge; age++) {
@@ -2992,7 +2983,7 @@ export function calculateLuckCycles(
     };
 
     // ==========================================
-    // B. 构建"正式大运" (Da Yun)
+    // B. 构建“正式大运” (Da Yun)
     // ==========================================
     const normalCycles = daYunList
       .slice(firstValidIndex)

@@ -94,7 +94,7 @@ const HomeContent: React.FC = () => {
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
                 {activeTab === 'guanshi' 
-                  ? '观天下事，知进退时'
+                  ? '世界会越来越好，你也是'
                   : activeTab === 'wendao'
                   ? '观点广场，待续'
                   : activeTab === 'bazi' 

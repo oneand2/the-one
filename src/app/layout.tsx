@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  themeColor: "#ffffff",
+  themeColor: "#fbf9f4",
   appleWebApp: {
     // 👇 关键：这是 iPhone 桌面上显示的 App 名字，必须改成 "二"
     title: "二",

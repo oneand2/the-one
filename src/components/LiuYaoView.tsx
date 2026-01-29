@@ -81,7 +81,7 @@ export const LiuYaoView: React.FC = () => {
     setHexagramAnalysis(null);
   };
 
-  const handleDivine = () => {
+  const handleDivine = async () => {
     const liuyaoData: ImportData = {
       liuyao: [{
         type: 'liuyao',
@@ -111,6 +111,40 @@ export const LiuYaoView: React.FC = () => {
       localStorage.setItem(pendingImportKey, JSON.stringify(liuyaoData));
     } catch (error) {
       console.warn('写入导入缓存失败:', error);
+    }
+
+    try {
+      const hexagramInfo = {
+        mainHexagram: hexagramAnalysis?.mainHexagram?.title || '',
+        transformedHexagram: hexagramAnalysis?.transformedHexagram?.title || '',
+        hasMovingLines: hexagramAnalysis?.hasMovingLines ?? false,
+        movingLineTexts: hexagramAnalysis?.movingLineTexts ?? [],
+        yaos: yaos.map((yao, index) => ({
+          position: index,
+          name: yao.name,
+          value: yao.value,
+          isChanging: yao.isChanging,
+        })),
+      };
+
+      const response = await fetch('/api/records/liuyao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          question,
+          date: new Date().toLocaleString('zh-CN'),
+          hexagram_info: hexagramInfo,
+          ai_result: '',
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        console.warn('保存六爻记录失败:', data?.error || response.statusText);
+      }
+    } catch (error) {
+      console.warn('保存六爻记录失败:', error);
     }
 
     router.push('/?tab=liuji');

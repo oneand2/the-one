@@ -115,7 +115,7 @@ function MyLiuyaoContent() {
         </Link>
         <h1 className="text-2xl font-serif text-stone-800 mb-2">我的六爻解卦</h1>
         <p className="text-sm text-stone-500 font-sans mb-8">
-          仅保存已进行 AI 解卦的记录，点击可查看当时的问题与解卦内容
+          已保存的起卦记录，点击可查看当时的问题与解卦内容
         </p>
 
         {loading && <div className="py-12 text-center text-stone-500 font-sans">加载中…</div>}
@@ -129,7 +129,7 @@ function MyLiuyaoContent() {
         )}
         {!loading && !error && list.length === 0 && (
           <div className="py-12 text-center text-stone-500 font-sans">
-            暂无六爻解卦记录，在「六爻占卜」中起卦并完成 AI 解卦后会自动保存
+            暂无六爻解卦记录，在「六爻占卜」中起卦后会自动保存
           </div>
         )}
         {!loading && !error && list.length > 0 && (

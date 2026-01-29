@@ -85,11 +85,7 @@ export async function POST(request: Request) {
   const question = body.question ?? '';
   const hexagram_info = body.hexagram_info ?? {};
   const date = body.date ?? '';
-  const ai_result = body.ai_result ?? '';
-
-  if (!ai_result || typeof ai_result !== 'string') {
-    return NextResponse.json({ error: '缺少 ai_result（解卦完成后再保存）' }, { status: 400 });
-  }
+  const ai_result = typeof body.ai_result === 'string' ? body.ai_result : '';
 
   const { data, error } = await supabase
     .from(TABLE)

@@ -35,6 +35,7 @@ export const BaZiView: React.FC = () => {
   const router = useRouter();
   const hasLoadedCacheRef = useRef(false);
   const cacheKey = 'bazi-input-cache-v1';
+  const resultCacheKey = 'bazi-result-cache-v1';
   const [inputMode, setInputMode] = useState<'date' | 'bazi'>('date');
   const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar');
 
@@ -103,6 +104,18 @@ export const BaZiView: React.FC = () => {
       console.warn('读取本地缓存失败:', error);
     } finally {
       hasLoadedCacheRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(resultCacheKey);
+      if (!cached) return;
+      const parsed = JSON.parse(cached);
+      if (parsed?.result) setResult(parsed.result);
+      if (parsed?.lastCalculatedInput) setLastCalculatedInput(parsed.lastCalculatedInput);
+    } catch (error) {
+      console.warn('读取八字结果缓存失败:', error);
     }
   }, []);
 
@@ -434,6 +447,14 @@ export const BaZiView: React.FC = () => {
         const baziResult = analyzeBazi(input);
         setResult(baziResult);
         setLastCalculatedInput(input);
+        try {
+          localStorage.setItem(resultCacheKey, JSON.stringify({
+            result: baziResult,
+            lastCalculatedInput: input,
+          }));
+        } catch (error) {
+          console.warn('写入八字结果缓存失败:', error);
+        }
       } catch (error) {
         console.error('计算失败:', error);
       }

@@ -31,6 +31,7 @@ export const metadata: Metadata = {
   title: "二 - 让自己 让世界变得更好",
   description: "相信终有一天，人与人之间会彼此理解。",
   manifest: "/manifest.json",
+  themeColor: "#fbf9f4",
   icons: {
     icon: "/icon-192.png",
     apple: "/apple-icon.png",

@@ -71,6 +71,8 @@ export const JueXingCangView: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false);
+  const lastSendRef = useRef<{ content: string; at: number }>({ content: '', at: 0 });
   const idRef = useRef(0);
   /** 用户是否在"跟读底部"（在底部附近未主动上滑），仅在为 true 时自动滚到底 */
   const userFollowsBottomRef = useRef(true);
@@ -153,29 +155,36 @@ export const JueXingCangView: React.FC = () => {
 
   // 发送消息
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.push('/login?next=/');
+    const content = input.trim();
+    if (!content || isLoading || sendingRef.current) return;
+    const now = Date.now();
+    if (lastSendRef.current.content === content && now - lastSendRef.current.at < 800) {
       return;
     }
-
-    const userMessage: Message = {
-      id: nextId(),
-      role: 'user',
-      content: input.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
-    userFollowsBottomRef.current = true;
+    sendingRef.current = true;
+    lastSendRef.current = { content, at: now };
 
     try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login?next=/');
+        return;
+      }
+
+      const userMessage: Message = {
+        id: nextId(),
+        role: 'user',
+        content,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+      setInput('');
+      setIsLoading(true);
+      userFollowsBottomRef.current = true;
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -244,6 +253,7 @@ export const JueXingCangView: React.FC = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      sendingRef.current = false;
     }
   };
 

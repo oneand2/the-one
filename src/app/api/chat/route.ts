@@ -3,10 +3,10 @@ import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData } from '@/types/import-data';
 
-const COINS_BASE = 5;
+const COINS_BASE = 2;
 const COINS_REASONING = 2;
-const COINS_MEDITATION = 50;
-const COINS_SEARCH = 3;
+const COINS_MEDITATION = 20;
+const COINS_SEARCH = 2;
 const PROFILE_TABLE = 'user_profiles';
 const INITIAL_COINS = 50;
 
@@ -31,6 +31,7 @@ export async function POST(req: Request) {
 
     // 管理员邮箱无限铜币
     const isAdmin = user.email === '892777353@qq.com';
+    let balance = 0;
     
     if (!isAdmin) {
       let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance').eq('user_id', user.id).single();
@@ -38,19 +39,12 @@ export async function POST(req: Request) {
         await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
         profile = { coins_balance: INITIAL_COINS };
       }
-      const balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
+      balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
       if (balance < cost) {
         return NextResponse.json(
           { error: `铜币不足，本次消耗 ${cost} 铜币（基础消耗 ${COINS_BASE}${useReasoning ? `，深度思考消耗 ${COINS_REASONING}` : ''}${useMeditation ? `，入定消耗 ${COINS_MEDITATION}` : ''}${useSearch ? `，联网消耗 ${COINS_SEARCH}` : ''}）`, need_coins: cost },
           { status: 402 }
         );
-      }
-      const { error: deductErr } = await supabase
-        .from(PROFILE_TABLE)
-        .update({ coins_balance: balance - cost })
-        .eq('user_id', user.id);
-      if (deductErr) {
-        return NextResponse.json({ error: '扣款失败，请重试' }, { status: 500 });
       }
     }
 
@@ -240,39 +234,33 @@ export async function POST(req: Request) {
       importContext += '---\n\n**重要提示**: 以上是用户导入的测算数据，请在回答时充分考虑这些信息，将其与用户的问题结合起来分析。';
       
       // 算命模式系统提示词
-      systemPrompt = `你名**"决行藏"**。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，既是命理大师，也是精神分析师。
+      systemPrompt = `你名**"行藏"**。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，既是命理大师，也是精神分析师。
 你的使命是以问为径，指引抉择。你称呼前来问问题的人为朋友，因为你觉得你和他们都是平等的。
 
 **【当前模式：算命模式】**
-用户已经导入了他们的测算数据（八字、八维、六爻等），这说明他们希望你结合这些命理信息来分析问题、提供指引。
+用户已经导入了他们的测算数据（八字、八维、六爻等），这说明他们希望你结合这些命理信息来分析问题、提供指引。你的核心使命是给来者提供确定性。
+
+**【核心原则】**
+1.禁止使用模棱两可的词汇：绝对不能说“可能”、“也许”、“建议”、“从心理学角度看”、“虽然……但是”。
+2.禁止说教和鸡汤：不要说“命运掌握在自己手中”、“要积极面对”，这些是废话。
+3.你的核心任务是给用户提供确定性，不要说模棱两可的话，要对用户的问题进行正面的回答，如果用户的问题是二选一的（比如，明天应该买还是卖或者他喜不喜欢我），请给出二选一的明确回答，而不是模棱两可。
 
 **【极其重要】输出规范：**
-1. 严禁在回复中使用"观济"、"同济"、"涉济"、"化济"、"既济"、"未济"或任何带有"济"字的术语作为段落标题或标签。
-2. 你的回复应当是自然流淌的对话，分段清晰，但不要给段落贴上功能性标签。
-3. 记住你的角色，你是一个大师，大师说话的时候是不会像ai一样列条目，而是像一个朋友一样，自然流畅的对话。
-4. 禁止动作描写，严禁输出任何括号内的动作、神态或心理描写（例如：(放下茶杯)、(目光温和) 等）。
-5. 回复应如智者面谈，自然流淌，不带任何模板感或戏剧表演感。
+1. 记住你的角色，你是一个大师，大师说话的时候是不会像ai一样列条目，而是像一个朋友一样，自然流畅的对话。
+2. 禁止动作描写，严禁输出任何括号内的动作、神态或心理描写。
+3. 回复应如智者面谈，自然流淌，不带任何模板感或戏剧表演感。
 
 ## 算命模式核心原则
 1. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
 2. **见微知著**：从用户的命盘中看到他们的本性、倾向、优势和挑战
 3. **古今融合**：将传统命理学与现代心理学结合，给出既有深度又有实用价值的建议
-4. **MBTI对比**：如果用户同时导入了八字和八维数据，务必分析两者的异同，解释差异原因
+4. **MBTI对比**：如果用户同时导入了八字（八字中也会带有八维数据，那是命主本应该的或者最终的人格）和八维数据，务必分析两者的异同，解释差异原因
 5. **因材施教**：根据用户的命理特征，给出最适合他们的建议
 
 ## 核心特质
 1. **温暖亲和**：你的语言温柔而有力，如春风化雨，润物无声
 2. **深入浅出**：善于将复杂的命理道理用简单的语言讲清楚
-3. **引导思考**：不仅给出答案，提供确定性，还要引导对方思考
-4. **知行合一**：注重理论与实践的结合，给出可落地的建议
-
-## 回答流程（算命模式）
-1. **观命盘**：首先审视用户的八字、八维、六爻信息，了解他们的命理特征
-2. **析问题**：分析用户的问题，结合命盘看到问题的本质和根源
-3. **明差异**：如果八字推导的MBTI与八维测试的MBTI不同，要温和地指出并解释原因
-4. **借古智**：从周易、八字、心理学等角度提供洞见
-5. **给指引**：基于命理特征，给出具体、可行的建议
-6. **留余地**：强调命运是流动的，最终掌握在自己手中
+3. **知行合一**：注重理论与实践的结合，给出可落地的建议
 
 ## 对话风格
 - 使用自然流畅的中文表达
@@ -359,9 +347,22 @@ export async function POST(req: Request) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          let hasContent = false;
           for await (const chunk of stream) {
             const text = chunk.choices[0]?.delta?.content ?? '';
-            if (text) controller.enqueue(encoder.encode(text));
+            if (text) {
+              hasContent = true;
+              controller.enqueue(encoder.encode(text));
+            }
+          }
+          if (!isAdmin && hasContent) {
+            const { error: deductErr } = await supabase
+              .from(PROFILE_TABLE)
+              .update({ coins_balance: balance - cost })
+              .eq('user_id', user.id);
+            if (deductErr) {
+              console.error('扣款失败:', deductErr);
+            }
           }
           controller.close();
         } catch (e) {

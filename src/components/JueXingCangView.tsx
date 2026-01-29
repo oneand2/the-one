@@ -352,7 +352,7 @@ export const JueXingCangView: React.FC = () => {
                   <CopperCoinIcon className={`w-2.5 h-2.5 ${
                     useSearch ? 'text-white/70' : 'text-amber-700/75'
                   }`} />
-                  <span className="text-[9px] tracking-wider font-light">3</span>
+                  <span className="text-[9px] tracking-wider font-light">2</span>
                 </span>
               </div>
             </button>
@@ -364,7 +364,7 @@ export const JueXingCangView: React.FC = () => {
           {/* 底部提示区域 */}
           <div className="mt-4 sm:mt-5 flex flex-col items-center gap-2">
             <span className="text-[10px] sm:text-[10.5px] text-stone-500 tracking-[0.18em] font-light">
-              每问基础消耗 <span className="text-amber-700/80 font-normal">5</span> 铜币
+              每问基础消耗 <span className="text-amber-700/80 font-normal">2</span> 铜币
             </span>
             
             {/* 入定提示 */}
@@ -381,7 +381,7 @@ export const JueXingCangView: React.FC = () => {
                 <span className="flex items-center gap-1 text-[9px] text-amber-700/70 tracking-[0.15em] font-light">
                   入定模式
                   <CopperCoinIcon className="w-2.5 h-2.5 text-amber-700/70" />
-                  <span>50</span>
+                  <span>20</span>
                 </span>
               </motion.div>
             )}
@@ -527,7 +527,7 @@ export const JueXingCangView: React.FC = () => {
                         <span className="flex items-center justify-center gap-1 text-[10px] text-amber-700/80">
                           入定模式
                           <CopperCoinIcon className="w-3 h-3 text-amber-700/80" />
-                          <span>50</span>
+                          <span>20</span>
                         </span>
                       </>
                     ) : (

@@ -82,8 +82,6 @@ export const LiuYaoView: React.FC = () => {
   };
 
   const handleDivine = () => {
-    if (!hexagramAnalysis) return;
-
     const liuyaoData: ImportData = {
       liuyao: [{
         type: 'liuyao',
@@ -95,17 +93,17 @@ export const LiuYaoView: React.FC = () => {
           isChanging: yao.isChanging,
         })),
         mainHexagram: {
-          title: hexagramAnalysis.mainHexagram?.title || '',
-          description: hexagramAnalysis.mainHexagram?.description || '',
+          title: hexagramAnalysis?.mainHexagram?.title || '',
+          description: hexagramAnalysis?.mainHexagram?.description || '',
         },
-        transformedHexagram: hexagramAnalysis.transformedHexagram
+        transformedHexagram: hexagramAnalysis?.transformedHexagram
           ? {
               title: hexagramAnalysis.transformedHexagram.title,
               description: hexagramAnalysis.transformedHexagram.description,
             }
           : undefined,
-        hasMovingLines: hexagramAnalysis.hasMovingLines,
-        movingLineTexts: hexagramAnalysis.movingLineTexts,
+        hasMovingLines: hexagramAnalysis?.hasMovingLines ?? false,
+        movingLineTexts: hexagramAnalysis?.movingLineTexts ?? [],
       }],
     };
 

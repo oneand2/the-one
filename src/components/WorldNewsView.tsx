@@ -305,7 +305,7 @@ export const WorldNewsView: React.FC = () => {
       // 正文段落
       if (trimmed.length > 0) {
         elements.push(
-          <p key={`p-${idx}`} className="font-sans text-[13.5px] text-stone-600 leading-[1.85] mb-3.5" style={{ letterSpacing: '0.02em', textAlign: 'justify' }}>
+          <p key={`p-${idx}`} className="font-sans text-[13.5px] text-stone-700 leading-[1.85] mb-3.5" style={{ letterSpacing: '0.02em', textAlign: 'justify' }}>
             {trimmed}
           </p>
         );
@@ -497,7 +497,7 @@ export const WorldNewsView: React.FC = () => {
           <p className="text-stone-500/70 font-sans tracking-wide">
             <span className="text-stone-600/60">声明</span>
             <span className="text-stone-400/50 mx-1.5">·</span>
-            本站仅提供信息收集与整理服务，不保证信息的准确性与完整性，所有内容仅供参考，不构成任何投资建议
+            本站仅提供信息收集与整理服务，不保证信息的准确性与完整性，所有新闻版权归原媒体所有。所有内容仅供参考，不构成任何投资建议。
           </p>
         </div>
       </motion.div>

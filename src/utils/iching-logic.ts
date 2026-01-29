@@ -31,7 +31,7 @@ export function analyzeHexagram(yaos: YaoValue[]): HexagramAnalysis {
   // 1. 计算本卦（只看阴阳，不看动静）
   // 6(老阴) -> 0, 8(少阴) -> 0
   // 7(少阳) -> 1, 9(老阳) -> 1
-  const mainCode = yaos.map(yao => {
+  const mainCode = [...yaos].reverse().map(yao => {
     return (yao === 7 || yao === 9) ? '1' : '0';
   }).join('');
 
@@ -51,7 +51,7 @@ export function analyzeHexagram(yaos: YaoValue[]): HexagramAnalysis {
   // 7, 8 保持不变
   let transformedHexagram: Hexagram | null = null;
   if (movingPositions.length > 0) {
-    const transformedCode = yaos.map(yao => {
+    const transformedCode = [...yaos].reverse().map(yao => {
       if (yao === 6) return '1'; // 老阴变阳
       if (yao === 9) return '0'; // 老阳变阴
       return (yao === 7) ? '1' : '0'; // 静爻保持

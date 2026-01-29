@@ -14,24 +14,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance').eq('user_id', user.id).single();
-    if (!profile) {
-      await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
-      profile = { coins_balance: INITIAL_COINS };
-    }
-    const balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
-    if (balance < COINS_DIVINE) {
-      return NextResponse.json(
-        { error: `铜币不足，AI 解卦需 ${COINS_DIVINE} 铜币`, need_coins: COINS_DIVINE },
-        { status: 402 }
-      );
-    }
-    const { error: deductErr } = await supabase
-      .from(PROFILE_TABLE)
-      .update({ coins_balance: balance - COINS_DIVINE })
-      .eq('user_id', user.id);
-    if (deductErr) {
-      return NextResponse.json({ error: '扣款失败，请重试' }, { status: 500 });
+    // 管理员邮箱无限铜币
+    const isAdmin = user.email === '892777353@qq.com';
+    
+    if (!isAdmin) {
+      let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance').eq('user_id', user.id).single();
+      if (!profile) {
+        await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
+        profile = { coins_balance: INITIAL_COINS };
+      }
+      const balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
+      if (balance < COINS_DIVINE) {
+        return NextResponse.json(
+          { error: `铜币不足，AI 解卦需 ${COINS_DIVINE} 铜币`, need_coins: COINS_DIVINE },
+          { status: 402 }
+        );
+      }
+      const { error: deductErr } = await supabase
+        .from(PROFILE_TABLE)
+        .update({ coins_balance: balance - COINS_DIVINE })
+        .eq('user_id', user.id);
+      if (deductErr) {
+        return NextResponse.json({ error: '扣款失败，请重试' }, { status: 500 });
+      }
     }
 
     const { question, hexagramInfo, date } = await req.json();
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
           2. **【必须分段】**：全文必须分为 **4 到 5 个自然段**。段落之间必须使用 **双换行符** (也就是空一行) 隔开，绝不能堆砌成一大块。
           3. **【自然叙事】**：请将所有分析融合成一篇连贯的短文（分 3-4 个自然段）。段落之间要有自然的过渡。
           4. **【深度聚焦】**：只谈用户问的那件事，把这件事讲深、讲透，不讲废话。
-          5. **【拒绝AI味】**：不要说“根据卦象显示”、“建议如下”，要用更拟人的语气，如“观君此卦，如……”、“依我看……”。
+          5. **【拒绝AI味】**：不要说"根据卦象显示"、"建议如下"，要用更拟人的语气，如"观君此卦，如……"、"依我看……"。
           5.**【篇幅要求】**：内容必须详实、丰满，总字数 **不得少于 800 字**。请尽情铺陈卦象的画面和哲理。
 
           ## 必须严格执行的【断卦逻辑】(隐形思维，不要直接说出来)
@@ -73,16 +78,16 @@ export async function POST(req: Request) {
           ## 【写作脉络】(请按此结构扩写，不要写标题)
 
           **第一部分：破题与共情 **
-          不要上来就掉书袋。先像老朋友一样，复述用户的处境。结合卦象给出一个**极具画面感的比喻**。例如：“读罢君之所问，观此卦象，恰如**孤舟夜渡，迷雾渐散**……”
+          不要上来就掉书袋。先像老朋友一样，复述用户的处境。结合卦象给出一个**极具画面感的比喻**。例如："读罢君之所问，观此卦象，恰如**孤舟夜渡，迷雾渐散**……"
 
           **第二部分：核心卦意深解 **
-          引用核心爻辞，既要翻译，也要**“演绎”**。把这句古文变成一段优美的现代散文。详细解释为什么卦象会呈现这种状态？是天时未到，还是人和不足？请深入剖析因果。
+          引用核心爻辞，既要翻译，也要**"演绎"**。把这句古文变成一段优美的现代散文。详细解释为什么卦象会呈现这种状态？是天时未到，还是人和不足？请深入剖析因果。
 
           **第三部分：将卦象与所问之事结合 **
           想想爻辞或卦辞对应在问题意味着什么。未来会发生什么？会有什么隐患？请用**温柔而深刻**的语言点破局势的演变，为用户指点迷津。
 
           **第四部分：锦囊与寄语 **
-          最后，给出具体的行动指引。不要说“建议你做三件事”，要说“**当此之时，君只需做一事……**”。把具体的策略（如待时、借力、守成）融合在温暖的鼓励中。
+          最后，给出具体的行动指引。不要说"建议你做三件事"，要说"**当此之时，君只需做一事……**"。把具体的策略（如待时、借力、守成）融合在温暖的鼓励中。
 
           每一部分不一定只输出一个自然段，请记住，你不是在输出数据，而是在为用户在这个动荡的时代提供确定性，你是在**抚慰人心**。`;
 

@@ -45,16 +45,16 @@ body {
   }
 }
 
-/* 六济输入区：仅移动端加大底部留白，避免被底部导航挡住 */
+/* 决行藏输入区：仅移动端加大底部留白，避免被底部导航挡住 */
 @media (max-width: 767px) {
-  .liuji-input-bottom {
+  .juexingcang-input-bottom {
     padding-bottom: max(2rem, calc(var(--mobile-nav-height, 60px) + 40px)) !important;
   }
 }
 
-/* 六济容器：移动端为底部导航预留空间 */
+/* 决行藏容器：移动端为底部导航预留空间 */
 @media (max-width: 767px) {
-  .liuji-shell {
+  .juexingcang-shell {
     height: calc(100vh - 12rem - var(--mobile-nav-height, 60px) - 24px);
   }
 }

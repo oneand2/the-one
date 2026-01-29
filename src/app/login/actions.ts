@@ -34,11 +34,13 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
+  const baseRedirect = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+  const redirectWithInvite = inviteCode ? `${baseRedirect}&inviteCode=${encodeURIComponent(inviteCode)}` : baseRedirect;
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(nextUrl)}`,
+      emailRedirectTo: redirectWithInvite,
       data: { nickname: nickname.slice(0, 50), invite_code: inviteCode.slice(0, 32) || undefined },
     },
   });

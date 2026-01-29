@@ -13,7 +13,7 @@ interface MobileNavProps {
 const iconClass = 'w-[30px] h-[30px] flex-shrink-0';
 
 export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) => {
-  const [subNavGroup, setSubNavGroup] = useState<'mbti' | 'liuyao' | null>(null);
+  const [subNavGroup, setSubNavGroup] = useState<'mbti' | null>(null);
   const navItems: Array<{
     id: TabType;
     label: string;
@@ -22,7 +22,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
   }> = [
     {
       id: 'guanshi',
-      label: '观世',
+      label: '见天地',
       icon: (
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
           <rect x="10" y="30" width="80" height="12" fill="currentColor" rx="1" />
@@ -31,20 +31,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
       ),
     },
     {
-      id: 'mbti',
-      label: '观心',
-      icon: (
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
-          <rect x="10" y="30" width="32" height="12" fill="currentColor" />
-          <rect x="58" y="30" width="32" height="12" fill="currentColor" />
-          <rect x="10" y="58" width="80" height="12" fill="currentColor" />
-        </svg>
-      ),
-      subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }],
-    },
-    {
-      id: 'liuyao',
-      label: '问途',
+      id: 'wendao',
+      label: '见众生',
       icon: (
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
           <rect x="10" y="30" width="80" height="12" fill="currentColor" />
@@ -52,34 +40,42 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
           <rect x="58" y="58" width="32" height="12" fill="currentColor" />
         </svg>
       ),
-      subTabs: [{ id: 'liuyao', label: '六爻' }, { id: 'liuji', label: '六济' }],
     },
     {
-      id: 'wendao',
-      label: '问道',
+      id: 'mbti',
+      label: '见自己',
       icon: (
-        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="12" className={iconClass}>
-          <line x1="10" y1="36" x2="38" y2="36" />
-          <line x1="62" y1="36" x2="90" y2="36" />
-          <line x1="10" y1="64" x2="38" y2="64" />
-          <line x1="62" y1="64" x2="90" y2="64" />
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
+          <rect x="10" y="30" width="32" height="12" fill="currentColor" />
+          <rect x="58" y="30" width="32" height="12" fill="currentColor" />
+          <rect x="10" y="58" width="80" height="12" fill="currentColor" />
+        </svg>
+      ),
+      subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }, { id: 'liuyao', label: '六爻' }],
+    },
+    {
+      id: 'liuji',
+      label: '决行藏',
+      icon: (
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
+          <rect x="10" y="30" width="32" height="12" fill="currentColor" />
+          <rect x="58" y="30" width="32" height="12" fill="currentColor" />
+          <rect x="10" y="58" width="32" height="12" fill="currentColor" />
+          <rect x="58" y="58" width="32" height="12" fill="currentColor" />
         </svg>
       ),
     },
   ];
 
   const getActiveId = (itemId: TabType) => {
-    if (itemId === 'mbti' && (activeTab === 'bazi' || activeTab === 'mbti')) return true;
-    if (itemId === 'liuyao' && (activeTab === 'liuyao' || activeTab === 'liuji')) return true;
+    if (itemId === 'mbti' && (activeTab === 'bazi' || activeTab === 'mbti' || activeTab === 'liuyao')) return true;
     return activeTab === itemId;
   };
 
   const showSubNav = subNavGroup !== null;
   const subTabs = subNavGroup === 'mbti'
-    ? [{ id: 'bazi' as TabType, label: '八字' }, { id: 'mbti' as TabType, label: '八维' }]
-    : subNavGroup === 'liuyao'
-      ? [{ id: 'liuyao' as TabType, label: '六爻' }, { id: 'liuji' as TabType, label: '六济' }]
-      : [];
+    ? [{ id: 'bazi' as TabType, label: '八字' }, { id: 'mbti' as TabType, label: '八维' }, { id: 'liuyao' as TabType, label: '六爻' }]
+    : [];
 
   return (
     <nav
@@ -91,7 +87,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
       }}
     >
 
-      {/* 子导航：观心时显示八字/八维，问途时显示六爻/六济 */}
+      {/* 子导航：见自己时显示八字/八维/六爻 */}
       <AnimatePresence initial={false}>
         {showSubNav && subTabs.length > 0 && (
           <motion.div
@@ -146,7 +142,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
               key={item.id}
               onClick={() => {
                 if (hasSubTabs) {
-                  setSubNavGroup((prev) => (prev === item.id ? null : (item.id as 'mbti' | 'liuyao')));
+                  setSubNavGroup((prev) => (prev === item.id ? null : (item.id as 'mbti')));
                   return;
                 }
                 setSubNavGroup(null);

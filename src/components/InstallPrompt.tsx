@@ -39,7 +39,7 @@ export default function InstallPrompt() {
     }
   }, []);
 
-  // 点击“安装”按钮 (仅安卓有效)
+  // 点击"安装"按钮 (仅安卓有效)
   const handleInstallClick = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
@@ -69,7 +69,7 @@ export default function InstallPrompt() {
              <img src="/icon-192.png" alt="App Icon" className="h-full w-full object-cover" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">安装“二”</h3>
+            <h3 className="font-semibold text-gray-900">安装"二"</h3>
             <p className="mt-1 text-sm text-gray-500">
               {isIOS 
                 ? "添加到主屏幕，获得更流畅的体验。" 

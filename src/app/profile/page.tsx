@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -21,6 +22,10 @@ export default function ProfilePage() {
       if (!user) {
         router.replace('/login?next=/profile');
         return;
+      }
+      // 检查是否是管理员
+      if (user.email === '892777353@qq.com') {
+        setIsAdmin(true);
       }
       fetch('/api/user/profile', { credentials: 'include' })
         .then((r) => {
@@ -150,7 +155,7 @@ export default function ProfilePage() {
               <label className="block text-sm font-sans text-stone-700 mb-2">铜币余额</label>
               <p className="text-lg font-sans text-stone-800 tabular-nums">{coins} 铜币</p>
               <p className="text-xs text-stone-500 mt-1 mb-3">
-                六爻 AI 解卦 6 枚/次，六济每问 5 枚（深度思考 +2，联网 +3）
+                六爻 AI 解卦 6 枚/次，决行藏每问 5 枚（深度思考 +2，联网 +3）
               </p>
               <button
                 type="button"
@@ -159,6 +164,19 @@ export default function ProfilePage() {
               >
                 获取铜币
               </button>
+            </div>
+          )}
+
+          {/* 管理员入口 */}
+          {isAdmin && (
+            <div className="pt-6 border-t border-stone-200">
+              <label className="block text-sm font-sans text-stone-700 mb-3">管理员功能</label>
+              <Link
+                href="/admin/news"
+                className="block w-full px-4 py-3 bg-stone-800 text-white text-center font-sans text-sm rounded-lg hover:bg-stone-700 transition-colors"
+              >
+                📰 发布新闻
+              </Link>
             </div>
           )}
         </div>

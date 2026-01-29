@@ -16,8 +16,8 @@ interface SidebarProps {
 }
 
 type TabItem = 
-  | { id: 'guanshi' | 'wendao'; label: string; subTabs?: never }
-  | { id: 'guanxin' | 'wentus'; label: string; subTabs: Array<{ id: TabType; label: string }> };
+  | { id: 'guanshi' | 'wendao' | 'liuji'; label: string; subTabs?: never }
+  | { id: 'guanxin'; label: string; subTabs: Array<{ id: TabType; label: string }> };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, onMouseEnter, onMouseLeave }) => {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
@@ -41,24 +41,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
   }, [clearLeaveTimer]);
 
   const tabs: TabItem[] = [
-    { id: 'guanshi' as const, label: '观世' },
+    { id: 'guanshi' as const, label: '见天地' },
+    { id: 'wendao' as const, label: '见众生' },
     { 
       id: 'guanxin' as const, 
-      label: '观心',
+      label: '见自己',
       subTabs: [
         { id: 'bazi' as TabType, label: '八字' },
         { id: 'mbti' as TabType, label: '八维' },
-      ]
-    },
-    { 
-      id: 'wentus' as const, 
-      label: '问途',
-      subTabs: [
         { id: 'liuyao' as TabType, label: '六爻' },
-        { id: 'liuji' as TabType, label: '六济' },
       ]
     },
-    { id: 'wendao' as const, label: '问道' },
+    { id: 'liuji' as const, label: '决行藏' },
   ];
 
   return (
@@ -231,9 +225,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                         // 如果有子菜单，点击时切换到第一个子选项
                         onTabChange(tab.subTabs[0].id);
                       } else {
-                        // 无子菜单，直接切换（guanshi 或 wendao）
+                        // 无子菜单，直接切换
                         const tabId = tab.id;
-                        if (tabId === 'guanshi' || tabId === 'wendao') {
+                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'liuji') {
                           onTabChange(tabId);
                         }
                       }

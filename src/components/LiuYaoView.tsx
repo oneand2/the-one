@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Hand } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { tossOnce, getYaoInfo, type YaoInfo, type YaoValue } from '@/utils/liuyaoLogic';
 import { CoinAnimation } from './CoinAnimation';
 import { analyzeHexagram, getYaoPositionName, type HexagramAnalysis } from '@/utils/iching-logic';
-import { createClient } from '@/utils/supabase/client';
-import { InsufficientCoinsModal } from './InsufficientCoinsModal';
+import type { ImportData } from '@/types/import-data';
 
 export const LiuYaoView: React.FC = () => {
   const router = useRouter();
@@ -20,13 +19,7 @@ export const LiuYaoView: React.FC = () => {
   const [showCoinAnimation, setShowCoinAnimation] = useState(false);
   const [hexagramAnalysis, setHexagramAnalysis] = useState<HexagramAnalysis | null>(null);
   
-  // AI 解卦相关状态
-  const [isLoading, setIsLoading] = useState(false);
-  const [aiResult, setAiResult] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const modalContentRef = useRef<HTMLDivElement>(null);
-  const [insuffOpen, setInsuffOpen] = useState(false);
-  const [insuffNeed, setInsuffNeed] = useState(6);
+  const pendingImportKey = 'juexingcang-import-pending';
 
   // 从数值反推硬币组合
   const getCoinsFromValue = (value: YaoValue): number[] => {
@@ -86,141 +79,43 @@ export const LiuYaoView: React.FC = () => {
     setShowCoinAnimation(false);
     setIsTossing(false);
     setHexagramAnalysis(null);
-    setAiResult(null);
-    setShowModal(false);
   };
 
-  // AI 解卦处理（流式：边生成边展示）
-  const handleDivine = async () => {
+  const handleDivine = () => {
     if (!hexagramAnalysis) return;
 
-    // 🔐 延迟登录检查：只有在尝试使用 AI 功能时才要求登录
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      // 未登录，跳转到登录页，并带上当前页面地址以便登录后跳回
-      router.push('/login?next=/');
-      return;
-    }
-
-    setIsLoading(true);
-    setAiResult('');
-    setShowModal(true);
-
-    let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-    try {
-      const hexagramInfo = {
+    const liuyaoData: ImportData = {
+      liuyao: [{
+        type: 'liuyao',
         question,
-        mainHexagram: hexagramAnalysis.mainHexagram?.title || '',
-        mainDescription: hexagramAnalysis.mainHexagram?.description || '',
-        transformedHexagram: hexagramAnalysis.transformedHexagram?.title || '',
-        hasMovingLines: hexagramAnalysis.hasMovingLines,
-        movingPositions: hexagramAnalysis.movingPositions,
-        movingLineTexts: hexagramAnalysis.movingLineTexts,
         yaos: yaos.map((yao, index) => ({
           position: index,
           name: yao.name,
           value: yao.value,
-          isChanging: yao.isChanging
-        }))
-      };
+          isChanging: yao.isChanging,
+        })),
+        mainHexagram: {
+          title: hexagramAnalysis.mainHexagram?.title || '',
+          description: hexagramAnalysis.mainHexagram?.description || '',
+        },
+        transformedHexagram: hexagramAnalysis.transformedHexagram
+          ? {
+              title: hexagramAnalysis.transformedHexagram.title,
+              description: hexagramAnalysis.transformedHexagram.description,
+            }
+          : undefined,
+        hasMovingLines: hexagramAnalysis.hasMovingLines,
+        movingLineTexts: hexagramAnalysis.movingLineTexts,
+      }],
+    };
 
-      const controller = new AbortController();
-      timeoutId = setTimeout(() => controller.abort(), 120_000);
-
-      const response = await fetch('/api/divine', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question,
-          hexagramInfo,
-          date: new Date().toLocaleString('zh-CN', {
-            timeZone: 'Asia/Shanghai',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          })
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
-        const data = await response.json().catch(() => ({}));
-        setShowModal(false);
-        if (response.status === 402) {
-          const need = (data?.need_coins ?? 6) as number;
-          setInsuffNeed(need);
-          setInsuffOpen(true);
-          window.dispatchEvent(new CustomEvent('coins-should-refresh'));
-          return;
-        }
-        alert((data?.error as string) || '解卦失败，请重试');
-        return;
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        if (timeoutId) clearTimeout(timeoutId);
-        setShowModal(false);
-        alert('无法读取响应，请重试');
-        return;
-      }
-
-      const decoder = new TextDecoder();
-      let acc = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        if (chunk) {
-          acc += chunk;
-          setAiResult(acc);
-        }
-      }
-
-      if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
-
-      // 只有 AI 解卦完成、有内容时才保存到「我的六爻解卦」
-      if (acc.trim()) {
-        window.dispatchEvent(new CustomEvent('coins-should-refresh'));
-        const saveDate = new Date().toLocaleString('zh-CN', {
-          timeZone: 'Asia/Shanghai',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-        fetch('/api/records/liuyao', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            question,
-            hexagram_info: hexagramInfo,
-            date: saveDate,
-            ai_result: acc,
-          }),
-        }).catch((err) => console.error('保存六爻记录失败:', err));
-      }
-    } catch (error: unknown) {
-      if (timeoutId) clearTimeout(timeoutId);
-      setShowModal(false);
-      console.error('解卦请求失败:', error);
-      if (error instanceof Error && error.name === 'AbortError') {
-        alert('请求超时，解卦耗时较长，请稍后重试');
-      } else {
-        alert('网络错误，请检查连接后重试');
-      }
-    } finally {
-      setIsLoading(false);
+    try {
+      localStorage.setItem(pendingImportKey, JSON.stringify(liuyaoData));
+    } catch (error) {
+      console.warn('写入导入缓存失败:', error);
     }
+
+    router.push('/?tab=liuji');
   };
 
   // 当6个爻都摇完后，自动解卦
@@ -231,13 +126,6 @@ export const LiuYaoView: React.FC = () => {
       setHexagramAnalysis(analysis);
     }
   }, [yaos]);
-
-  // 流式输出时自动滚动到底部
-  useEffect(() => {
-    if (isLoading && aiResult && modalContentRef.current) {
-      modalContentRef.current.scrollTop = modalContentRef.current.scrollHeight;
-    }
-  }, [isLoading, aiResult]);
 
   // 获取爻的符号样式 - 使用 SVG 确保跨浏览器兼容
   const getYaoSymbol = (yao: YaoInfo) => {
@@ -602,7 +490,7 @@ export const LiuYaoView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* AI 深度解卦 CTA 按钮 */}
+                  {/* 决行藏解卦入口 */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -611,21 +499,20 @@ export const LiuYaoView: React.FC = () => {
                   >
                     <motion.button
                       onClick={handleDivine}
-                      disabled={isLoading}
-                      className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg"
                       style={{ 
-                        backgroundColor: isLoading ? '#a8a29e' : '#78716c' // stone-400 loading, stone-500 normal
+                        backgroundColor: '#78716c'
                       }}
-                      whileHover={!isLoading ? { 
+                      whileHover={{ 
                         y: -2,
-                        backgroundColor: '#292524' // stone-800 - 高饱和度
-                      } : {}}
-                      whileTap={!isLoading ? { y: 0 } : {}}
+                        backgroundColor: '#292524'
+                      }}
+                      whileTap={{ y: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      {isLoading ? '静心 问念...' : '凡事有因，于此寻果'}
+                      凡事有因，于此寻果
                     </motion.button>
-                    <p className="text-xs text-stone-500 font-sans">消耗 6 铜币</p>
+                    <p className="text-xs text-stone-500 font-sans">进入决行藏继续解卦</p>
                   </motion.div>
                 </motion.div>
               )}
@@ -653,110 +540,6 @@ export const LiuYaoView: React.FC = () => {
         </p>
       </motion.div>
 
-      {/* AI 解卦结果模态框（流式：边生成边显示） */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-            onClick={() => setShowModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-[#FBF9F4] rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* 模态框头部 */}
-              <div className="bg-gradient-to-b from-stone-100/50 to-transparent px-8 py-6 border-b border-stone-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-serif text-stone-800 tracking-wider">
-                    解卦详析
-                  </h3>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="text-stone-400 hover:text-stone-700 transition-colors"
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-                <p className="text-sm text-stone-500 font-serif italic mt-3">
-                  "{question}"
-                </p>
-              </div>
-
-              {/* 模态框内容：流式逐字显示 */}
-              <div ref={modalContentRef} className="px-8 py-6 overflow-y-auto max-h-[60vh]">
-                <div className="prose prose-stone max-w-none">
-                  <div className="text-base text-stone-700 font-serif leading-loose whitespace-pre-wrap min-h-[1.5em]">
-                    {isLoading && !aiResult ? (
-                      <span className="inline-flex items-center gap-2 text-stone-400">
-                        <span className="animate-pulse">静心</span>
-                        <span className="animate-pulse" style={{ animationDelay: '0.2s' }}>问念</span>
-                        <span className="animate-pulse" style={{ animationDelay: '0.4s' }}>…</span>
-                      </span>
-                    ) : (
-                      <>
-                        {aiResult}
-                        {isLoading && (
-                          <span className="inline-block w-2 h-4 ml-0.5 bg-stone-400 animate-pulse align-middle" />
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 模态框底部 */}
-              <div className="bg-gradient-to-t from-stone-100/50 to-transparent px-8 py-6 border-t border-stone-200 flex justify-end gap-4">
-                {isLoading ? (
-                  <span className="text-sm text-stone-400 font-sans">生成中…</span>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        if (aiResult) {
-                          navigator.clipboard.writeText(aiResult);
-                          alert('已复制到剪贴板');
-                        }
-                      }}
-                      disabled={!aiResult}
-                      className="px-6 py-2.5 bg-stone-200 text-stone-700 font-sans text-sm rounded-lg hover:bg-stone-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      复制内容
-                    </button>
-                    <button
-                      onClick={() => setShowModal(false)}
-                      className="px-6 py-2.5 bg-stone-700 text-white font-sans text-sm rounded-lg hover:bg-stone-800 transition-colors"
-                    >
-                      知晓了
-                    </button>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <InsufficientCoinsModal
-        open={insuffOpen}
-        needCoins={insuffNeed}
-        onClose={() => setInsuffOpen(false)}
-      />
     </div>
   );
 };

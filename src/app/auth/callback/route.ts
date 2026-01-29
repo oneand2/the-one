@@ -25,7 +25,9 @@ export async function GET(request: NextRequest) {
       const uid = data.user.id;
       const meta = data.user.user_metadata || {};
       const nickname = (meta.nickname as string)?.trim()?.slice(0, 50) ?? '';
-      const inviteCode = (meta.invite_code as string)?.trim()?.toUpperCase();
+      const inviteCodeFromMeta = (meta.invite_code as string)?.trim()?.toUpperCase();
+      const inviteCodeFromQuery = requestUrl.searchParams.get('inviteCode')?.trim()?.toUpperCase();
+      const inviteCode = inviteCodeFromMeta || inviteCodeFromQuery;
 
       const { error: insertErr } = await supabase
         .from(PROFILE_TABLE)

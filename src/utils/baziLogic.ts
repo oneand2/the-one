@@ -2951,7 +2951,7 @@ export function calculateLuckCycles(
       : getShenSha;
 
     // ==========================================
-    // A. 构建“小运” (Xiao Yun)
+    // A. 构建"小运" (Xiao Yun)
     // ==========================================
     const preLuckYears = [];
     for (let age = 1; age < startAge; age++) {
@@ -2992,7 +2992,7 @@ export function calculateLuckCycles(
     };
 
     // ==========================================
-    // B. 构建“正式大运” (Da Yun)
+    // B. 构建"正式大运" (Da Yun)
     // ==========================================
     const normalCycles = daYunList
       .slice(firstValidIndex)

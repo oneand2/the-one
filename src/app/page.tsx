@@ -5,8 +5,9 @@ import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
-import { LiuJiView } from '@/components/LiuJiView';
+import { JueXingCangView } from '@/components/JueXingCangView';
 import { MbtiTestView } from '@/components/MbtiTestView';
+import { WorldNewsView } from '@/components/WorldNewsView';
 import { MobileNav } from '@/components/MobileNav';
 import { useSearchParams } from 'next/navigation';
 type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
@@ -65,17 +66,17 @@ const HomeContent: React.FC = () => {
                     <rect x="0" y="58" width="100" height="20" fill="currentColor" />
                   </svg>
                 ) : activeTab === 'wendao' ? (
-                  // 老阴 - 两条虚杠（两虚线，中间断）
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="14" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto mb-4" style={{ color: '#2c2c2c' }}>
-                    <line x1="0" y1="34" x2="38" y2="34" />
-                    <line x1="62" y1="34" x2="100" y2="34" />
-                    <line x1="0" y1="66" x2="38" y2="66" />
-                    <line x1="62" y1="66" x2="100" y2="66" />
-                  </svg>
-                ) : (activeTab === 'liuyao' || activeTab === 'liuji') ? (
                   // 少阳 - 上实下虚
                   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="100" height="20" />
+                    <rect x="0" y="60" width="44" height="20" />
+                    <rect x="56" y="60" width="44" height="20" />
+                  </svg>
+                ) : activeTab === 'liuji' ? (
+                  // 老阴 - 两条虚杠（两段式，中间断开）
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
+                    <rect x="0" y="20" width="44" height="20" />
+                    <rect x="56" y="20" width="44" height="20" />
                     <rect x="0" y="60" width="44" height="20" />
                     <rect x="56" y="60" width="44" height="20" />
                   </svg>
@@ -89,11 +90,11 @@ const HomeContent: React.FC = () => {
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'guanshi' ? '观世' : activeTab === 'wendao' ? '问道' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '六济问津'}
+                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuyao' ? '六爻占卜' : '决行藏'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
                 {activeTab === 'guanshi' 
-                  ? '观天下事，待续'
+                  ? '观天下事，知进退时'
                   : activeTab === 'wendao'
                   ? '观点广场，待续'
                   : activeTab === 'bazi' 
@@ -102,7 +103,7 @@ const HomeContent: React.FC = () => {
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'liuyao'
                   ? '所信即所见，请相信相信的力量'
-                  : '观济 同济 涉济 化济 既济 未济'}
+                  : '用之则行，舍之则藏'}
               </p>
             </div>
           </motion.header>
@@ -114,17 +115,12 @@ const HomeContent: React.FC = () => {
                 {activeTab === 'guanshi' ? (
                   <motion.div
                     key="guanshi-content"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
                   >
-                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
-                    <p className="text-stone-500 text-sm font-serif tracking-wide text-center" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
-                      感谢您的支持<br />观世功能正在开发中
-                    </p>
-                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                    <WorldNewsView />
                   </motion.div>
                 ) : activeTab === 'wendao' ? (
                   <motion.div
@@ -137,7 +133,7 @@ const HomeContent: React.FC = () => {
                   >
                     <div className="w-12 h-px bg-stone-200/80 mb-6" />
                     <p className="text-stone-500 text-sm font-serif tracking-wide text-center" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
-                      感谢您的支持<br />问道功能正在开发中
+                      感谢您的支持<br />见众生功能正在开发中
                     </p>
                     <div className="w-8 h-px bg-stone-200/60 mt-6" />
                   </motion.div>
@@ -174,14 +170,14 @@ const HomeContent: React.FC = () => {
                 ) : (
                   <div className="w-full flex flex-col">
                     <motion.div
-                      key="liuji-content"
+                      key="juexingcang-content"
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ duration: 0.3 }}
                       className="w-full flex flex-col"
                     >
-                      <LiuJiView />
+                      <JueXingCangView />
                     </motion.div>
                   </div>
                 )}

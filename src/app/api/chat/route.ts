@@ -362,6 +362,15 @@ export async function POST(req: Request) {
       ...messages,
     ];
 
+    const maxTokensEnv = Number(process.env.AI_MAX_TOKENS);
+    const maxTokens = Number.isFinite(maxTokensEnv)
+      ? maxTokensEnv
+      : useMeditation
+        ? 4096
+        : useReasoning
+          ? 3072
+          : 2048;
+
     // 流式调用 AI 接口（支持故障转移）
     let stream: any;
     let usedFallback = false;
@@ -372,6 +381,7 @@ export async function POST(req: Request) {
         model: modelName,
         messages: fullMessages as any,
         temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
+        max_tokens: maxTokens,
         stream: true,
       });
     } catch (primaryError: any) {
@@ -383,6 +393,7 @@ export async function POST(req: Request) {
             model: fallbackModelName,
             messages: fullMessages as any,
             temperature: 1.0,
+            max_tokens: maxTokens,
             stream: true,
           });
           usedFallback = true;
@@ -400,35 +411,47 @@ export async function POST(req: Request) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          const THINK_START = '<think>';
+          const THINK_END = '</think>';
+          const MAX_THINK_BUFFER = 8000;
           let inThinkBlock = false;
           let pending = '';
+          let thinkBuffer = '';
+          let disableThinkStrip = false;
 
           const stripThink = (chunkText: string) => {
-            const text = pending + chunkText;
+            if (disableThinkStrip) return chunkText;
+            let input = pending + chunkText;
             pending = '';
             let output = '';
-            let i = 0;
 
-            while (i < text.length) {
+            while (input.length > 0) {
               if (!inThinkBlock) {
-                const start = text.indexOf('<think>', i);
+                const start = input.indexOf(THINK_START);
                 if (start === -1) {
-                  const keepFrom = Math.max(i, text.length - 6);
-                  output += text.slice(i, keepFrom);
-                  pending = text.slice(keepFrom);
+                  const keepFrom = Math.max(0, input.length - (THINK_START.length - 1));
+                  output += input.slice(0, keepFrom);
+                  pending = input.slice(keepFrom);
                   return output;
                 }
-                output += text.slice(i, start);
-                i = start + 7;
+                output += input.slice(0, start);
+                input = input.slice(start + THINK_START.length);
                 inThinkBlock = true;
+                thinkBuffer = '';
               } else {
-                const end = text.indexOf('</think>', i);
+                thinkBuffer += input;
+                const end = thinkBuffer.indexOf(THINK_END);
                 if (end === -1) {
-                  const keepFrom = Math.max(i, text.length - 7);
-                  pending = text.slice(keepFrom);
+                  if (thinkBuffer.length > MAX_THINK_BUFFER) {
+                    output += THINK_START + thinkBuffer;
+                    thinkBuffer = '';
+                    inThinkBlock = false;
+                    disableThinkStrip = true;
+                  }
                   return output;
                 }
-                i = end + 8;
+                input = thinkBuffer.slice(end + THINK_END.length);
+                thinkBuffer = '';
                 inThinkBlock = false;
               }
             }
@@ -442,6 +465,20 @@ export async function POST(req: Request) {
             if (text) {
               hasContent = true;
               controller.enqueue(encoder.encode(text));
+            }
+          }
+          if (useMeditation && !disableThinkStrip) {
+            if (!inThinkBlock && pending) {
+              hasContent = true;
+              controller.enqueue(encoder.encode(pending));
+              pending = '';
+            }
+            if (inThinkBlock && thinkBuffer) {
+              // 防止未闭合 <think> 导致内容被截断
+              hasContent = true;
+              controller.enqueue(encoder.encode(THINK_START + thinkBuffer));
+              thinkBuffer = '';
+              inThinkBlock = false;
             }
           }
           if (!isAdmin && hasContent) {

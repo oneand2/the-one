@@ -89,15 +89,31 @@ export async function POST(req: Request) {
     let fallbackModelName: string | null = null;
 
     if (useMeditation) {
-      // 入定模式：使用 Claude 模型（主API）
-      client = new OpenAI({
-        apiKey: process.env.AI_MEDITATION_API_KEY,
-        baseURL: process.env.AI_MEDITATION_BASE_URL,
-      });
-      modelName = process.env.AI_MEDITATION_MODEL_NAME || 'claude-sonnet-4-5';
+      const hasPrimaryMeditation =
+        Boolean(process.env.AI_MEDITATION_API_KEY) && Boolean(process.env.AI_MEDITATION_BASE_URL);
+      const hasFallbackMeditation =
+        Boolean(process.env.AI_MEDITATION_FALLBACK_API_KEY) && Boolean(process.env.AI_MEDITATION_FALLBACK_BASE_URL);
+
+      if (hasPrimaryMeditation) {
+        // 入定模式：使用 Claude 模型（主API）
+        client = new OpenAI({
+          apiKey: process.env.AI_MEDITATION_API_KEY,
+          baseURL: process.env.AI_MEDITATION_BASE_URL,
+        });
+        modelName = process.env.AI_MEDITATION_MODEL_NAME || 'claude-sonnet-4-5';
+      } else if (hasFallbackMeditation) {
+        // 主API未配置时，直接使用备用API作为主通道
+        client = new OpenAI({
+          apiKey: process.env.AI_MEDITATION_FALLBACK_API_KEY,
+          baseURL: process.env.AI_MEDITATION_FALLBACK_BASE_URL,
+        });
+        modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
+      } else {
+        throw new Error('入定模式未配置可用的API，请检查环境变量');
+      }
       
       // 配置备用API（用于故障转移）
-      if (process.env.AI_MEDITATION_FALLBACK_API_KEY && process.env.AI_MEDITATION_FALLBACK_BASE_URL) {
+      if (hasPrimaryMeditation && hasFallbackMeditation) {
         fallbackClient = new OpenAI({
           apiKey: process.env.AI_MEDITATION_FALLBACK_API_KEY,
           baseURL: process.env.AI_MEDITATION_FALLBACK_BASE_URL,

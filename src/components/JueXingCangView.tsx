@@ -201,7 +201,12 @@ export const JueXingCangView: React.FC = () => {
           window.dispatchEvent(new CustomEvent('coins-should-refresh'));
           return;
         }
-        throw new Error('对话失败');
+        const data = await response.json().catch(() => ({}));
+        const serverMessage =
+          (data?.details as string | undefined) ||
+          (data?.error as string | undefined) ||
+          `请求失败（${response.status}）`;
+        throw new Error(serverMessage);
       }
 
       const reader = response.body?.getReader();
@@ -238,7 +243,7 @@ export const JueXingCangView: React.FC = () => {
       const errorMessage: Message = {
         id: nextId(),
         role: 'assistant',
-        content: '抱歉，对话出现了问题，请稍后再试。',
+        content: `抱歉，对话出现了问题：${error instanceof Error ? error.message : '未知错误'}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);

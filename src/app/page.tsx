@@ -36,7 +36,7 @@ const HomeContent: React.FC = () => {
       <div className="hidden md:block">
         <Sidebar 
           activeTab={activeTab} 
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => setActiveTab(tab)}
           isCollapsed={isCollapsed}
           onMouseEnter={() => setIsCollapsed(false)}
           onMouseLeave={() => setIsCollapsed(true)}
@@ -187,7 +187,7 @@ const HomeContent: React.FC = () => {
         </div>
       </main>
 
-      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
     </div>
   );
 };

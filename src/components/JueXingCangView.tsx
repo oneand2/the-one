@@ -17,6 +17,13 @@ interface Message {
   timestamp: Date;
 }
 
+interface ChatSession {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // 导入数据类型定义
 interface ImportedBaziData {
   type: 'bazi';
@@ -71,7 +78,10 @@ export const JueXingCangView: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const sendingRef = useRef(false);
+  const lastSendRef = useRef<{ content: string; at: number }>({ content: '', at: 0 });
   const idRef = useRef(0);
+  const prefillAppliedRef = useRef(false);
   /** 用户是否在"跟读底部"（在底部附近未主动上滑），仅在为 true 时自动滚到底 */
   const userFollowsBottomRef = useRef(true);
   const [insuffOpen, setInsuffOpen] = useState(false);
@@ -80,8 +90,45 @@ export const JueXingCangView: React.FC = () => {
   // 导入数据相关状态
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState<ImportData>({});
+  const [showBaziImportedNotice, setShowBaziImportedNotice] = useState(false);
   const [showLiuyaoImportedNotice, setShowLiuyaoImportedNotice] = useState(false);
   const pendingImportKey = 'juexingcang-import-pending';
+  const inputPresetKey = 'juexingcang-input-preset';
+
+  // 会话管理相关状态
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [showSessionList, setShowSessionList] = useState(false); // 移动端抽屉显示
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [showDesktopSidebar, setShowDesktopSidebar] = useState(false); // 桌面端侧边栏显示状态
+  const [searchQuery, setSearchQuery] = useState(''); // 搜索关键词
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null); // 正在编辑的会话ID
+  const [editingTitle, setEditingTitle] = useState(''); // 编辑中的标题
+
+  const renderMessageContent = (content: string) => {
+    const parts: React.ReactNode[] = [];
+    const regex = /\*\*([\s\S]+?)\*\*/g;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+
+    while ((match = regex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(content.slice(lastIndex, match.index));
+      }
+      parts.push(
+        <strong key={`bold-${match.index}`} className="font-semibold">
+          {match[1]}
+        </strong>
+      );
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(content.slice(lastIndex));
+    }
+
+    return parts;
+  };
 
   const normalizeImportData = (data: Partial<ImportData> | null | undefined): ImportData => ({
     bazi: Array.isArray(data?.bazi) ? data?.bazi : data?.bazi ? [data.bazi] : undefined,
@@ -102,6 +149,168 @@ export const JueXingCangView: React.FC = () => {
 
   const SCROLL_BOTTOM_THRESHOLD = 80;
 
+  // 加载会话列表
+  const loadSessions = async () => {
+    setIsLoadingSessions(true);
+    try {
+      const response = await fetch('/api/chat-sessions');
+      if (response.ok) {
+        const data = await response.json();
+        setSessions(data);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('加载会话列表失败:', response.status, errorData);
+      }
+    } catch (error) {
+      console.error('加载会话列表失败:', error);
+    } finally {
+      setIsLoadingSessions(false);
+    }
+  };
+
+  // 创建新会话
+  const createNewSession = async () => {
+    try {
+      const response = await fetch('/api/chat-sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '新对话' }),
+      });
+      
+      if (response.ok) {
+        const newSession = await response.json();
+        setSessions(prev => [newSession, ...prev]);
+        setCurrentSessionId(newSession.id);
+        setMessages([]);
+        return newSession;
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('创建会话失败:', response.status, errorData);
+      }
+    } catch (error) {
+      console.error('创建会话失败:', error);
+    }
+    return null;
+  };
+
+  // 加载会话消息
+  const loadSessionMessages = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat-sessions/${sessionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const loadedMessages: Message[] = data.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          isReasoning: msg.is_reasoning,
+          timestamp: new Date(msg.created_at),
+        }));
+        setMessages(loadedMessages);
+      }
+    } catch (error) {
+      console.error('加载消息失败:', error);
+    }
+  };
+
+  // 切换会话
+  const switchSession = async (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    await loadSessionMessages(sessionId);
+    setShowSessionList(false);
+  };
+
+  // 删除会话
+  const deleteSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat-sessions?id=${sessionId}`, {
+        method: 'DELETE',
+      });
+      
+      if (response.ok) {
+        setSessions(prev => prev.filter(s => s.id !== sessionId));
+        if (currentSessionId === sessionId) {
+          setCurrentSessionId(null);
+          setMessages([]);
+        }
+      }
+    } catch (error) {
+      console.error('删除会话失败:', error);
+    }
+  };
+
+  // 保存消息到当前会话
+  const saveMessagesToSession = async (sessionId: string, newMessages: Message[]) => {
+    try {
+      const response = await fetch(`/api/chat-sessions/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: newMessages.map(msg => ({
+            role: msg.role,
+            content: msg.content,
+            isReasoning: msg.isReasoning,
+          })),
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('保存消息失败:', response.status, errorData);
+        throw new Error(`保存消息失败: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('保存消息失败:', error);
+      throw error;
+    }
+  };
+
+  // 更新会话标题
+  const updateSessionTitle = async (sessionId: string, title: string) => {
+    try {
+      await fetch(`/api/chat-sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title }),
+      });
+      // 更新本地状态
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, title } : s
+      ));
+    } catch (error) {
+      console.error('更新会话标题失败:', error);
+    }
+  };
+
+  // 开始编辑会话标题
+  const startEditingTitle = (sessionId: string, currentTitle: string) => {
+    setEditingSessionId(sessionId);
+    setEditingTitle(currentTitle);
+  };
+
+  // 保存编辑的标题
+  const saveEditingTitle = async (sessionId: string) => {
+    if (editingTitle.trim() && editingTitle !== sessions.find(s => s.id === sessionId)?.title) {
+      await updateSessionTitle(sessionId, editingTitle.trim());
+    }
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
+  // 取消编辑
+  const cancelEditingTitle = () => {
+    setEditingSessionId(null);
+    setEditingTitle('');
+  };
+
+  // 过滤会话列表
+  const filteredSessions = sessions.filter(session =>
+    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   // 仅当用户处于"跟读底部"时，把滚动容器滚到底（不碰外层页面）
   const scrollToBottomIfFollowing = () => {
     const el = scrollContainerRef.current;
@@ -115,26 +324,66 @@ export const JueXingCangView: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    try {
-      const cached = localStorage.getItem(pendingImportKey);
-      if (!cached) return;
-      const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
-      if (getImportCount(normalized) > 0) {
-        setImportData((prev) => mergeImportData(prev, normalized));
+    const cleanupTimers: number[] = [];
+    const initializeWithImportData = async () => {
+      try {
+        const cached = localStorage.getItem(pendingImportKey);
+        if (!cached) return;
+        const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
+        if (getImportCount(normalized) > 0) {
+          setImportData((prev) => mergeImportData(prev, normalized));
+          const newSession = await createNewSession();
+          if (!newSession) {
+            console.warn('自动创建会话失败，对话可能不会被保存');
+          }
+        }
+        if ((normalized.bazi?.length ?? 0) > 0) {
+          setShowBaziImportedNotice(true);
+          const timer = window.setTimeout(() => {
+            setShowBaziImportedNotice(false);
+          }, 4000);
+          cleanupTimers.push(timer);
+        }
+        if ((normalized.liuyao?.length ?? 0) > 0) {
+          setShowLiuyaoImportedNotice(true);
+          const timer = window.setTimeout(() => {
+            setShowLiuyaoImportedNotice(false);
+          }, 4000);
+          cleanupTimers.push(timer);
+        }
+      } catch (error) {
+        console.warn('读取导入缓存失败:', error);
+      } finally {
+        localStorage.removeItem(pendingImportKey);
       }
-      if ((normalized.liuyao?.length ?? 0) > 0) {
-        setShowLiuyaoImportedNotice(true);
-        const timer = window.setTimeout(() => {
-          setShowLiuyaoImportedNotice(false);
-        }, 4000);
-        return () => window.clearTimeout(timer);
+    };
+
+    initializeWithImportData();
+    return () => {
+      cleanupTimers.forEach((timer) => window.clearTimeout(timer));
+    };
+  }, [pendingImportKey]);
+
+  // 初始化时加载会话列表
+  useEffect(() => {
+    loadSessions();
+  }, []);
+
+  useEffect(() => {
+    if (prefillAppliedRef.current) return;
+    try {
+      const preset = localStorage.getItem(inputPresetKey);
+      if (!preset) return;
+      if (!input.trim()) {
+        setInput(preset);
       }
     } catch (error) {
-      console.warn('读取导入缓存失败:', error);
+      console.warn('读取输入预填失败:', error);
     } finally {
-      localStorage.removeItem(pendingImportKey);
+      prefillAppliedRef.current = true;
+      localStorage.removeItem(inputPresetKey);
     }
-  }, [pendingImportKey]);
+  }, [input, inputPresetKey]);
 
   const handleScrollContainerScroll = () => {
     const el = scrollContainerRef.current;
@@ -153,29 +402,49 @@ export const JueXingCangView: React.FC = () => {
 
   // 发送消息
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      router.push('/login?next=/');
+    const content = input.trim();
+    if (!content || isLoading || sendingRef.current) return;
+    const now = Date.now();
+    if (lastSendRef.current.content === content && now - lastSendRef.current.at < 800) {
       return;
     }
-
-    const userMessage: Message = {
-      id: nextId(),
-      role: 'user',
-      content: input.trim(),
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsLoading(true);
-    userFollowsBottomRef.current = true;
+    sendingRef.current = true;
+    lastSendRef.current = { content, at: now };
 
     try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.push('/login?next=/');
+        return;
+      }
+
+      const userMessage: Message = {
+        id: nextId(),
+        role: 'user',
+        content,
+        timestamp: new Date(),
+      };
+
+      // 如果没有当前会话，创建新会话
+      let sessionId = currentSessionId;
+      if (!sessionId) {
+        const newSession = await createNewSession();
+        if (newSession) {
+          sessionId = newSession.id;
+        } else {
+          console.error('创建新会话失败，对话将不会被保存到历史记录');
+          console.error('可能的原因：未登录、网络错误或数据库问题');
+          // 继续对话，但不会保存到历史记录
+        }
+      }
+
+      setMessages(prev => [...prev, userMessage]);
+      setInput('');
+      setIsLoading(true);
+      userFollowsBottomRef.current = true;
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -237,6 +506,28 @@ export const JueXingCangView: React.FC = () => {
           return newMessages;
         });
       }
+
+      // 保存消息到数据库
+      if (sessionId) {
+        try {
+          await saveMessagesToSession(sessionId, [userMessage, assistantMessage]);
+          
+          // 如果是第一条消息,自动生成会话标题
+          const currentSession = sessions.find(s => s.id === sessionId);
+          if (currentSession?.title === '新对话' && userMessage.content) {
+            const titleText = userMessage.content.slice(0, 20) + (userMessage.content.length > 20 ? '...' : '');
+            await updateSessionTitle(sessionId, titleText);
+          }
+          
+          // 更新会话列表的 updated_at
+          await loadSessions();
+        } catch (saveError) {
+          console.error('保存对话失败，但对话将继续:', saveError);
+          // 不阻断用户体验，但记录错误
+        }
+      } else {
+        console.warn('没有会话ID，对话未保存到历史记录');
+      }
       window.dispatchEvent(new CustomEvent('coins-should-refresh'));
     } catch (error) {
       console.error('发送消息失败:', error);
@@ -249,6 +540,7 @@ export const JueXingCangView: React.FC = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+      sendingRef.current = false;
     }
   };
 
@@ -256,7 +548,304 @@ export const JueXingCangView: React.FC = () => {
   const isMeditation = mindMode === 'meditation';
 
   return (
-    <div className="w-full flex flex-col relative bg-[#fbf9f4]">
+    <>
+      {/* 桌面端遮罩层 */}
+      {showDesktopSidebar && (
+        <div 
+          className="hidden md:block fixed inset-0 z-20"
+          onClick={() => setShowDesktopSidebar(false)}
+        />
+      )}
+
+      {/* 桌面端侧边栏 - 无边框漂浮设计 */}
+      {showDesktopSidebar && (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="hidden md:flex fixed left-[max(15.0rem,calc(50vw-46.5rem))] top-32 bottom-6 w-[300px] flex-col bg-[#fbf9f4] z-30"
+        >
+          {/* 侧边栏内容容器 */}
+          <div className="flex flex-col h-full">
+            {/* 侧边栏头部 */}
+            <div className="flex-shrink-0 px-5 pt-6 pb-4">
+              {/* 新建对话按钮 */}
+              <button
+                onClick={createNewSession}
+                className="w-full px-4 py-2.5 bg-stone-900 text-white text-[13px] rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-2 font-medium"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                新建对话
+              </button>
+            </div>
+
+            {/* 搜索框 */}
+            <div className="px-5 pb-3">
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="搜索对话..."
+                  className="w-full pl-9 pr-3 py-2 text-[13px] bg-stone-100/50 border-0 rounded-lg focus:outline-none focus:bg-stone-100 transition-colors placeholder:text-stone-400"
+                />
+                <svg 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400"
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* 会话列表 */}
+            <div className="flex-1 overflow-y-auto px-3 custom-scrollbar">
+              {isLoadingSessions ? (
+                <div className="flex flex-col items-center justify-center py-20">
+                  <div className="w-8 h-8 border-2 border-stone-300 border-t-stone-900 rounded-full animate-spin"></div>
+                </div>
+              ) : filteredSessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-6">
+                  <div className="text-[13px] text-stone-400 text-center">
+                    {searchQuery ? '无匹配结果' : '暂无对话'}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1 pb-3">
+                  {filteredSessions.map((session) => (
+                    <div
+                      key={session.id}
+                      onClick={() => {
+                        switchSession(session.id);
+                        setShowDesktopSidebar(false);
+                      }}
+                      className={`
+                        group relative px-3 py-2.5 rounded-lg cursor-pointer transition-colors duration-150
+                        ${currentSessionId === session.id
+                          ? 'bg-stone-200/60'
+                          : 'hover:bg-stone-100/50'
+                        }
+                      `}
+                    >
+                      {editingSessionId === session.id ? (
+                        <input
+                          type="text"
+                          value={editingTitle}
+                          onChange={(e) => setEditingTitle(e.target.value)}
+                          onBlur={() => saveEditingTitle(session.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveEditingTitle(session.id);
+                            } else if (e.key === 'Escape') {
+                              cancelEditingTitle();
+                            }
+                          }}
+                          autoFocus
+                          className="w-full px-2 py-1.5 text-[13px] text-stone-900 bg-white border border-stone-300 rounded focus:outline-none focus:border-stone-900"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <>
+                          <div className="text-[13px] text-stone-900 truncate pr-14 leading-snug font-medium">
+                            {session.title}
+                          </div>
+                          <div className="text-[11px] text-stone-400 mt-1">
+                            {new Date(session.updated_at).toLocaleDateString('zh-CN', {
+                              month: 'numeric',
+                              day: 'numeric',
+                            })}
+                          </div>
+                        </>
+                      )}
+                      
+                      {/* 操作按钮 */}
+                      {editingSessionId !== session.id && (
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditingTitle(session.id, session.title);
+                            }}
+                            className="p-1.5 rounded hover:bg-stone-200 transition-colors text-stone-500"
+                            title="编辑"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('确定要删除这个对话吗？')) {
+                                deleteSession(session.id);
+                              }
+                            }}
+                            className="p-1.5 rounded hover:bg-red-50 transition-colors text-stone-500 hover:text-red-600"
+                            title="删除"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 底部统计信息 */}
+            {sessions.length > 0 && (
+              <div className="flex-shrink-0 px-5 py-3 border-t border-stone-200/50">
+                <div className="text-[11px] text-stone-400">
+                  {filteredSessions.length} 个对话
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* 移动端历史抽屉 */}
+      <AnimatePresence>
+        {showSessionList && (
+          <>
+            {/* 遮罩层 */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSessionList(false)}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden"
+            />
+            
+            {/* 移动端侧边栏 */}
+            <motion.div
+              initial={{ x: -320 }}
+              animate={{ x: 0 }}
+              exit={{ x: -320 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed left-0 top-0 h-full w-80 bg-[#fbf9f4] border-r border-stone-200 shadow-2xl z-50 flex flex-col md:hidden"
+            >
+              {/* 移动端头部 */}
+              <div className="px-4 pt-6 pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-sans text-stone-500 tracking-[0.2em] uppercase">
+                    History
+                  </h3>
+                  <button
+                    onClick={() => setShowSessionList(false)}
+                    className="p-1.5 rounded text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <button
+                  onClick={async () => {
+                    await createNewSession();
+                    setShowSessionList(false);
+                  }}
+                  className="w-full px-3 py-2.5 bg-stone-800 text-white text-xs rounded-lg hover:bg-stone-900 transition-colors flex items-center justify-center gap-2 tracking-wide"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  新建对话
+                </button>
+              </div>
+
+              {/* 移动端搜索框 */}
+              <div className="px-4 pb-3">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="搜索..."
+                    className="w-full pl-8 pr-3 py-2 text-xs bg-stone-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-stone-300 transition-all placeholder:text-stone-400"
+                  />
+                  <svg 
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400"
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* 移动端会话列表 */}
+              <div className="flex-1 overflow-y-auto px-2 custom-scrollbar">
+                {isLoadingSessions ? (
+                  <div className="text-center py-12 text-stone-400 text-xs">
+                    加载中...
+                  </div>
+                ) : filteredSessions.length === 0 ? (
+                  <div className="text-center py-12 text-stone-400 text-xs">
+                    {searchQuery ? '未找到匹配的对话' : '暂无对话记录'}
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {filteredSessions.map((session) => (
+                      <div
+                        key={session.id}
+                        onClick={() => {
+                          switchSession(session.id);
+                          setShowSessionList(false);
+                        }}
+                        className={`
+                          group relative px-3 py-2.5 rounded-lg cursor-pointer transition-all
+                          ${currentSessionId === session.id
+                            ? 'bg-stone-100'
+                            : 'hover:bg-stone-50'
+                          }
+                        `}
+                      >
+                        <div className="text-xs text-stone-700 truncate pr-8 leading-relaxed">
+                          {session.title}
+                        </div>
+                        <div className="text-[10px] text-stone-400 mt-1">
+                          {new Date(session.updated_at).toLocaleDateString('zh-CN', {
+                            month: 'numeric',
+                            day: 'numeric',
+                          })}
+                        </div>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm('确定要删除这个对话吗？')) {
+                              deleteSession(session.id);
+                            }
+                          }}
+                          className="absolute right-2 top-2 p-1 rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="w-full flex flex-col relative bg-[#fbf9f4]">
       {/* 背景纹理层 - 宣纸质感 */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.015]" 
         style={{
@@ -298,6 +887,44 @@ export const JueXingCangView: React.FC = () => {
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
           className="pt-8 sm:pt-10 pb-4 sm:pb-5"
         >
+          {/* 移动端顶部工具栏 */}
+          <div className="md:hidden flex items-center justify-between mb-4 px-4">
+            <button
+              onClick={() => setShowSessionList(true)}
+              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
+              </svg>
+              <span className="text-xs">对话</span>
+            </button>
+
+            {currentSessionId && (
+              <div className="text-xs text-stone-500 truncate max-w-[200px]">
+                {sessions.find(s => s.id === currentSessionId)?.title || '新对话'}
+              </div>
+            )}
+          </div>
+
+          {/* 桌面端顶部工具栏 */}
+          <div className="hidden md:flex items-center justify-between mb-4 px-4">
+            <button
+              onClick={() => setShowDesktopSidebar(!showDesktopSidebar)}
+              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
+              </svg>
+              <span className="text-xs">对话</span>
+            </button>
+
+            {currentSessionId && (
+              <div className="text-xs text-stone-500 truncate max-w-[200px]">
+                {sessions.find(s => s.id === currentSessionId)?.title || '新对话'}
+              </div>
+            )}
+          </div>
+
           {/* 按钮组 */}
           <div className="flex items-center justify-center gap-4 sm:gap-5 mb-4 sm:mb-5">
             {/* 深思按钮 */}
@@ -623,7 +1250,7 @@ export const JueXingCangView: React.FC = () => {
                       {/* 消息文本 */}
                       <p className="text-[14px] leading-loose text-[#333333] 
                         whitespace-pre-wrap font-light tracking-wide">
-                        {message.content}
+                        {renderMessageContent(message.content)}
                       </p>
 
                       {/* 装饰角 - 无印良品风格 */}
@@ -705,6 +1332,22 @@ export const JueXingCangView: React.FC = () => {
           className="pt-6 border-t border-stone-200 juexingcang-input-bottom md:!pb-8"
         >
           <AnimatePresence>
+            {showBaziImportedNotice && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.25 }}
+                className="mb-3"
+              >
+                <div className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-emerald-200/70 bg-emerald-50/60">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-[11px] tracking-[0.2em] text-emerald-700 font-light">
+                    已导入该八字
+                  </span>
+                </div>
+              </motion.div>
+            )}
             {showLiuyaoImportedNotice && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }}
@@ -905,6 +1548,7 @@ export const JueXingCangView: React.FC = () => {
         currentImportData={importData}
       />
     </div>
+    </>
   );
 };
 

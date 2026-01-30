@@ -1517,10 +1517,10 @@ export function generateClassicalBaziData(input: BaziInput): ClassicalBaziData {
   const yearZhi = pillars.year.zhi;
   const monthZhi = pillars.month.zhi;
   const shenSha = {
-    year: getShenSha('year', pillars.year.gan, pillars.year.zhi, dayMasterGan, monthZhi, yearZhi),
-    month: getShenSha('month', pillars.month.gan, pillars.month.zhi, dayMasterGan, monthZhi, yearZhi),
-    day: getShenSha('day', pillars.day.gan, pillars.day.zhi, dayMasterGan, monthZhi, yearZhi),
-    hour: getShenSha('hour', pillars.hour.gan, pillars.hour.zhi, dayMasterGan, monthZhi, yearZhi)
+    year: getShenSha('year', pillars.year.gan, pillars.year.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
+    month: getShenSha('month', pillars.month.gan, pillars.month.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
+    day: getShenSha('day', pillars.day.gan, pillars.day.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
+    hour: getShenSha('hour', pillars.hour.gan, pillars.hour.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan)
   };
 
   // 十二长生（星运）
@@ -1727,48 +1727,82 @@ const SHEN_SHA_RULES = {
 // @param dayGan 日干（查贵人用）
 // @param monthZhi 月支（查德贵人用）
 // @param yearZhi 年支（查桃花/将星/华盖用）
-function getShenSha(
+type ShenShaMatch = { name: string; reason: string };
+
+function getShenShaResult(
   location: 'year' | 'month' | 'day' | 'hour',
   gan: string,
   zhi: string,
   dayGan: string,
   monthZhi: string,
-  yearZhi: string
-): string[] {
-  const shenShaList: string[] = [];
+  yearZhi: string,
+  dayZhi: string,
+  yearGan?: string
+): { list: string[]; audit: ShenShaMatch[] } {
+  const shenShaSet = new Set<string>();
+  const audit: ShenShaMatch[] = [];
   const ganZhi = gan + zhi;
+
+  const pushSha = (name: string, reason: string) => {
+    if (!shenShaSet.has(name)) {
+      shenShaSet.add(name);
+      audit.push({ name, reason });
+    }
+  };
+
+  const baseZhis = Array.from(new Set([yearZhi, dayZhi].filter(Boolean)));
+  const sanHeRules = [
+    { group: ['申', '子', '辰'], peach: '酉', yima: '寅', huagai: '辰', jiang: '子', jiesha: '巳', zaisha: '午', wangshen: '亥' },
+    { group: ['寅', '午', '戌'], peach: '卯', yima: '申', huagai: '戌', jiang: '午', jiesha: '亥', zaisha: '子', wangshen: '巳' },
+    { group: ['巳', '酉', '丑'], peach: '午', yima: '亥', huagai: '丑', jiang: '酉', jiesha: '申', zaisha: '卯', wangshen: '申' },
+    { group: ['亥', '卯', '未'], peach: '子', yima: '巳', huagai: '未', jiang: '卯', jiesha: '寅', zaisha: '酉', wangshen: '寅' }
+  ];
+
+  const matchSanHeRule = (ruleKey: keyof (typeof sanHeRules)[number]) => {
+    for (const base of baseZhis) {
+      const rule = sanHeRules.find(item => item.group.includes(base));
+      if (rule && rule[ruleKey] === zhi) {
+        return base;
+      }
+    }
+    return null;
+  };
 
   // ==========================================
   // 1. 日柱专有神煞 (Strictly Day Pillar Only)
   // ==========================================
   if (location === 'day') {
-    if (SHEN_SHA_RULES.tenSpirit.includes(ganZhi)) shenShaList.push('十灵日');
-    if (SHEN_SHA_RULES.kuiGang.includes(ganZhi)) shenShaList.push('魁罡格');
-    if (SHEN_SHA_RULES.jinShen.includes(ganZhi)) shenShaList.push('进神');
-    if (SHEN_SHA_RULES.yinYangChaCuo.includes(ganZhi)) shenShaList.push('阴阳差错');
-    if (SHEN_SHA_RULES.guLuan.includes(ganZhi)) shenShaList.push('孤鸾煞');
+    if (SHEN_SHA_RULES.tenSpirit.includes(ganZhi)) pushSha('十灵日', '日柱专有');
+    if (SHEN_SHA_RULES.kuiGang.includes(ganZhi)) pushSha('魁罡格', '日柱专有');
+    if (SHEN_SHA_RULES.jinShen.includes(ganZhi)) pushSha('进神', '日柱专有');
+    if (SHEN_SHA_RULES.yinYangChaCuo.includes(ganZhi)) pushSha('阴阳差错', '日柱专有');
+    if (SHEN_SHA_RULES.guLuan.includes(ganZhi)) pushSha('孤鸾煞', '日柱专有');
   }
 
   // ==========================================
   // 2. 通用神煞 (以日干查地支) - 天乙/文昌/羊刃/禄等
   // ==========================================
 
-  // 天乙贵人 (甲戊并牛羊...)
-  if ((dayGan === '甲' || dayGan === '戊') && (zhi === '丑' || zhi === '未')) shenShaList.push('天乙贵人');
-  if ((dayGan === '乙' || dayGan === '己') && (zhi === '子' || zhi === '申')) shenShaList.push('天乙贵人');
-  if ((dayGan === '丙' || dayGan === '丁') && (zhi === '亥' || zhi === '酉')) shenShaList.push('天乙贵人');
-  if ((dayGan === '壬' || dayGan === '癸') && (zhi === '卯' || zhi === '巳')) shenShaList.push('天乙贵人');
-  if ((dayGan === '庚' || dayGan === '辛') && (zhi === '午' || zhi === '寅')) shenShaList.push('天乙贵人');
-
-  // 太极贵人
-  const taiJi: { [key: string]: string[] } = {
-    '甲': ['子', '午'], '乙': ['子', '午'],
-    '丙': ['卯', '酉'], '丁': ['卯', '酉'],
-    '戊': ['辰', '戌', '丑', '未'], '己': ['辰', '戌', '丑', '未'],
-    '庚': ['寅', '亥'], '辛': ['寅', '亥'],
-    '壬': ['巳', '申'], '癸': ['巳', '申']
+  // 天乙贵人 (以日干/年干查地支)
+  const tianYiMatch = (baseGan?: string) => {
+    if (!baseGan) return false;
+    if ((baseGan === '甲' || baseGan === '戊') && (zhi === '丑' || zhi === '未')) return true;
+    if ((baseGan === '乙' || baseGan === '己') && (zhi === '子' || zhi === '申')) return true;
+    if ((baseGan === '丙' || baseGan === '丁') && (zhi === '亥' || zhi === '酉')) return true;
+    if ((baseGan === '壬' || baseGan === '癸') && (zhi === '卯' || zhi === '巳')) return true;
+    if ((baseGan === '庚' || baseGan === '辛') && (zhi === '午' || zhi === '寅')) return true;
+    return false;
   };
-  if (taiJi[dayGan]?.includes(zhi)) shenShaList.push('太极贵人');
+  if (tianYiMatch(dayGan)) pushSha('天乙贵人', `日干${dayGan}查贵人`);
+  if (tianYiMatch(yearGan)) pushSha('天乙贵人', `年干${yearGan}查贵人`);
+
+  // 禄神（以日干查地支）
+  const luShen: { [key: string]: string } = {
+    '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午',
+    '戊': '巳', '己': '午', '庚': '申', '辛': '酉',
+    '壬': '亥', '癸': '子'
+  };
+  if (luShen[dayGan] === zhi) pushSha('禄神', '以日干查地支');
 
   // 文昌贵人
   const wenChang: { [key: string]: string } = {
@@ -1776,7 +1810,7 @@ function getShenSha(
     '戊': '申', '己': '酉', '庚': '亥', '辛': '子',
     '壬': '寅', '癸': '卯'
   };
-  if (wenChang[dayGan] === zhi) shenShaList.push('文昌贵人');
+  if (wenChang[dayGan] === zhi) pushSha('文昌贵人', '以日干查地支');
 
   // 国印贵人
   const guoYin: { [key: string]: string } = {
@@ -1784,7 +1818,7 @@ function getShenSha(
     '戊': '丑', '己': '丑', '庚': '辰', '辛': '辰',
     '壬': '未', '癸': '未'
   };
-  if (guoYin[dayGan] === zhi) shenShaList.push('国印贵人');
+  if (guoYin[dayGan] === zhi) pushSha('国印贵人', '以日干查地支');
 
   // 德秀贵人
   const deXiu: { [key: string]: string[] } = {
@@ -1794,7 +1828,7 @@ function getShenSha(
     '庚': ['寅', '午'], '辛': ['巳', '酉'],
     '壬': ['寅', '午'], '癸': ['巳', '酉']
   };
-  if (deXiu[dayGan]?.includes(zhi)) shenShaList.push('德秀贵人');
+  if (deXiu[dayGan]?.includes(zhi)) pushSha('德秀贵人', '以日干查地支');
 
   // 福星贵人
   const fuXing: { [key: string]: string } = {
@@ -1802,7 +1836,7 @@ function getShenSha(
     '戊': '巳', '己': '午', '庚': '申', '辛': '酉',
     '壬': '亥', '癸': '子'
   };
-  if (fuXing[dayGan] === zhi) shenShaList.push('福星贵人');
+  if (fuXing[dayGan] === zhi) pushSha('福星贵人', '以日干查地支');
 
   // 金舆
   const jinYu: { [key: string]: string } = {
@@ -1810,7 +1844,7 @@ function getShenSha(
     '戊': '未', '己': '未', '庚': '戌', '辛': '戌',
     '壬': '丑', '癸': '丑'
   };
-  if (jinYu[dayGan] === zhi) shenShaList.push('金舆');
+  if (jinYu[dayGan] === zhi) pushSha('金舆', '以日干查地支');
 
   // 羊刃
   const yangRen: { [key: string]: string } = {
@@ -1818,7 +1852,7 @@ function getShenSha(
     '戊': '午', '己': '未', '庚': '酉', '辛': '戌',
     '壬': '子', '癸': '丑'
   };
-  if (yangRen[dayGan] === zhi) shenShaList.push('羊刃');
+  if (yangRen[dayGan] === zhi) pushSha('羊刃', '以日干查地支');
 
   // 红艳
   const hongYan: { [key: string]: string } = {
@@ -1826,7 +1860,7 @@ function getShenSha(
     '戊': '辰', '己': '辰', '庚': '戌', '辛': '酉',
     '壬': '子', '癸': '申'
   };
-  if (hongYan[dayGan] === zhi) shenShaList.push('红艳');
+  if (hongYan[dayGan] === zhi) pushSha('红艳', '以日干查地支');
 
   // ==========================================
   // 3. 月令相关神煞 (以月支查天干/地支) - 天德/月德
@@ -1839,7 +1873,7 @@ function getShenSha(
     '戌': '丙', '亥': '乙', '子': '巳', '丑': '庚'
   };
   const tianDeValue = tianDe[monthZhi];
-  if (tianDeValue === gan || tianDeValue === zhi) shenShaList.push('天德贵人');
+  if (tianDeValue === gan || tianDeValue === zhi) pushSha('天德贵人', '以月令查天干/地支');
 
   // 月德贵人 (寅午戌月在丙...)
   const yueDe: { [key: string]: string } = {
@@ -1849,7 +1883,7 @@ function getShenSha(
     '巳': '庚', '酉': '庚', '丑': '庚'
   };
   const yueDeGan = yueDe[monthZhi];
-  if (yueDeGan === gan) shenShaList.push('月德贵人');
+  if (yueDeGan === gan) pushSha('月德贵人', '以月令查天干');
 
   // 天德合/月德合 (五合)
   const fiveCombine: { [key: string]: string } = {
@@ -1857,47 +1891,83 @@ function getShenSha(
     '丙': '辛', '辛': '丙', '丁': '壬', '壬': '丁',
     '戊': '癸', '癸': '戊'
   };
-  if (tianDeValue && fiveCombine[tianDeValue] === gan) shenShaList.push('天德合');
-  if (yueDeGan && fiveCombine[yueDeGan] === gan) shenShaList.push('月德合');
+  if (tianDeValue && fiveCombine[tianDeValue] === gan) pushSha('天德合', '天德五合');
+  if (yueDeGan && fiveCombine[yueDeGan] === gan) pushSha('月德合', '月德五合');
 
   // ==========================================
   // 4. 年/日支查桃花驿马 (以年支或日支查其他地支)
   // ==========================================
 
-  // 桃花 (申子辰在酉...)
-  if (['申', '子', '辰'].includes(yearZhi) && zhi === '酉') shenShaList.push('桃花');
-  if (['寅', '午', '戌'].includes(yearZhi) && zhi === '卯') shenShaList.push('桃花');
-  if (['巳', '酉', '丑'].includes(yearZhi) && zhi === '午') shenShaList.push('桃花');
-  if (['亥', '卯', '未'].includes(yearZhi) && zhi === '子') shenShaList.push('桃花');
+  const peachBase = matchSanHeRule('peach');
+  if (peachBase) pushSha('桃花', `以${peachBase}支查桃花`);
 
-  // 驿马 (申子辰在寅...)
-  if (['申', '子', '辰'].includes(yearZhi) && zhi === '寅') shenShaList.push('驿马');
-  if (['寅', '午', '戌'].includes(yearZhi) && zhi === '申') shenShaList.push('驿马');
-  if (['巳', '酉', '丑'].includes(yearZhi) && zhi === '亥') shenShaList.push('驿马');
-  if (['亥', '卯', '未'].includes(yearZhi) && zhi === '巳') shenShaList.push('驿马');
+  const yiMaBase = matchSanHeRule('yima');
+  if (yiMaBase) pushSha('驿马', `以${yiMaBase}支查驿马`);
 
-  // 华盖 (申子辰在辰...)
-  if (['申', '子', '辰'].includes(yearZhi) && zhi === '辰') shenShaList.push('华盖');
-  if (['寅', '午', '戌'].includes(yearZhi) && zhi === '戌') shenShaList.push('华盖');
-  if (['巳', '酉', '丑'].includes(yearZhi) && zhi === '丑') shenShaList.push('华盖');
-  if (['亥', '卯', '未'].includes(yearZhi) && zhi === '未') shenShaList.push('华盖');
+  const huaGaiBase = matchSanHeRule('huagai');
+  if (huaGaiBase) pushSha('华盖', `以${huaGaiBase}支查华盖`);
 
-  // 将星 (申子辰在子...)
-  if (['申', '子', '辰'].includes(yearZhi) && zhi === '子') shenShaList.push('将星');
-  if (['寅', '午', '戌'].includes(yearZhi) && zhi === '午') shenShaList.push('将星');
-  if (['巳', '酉', '丑'].includes(yearZhi) && zhi === '酉') shenShaList.push('将星');
-  if (['亥', '卯', '未'].includes(yearZhi) && zhi === '卯') shenShaList.push('将星');
+  const jiangBase = matchSanHeRule('jiang');
+  if (jiangBase) pushSha('将星', `以${jiangBase}支查将星`);
 
-  // 劫煞 (申子辰在巳...)
-  if (['申', '子', '辰'].includes(yearZhi) && zhi === '巳') shenShaList.push('劫煞');
-  if (['寅', '午', '戌'].includes(yearZhi) && zhi === '亥') shenShaList.push('劫煞');
-  if (['巳', '酉', '丑'].includes(yearZhi) && zhi === '申') shenShaList.push('劫煞');
-  if (['亥', '卯', '未'].includes(yearZhi) && zhi === '寅') shenShaList.push('劫煞');
+  const jieShaBase = matchSanHeRule('jiesha');
+  if (jieShaBase) pushSha('劫煞', `以${jieShaBase}支查劫煞`);
+
+  const zaiShaBase = matchSanHeRule('zaisha');
+  if (zaiShaBase) pushSha('灾煞', `以${zaiShaBase}支查灾煞`);
+
+  const wangShenBase = matchSanHeRule('wangshen');
+  if (wangShenBase) pushSha('亡神', `以${wangShenBase}支查亡神`);
+
+  // 天喜 (以年支/日支查地支)
+  const tianXiMap: { [key: string]: string } = {
+    '子': '酉', '丑': '申', '寅': '未', '卯': '午',
+    '辰': '巳', '巳': '辰', '午': '卯', '未': '寅',
+    '申': '丑', '酉': '子', '戌': '亥', '亥': '戌'
+  };
+  const tianXiBase = baseZhis.find(base => tianXiMap[base] === zhi);
+  if (tianXiBase) pushSha('天喜', `以${tianXiBase}支查天喜`);
 
   // 去重并返回
-  return Array.from(new Set(shenShaList));
+  return { list: Array.from(shenShaSet), audit };
 }
 
+function getShenSha(
+  location: 'year' | 'month' | 'day' | 'hour',
+  gan: string,
+  zhi: string,
+  dayGan: string,
+  monthZhi: string,
+  yearZhi: string,
+  dayZhi: string,
+  yearGan?: string
+): string[] {
+  return getShenShaResult(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan).list;
+}
+
+export function auditShenShaForPillars(baziData: ClassicalBaziData) {
+  const yearGan = baziData.pillars.year.gan;
+  const yearZhi = baziData.pillars.year.zhi;
+  const monthZhi = baziData.pillars.month.zhi;
+  const dayGan = baziData.pillars.day.gan;
+  const dayZhi = baziData.pillars.day.zhi;
+  const pillars = (['year', 'month', 'day', 'hour'] as const).reduce((acc, key) => {
+    const pillar = baziData.pillars[key];
+    acc[key] = getShenShaResult(
+      key,
+      pillar.gan,
+      pillar.zhi,
+      dayGan,
+      monthZhi,
+      yearZhi,
+      dayZhi,
+      yearGan
+    );
+    return acc;
+  }, {} as Record<'year' | 'month' | 'day' | 'hour', { list: string[]; audit: ShenShaMatch[] }>);
+
+  return pillars;
+}
 // 兼容旧接口：按柱计算神煞
 function calculateShenShaForPillar(
   location: 'year' | 'month' | 'day' | 'hour',
@@ -1905,9 +1975,11 @@ function calculateShenShaForPillar(
   zhi: string,
   dayGan: string,
   monthZhi: string,
-  yearZhi: string
+  yearZhi: string,
+  dayZhi: string,
+  yearGan?: string
 ): string[] {
-  return getShenSha(location, gan, zhi, dayGan, monthZhi, yearZhi);
+  return getShenSha(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan);
 }
 
 // 辅助函数：获取十二长生
@@ -2956,7 +3028,16 @@ export function calculateLuckCycles(
       const liunianGanZhi = noteLunar.getYearInGanZhi();
 
       const shenshas = baziData
-        ? calcShenSha('year', liunianGanZhi[0], liunianGanZhi[1], baziData.pillars?.day?.gan, baziData.pillars?.month?.zhi, baziData.pillars?.year?.zhi)
+        ? calcShenSha(
+            'year',
+            liunianGanZhi[0],
+            liunianGanZhi[1],
+            baziData.pillars?.day?.gan,
+            baziData.pillars?.month?.zhi,
+            baziData.pillars?.year?.zhi,
+            baziData.pillars?.day?.zhi,
+            baziData.pillars?.year?.gan
+          )
         : [];
 
       preLuckYears.push({
@@ -2991,14 +3072,32 @@ export function calculateLuckCycles(
       const dyGanZhi = dy.getGanZhi();
       if (!dyGanZhi || dyGanZhi.trim() === '') return null;
       const dyShenshas = baziData
-        ? calcShenSha('month', dyGanZhi[0], dyGanZhi[1], baziData.pillars?.day?.gan, baziData.pillars?.month?.zhi, baziData.pillars?.year?.zhi)
+        ? calcShenSha(
+            'month',
+            dyGanZhi[0],
+            dyGanZhi[1],
+            baziData.pillars?.day?.gan,
+            baziData.pillars?.month?.zhi,
+            baziData.pillars?.year?.zhi,
+            baziData.pillars?.day?.zhi,
+            baziData.pillars?.year?.gan
+          )
         : [];
 
       const liuNianList = dy.getLiuNian(10);
       const years = liuNianList.map((ln: any) => {
         const lnGanZhi = ln.getGanZhi();
         const lnShenshas = baziData
-          ? calcShenSha('year', lnGanZhi[0], lnGanZhi[1], baziData.pillars?.day?.gan, baziData.pillars?.month?.zhi, baziData.pillars?.year?.zhi)
+          ? calcShenSha(
+              'year',
+              lnGanZhi[0],
+              lnGanZhi[1],
+              baziData.pillars?.day?.gan,
+              baziData.pillars?.month?.zhi,
+              baziData.pillars?.year?.zhi,
+              baziData.pillars?.day?.zhi,
+              baziData.pillars?.year?.gan
+            )
           : [];
 
         return {
@@ -3747,24 +3846,99 @@ export function calculateEnergyProfile(baziData: ClassicalBaziData): EnergyProfi
     logs.push(`🌡️ [调候用神] 使用季节兜底逻辑：${climateGod}`);
   }
 
-  // 格局喜忌规则（简化版）
-  const prefCats = isStrong ? ["官杀", "财星", "食伤"] : ["印枭", "比劫"];
-  const tabooCats = isStrong ? ["印枭", "比劫"] : ["官杀", "食伤"];
+  // 格局喜忌规则（完善版）
+  const patternRules: { [key: string]: { Strong: [string[], string[]]; Weak: [string[], string[]] } } = {
+    "正官": {
+      "Strong": [["财星", "食伤"], ["印枭"]],
+      "Weak": [["印枭", "比劫"], ["财星", "食伤"]]
+    },
+    "七杀": {
+      "Strong": [["食伤", "印枭"], ["财星"]],
+      "Weak": [["印枭", "比劫"], ["财星", "食伤"]]
+    },
+    "正印": {
+      "Strong": [["财星", "食伤"], ["印枭", "比劫"]],
+      "Weak": [["官杀", "比劫"], ["财星"]]
+    },
+    "枭神": {
+      "Strong": [["财星", "食伤"], ["印枭"]],
+      "Weak": [["比劫", "官杀"], ["食伤"]]
+    },
+    "偏印": {
+      "Strong": [["食伤", "财星"], ["印枭"]],
+      "Weak": [["比劫", "官杀"], ["食伤"]]
+    },
+    "食神": {
+      "Strong": [["财星", "官杀"], ["印枭"]],
+      "Weak": [["印枭", "比劫"], ["财星", "食伤"]]
+    },
+    "伤官": {
+      "Strong": [["财星", "印枭"], ["官杀"]],
+      "Weak": [["印枭", "比劫"], ["官杀", "财星"]]
+    },
+    "正财": {
+      "Strong": [["食伤", "官杀"], ["比劫"]],
+      "Weak": [["比劫", "印枭"], ["食伤", "财星"]]
+    },
+    "偏财": {
+      "Strong": [["食伤", "官杀"], ["比劫"]],
+      "Weak": [["比劫", "印枭"], ["食伤", "财星"]]
+    },
+    "建禄": {
+      "Strong": [["官杀", "财星", "食伤"], ["印枭"]],
+      "Weak": [["印枭", "比劫"], ["官杀", "食伤"]]
+    },
+    "月劫": {
+      "Strong": [["官杀", "财星", "食伤"], ["印枭"]],
+      "Weak": [["印枭", "比劫"], ["官杀", "财星"]]
+    }
+  };
 
-  const candidatePool: { stem: string; score: number }[] = [];
+  let baseKey = "正官";
+  for (const k of Object.keys(patternRules)) {
+    if (gegu.includes(k)) {
+      baseKey = k;
+      break;
+    }
+  }
+
+  const strengthKey = isStrong ? "Strong" : "Weak";
+  const [prefCats, tabooCats] = patternRules[baseKey][strengthKey];
+
+  const godNatureRank: { [key: string]: number } = {
+    "正官": 1, "正印": 1, "食神": 1, "正财": 1,
+    "比肩": 2, "偏财": 2,
+    "七杀": 3, "伤官": 3, "枭神": 3, "劫财": 3, "偏印": 3
+  };
+
+  const rawBalCats = isStrong ? ["官杀", "食伤", "财星"] : ["印枭", "比劫"];
+  const filtBalCats = rawBalCats.filter(cat => !tabooCats.includes(cat));
+  const finalBalCats = filtBalCats.length > 0 ? filtBalCats : prefCats;
+
+  const candidatePool: Array<{ stem: string; isPref: number; nature: number; score: number; name: string }> = [];
   for (const s of stems) {
     if (finalScores[s] <= 0) continue;
     const ssName = getSs(dayMaster, s);
     const ssCat = ssToCat[ssName];
-    if (prefCats.includes(ssCat)) {
-      candidatePool.push({ stem: s, score: finalScores[s] });
+    if (finalBalCats.includes(ssCat) || prefCats.includes(ssCat)) {
+      candidatePool.push({
+        stem: s,
+        isPref: prefCats.includes(ssCat) ? 1 : 0,
+        nature: godNatureRank[ssName] || 4,
+        score: finalScores[s],
+        name: ssName
+      });
     }
   }
 
   if (candidatePool.length > 0) {
-    candidatePool.sort((a, b) => b.score - a.score);
+    candidatePool.sort((a, b) => {
+      if (a.isPref !== b.isPref) return b.isPref - a.isPref;
+      if (a.nature !== b.nature) return a.nature - b.nature;
+      return 0;
+    });
     balanceGod = candidatePool[0].stem;
-    decisionLog = "依强弱/喜忌定用";
+    decisionLog = `强弱喜忌+格局喜忌综合选优 | ${candidatePool[0].name}${balanceGod}`;
   } else {
     balanceGod = "无";
   }

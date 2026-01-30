@@ -1,7 +1,7 @@
 /**
  * 《周易》64卦数据结构
  * 
- * code: 6位二进制字符串（从初爻到上爻）
+ * code: 6位二进制字符串（从上爻到初爻）
  *       0 = 阴爻 (6老阴, 8少阴)
  *       1 = 阳爻 (7少阳, 9老阳)
  * 
@@ -46,7 +46,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "010000",
+    code: "010001",
     name: "屯",
     title: "水雷屯",
     description: "元亨利贞。勿用有攸往，利建侯。",
@@ -60,7 +60,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "000010",
+    code: "100010",
     name: "蒙",
     title: "山水蒙",
     description: "亨。匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。",
@@ -102,7 +102,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "000001",
+    code: "000010",
     name: "师",
     title: "地水师",
     description: "贞丈人吉，无咎。",
@@ -116,7 +116,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "100000",
+    code: "010000",
     name: "比",
     title: "水地比",
     description: "吉。原筮，元永贞，无咎。不宁方来，后夫凶。",
@@ -438,7 +438,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "110100",
+    code: "011100",
     name: "咸",
     title: "泽山咸",
     description: "亨。利贞，取女吉。",
@@ -452,7 +452,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "001011",
+    code: "001110",
     name: "恒",
     title: "雷风恒",
     description: "亨，无咎。利贞，利有攸往。",
@@ -746,7 +746,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "110110",
+    code: "110100",
     name: "渐",
     title: "风山渐",
     description: "女归吉，利贞。",
@@ -760,7 +760,7 @@ export const ICHING_64_HEXAGRAMS: Hexagram[] = [
     ]
   },
   {
-    code: "011100",
+    code: "001011",
     name: "归妹",
     title: "雷泽归妹",
     description: "征凶，无攸利。",

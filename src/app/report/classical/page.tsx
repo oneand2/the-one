@@ -351,6 +351,7 @@ const ClassicalReportContent: React.FC = () => {
         // 3. 存储到 localStorage（先清空旧数据，避免累积）
         localStorage.removeItem('juexingcang-import-pending');
         localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
+        localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
 
         // 4. 跳转到决行藏界面
         router.push('/?tab=liuji');

@@ -22,6 +22,7 @@ export const LiuYaoView: React.FC = () => {
   const prefillAppliedRef = useRef(false);
   
   const pendingImportKey = 'juexingcang-import-pending';
+  const inputPresetKey = 'juexingcang-input-preset';
   const presetQuestion = searchParams.get('question');
 
   useEffect(() => {
@@ -120,6 +121,7 @@ export const LiuYaoView: React.FC = () => {
 
     try {
       localStorage.setItem(pendingImportKey, JSON.stringify(liuyaoData));
+      localStorage.setItem(inputPresetKey, '请帮我解卦');
     } catch (error) {
       console.warn('写入导入缓存失败:', error);
     }

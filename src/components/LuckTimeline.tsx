@@ -45,25 +45,31 @@ const getTenGod = (gan: string, dayGan: string): string => {
 };
 
 // 竖排神煞列表组件 - 朱砂印与水墨批风格
-const VerticalShenshaList = ({ tags, maxItems = 3 }: { tags: string[], maxItems?: number }) => {
+const VerticalShenshaList = ({ tags, maxItems = 6 }: { tags: string[], maxItems?: number }) => {
   if (!tags || tags.length === 0) {
     return <div className="min-h-[16px] md:min-h-[20px] flex items-center justify-center">
       <span className="text-[8px] md:text-[9px] text-stone-300" style={{ fontFamily: '"Songti SC", "Noto Serif SC", serif' }}>无</span>
     </div>;
   }
 
-  const auspicious = ['天乙贵人', '太极贵人', '文昌贵人', '国印贵人', '天德贵人', '月德贵人', '月德合', '天德合', '将星', '金匮', '金舆禄', '禄神', '三奇', '福星贵人'];
+  const auspicious = ['天乙贵人', '文昌贵人', '国印贵人', '天德贵人', '月德贵人', '月德合', '天德合', '将星', '金匮', '金舆禄', '禄神', '三奇', '福星贵人'];
 
-  // 排序：吉神（带红框）在前，其他神煞在后
-  const sortedTags = [...tags].sort((a, b) => {
-    const aIsGood = auspicious.some(k => a.includes(k));
-    const bIsGood = auspicious.some(k => b.includes(k));
-    if (aIsGood && !bIsGood) return -1;
-    if (!aIsGood && bIsGood) return 1;
+  // 优先展示的重要神煞，避免因截断而缺失
+  const priorityTags = ['桃花', '驿马', '华盖', '将星', '劫煞', '灾煞', '亡神', '天喜', '禄神'];
+
+  // 排序：红色吉神优先，其次按重点神煞，其余保持原顺序
+  const isGood = (tag: string) => auspicious.some(k => tag.includes(k));
+  const isPriority = (tag: string) => priorityTags.some(k => tag.includes(k));
+
+  const displayTags = [...tags].sort((a, b) => {
+    const aGood = isGood(a);
+    const bGood = isGood(b);
+    if (aGood !== bGood) return aGood ? -1 : 1;
+    const aPriority = isPriority(a);
+    const bPriority = isPriority(b);
+    if (aPriority !== bPriority) return aPriority ? -1 : 1;
     return 0;
-  });
-
-  const displayTags = sortedTags.slice(0, maxItems);
+  }).slice(0, maxItems > 0 ? maxItems : tags.length);
 
   return (
     <div className="flex flex-col items-center gap-0.5 md:gap-1 min-h-[16px] md:min-h-[20px]">
@@ -196,7 +202,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={selectedYear?.shensha || []} maxItems={2} />
+                    <VerticalShenshaList tags={selectedYear?.shensha || []} maxItems={6} />
                   </div>
                 </div>
 
@@ -212,7 +218,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={selectedDaYun?.shensha || []} maxItems={2} />
+                    <VerticalShenshaList tags={selectedDaYun?.shensha || []} maxItems={6} />
                   </div>
                 </div>
 
@@ -233,7 +239,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.year || []} maxItems={2} />
+                    <VerticalShenshaList tags={baziData?.shenSha?.year || []} maxItems={(baziData?.shenSha?.year || []).length} />
                   </div>
                 </div>
 
@@ -249,7 +255,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.month || []} maxItems={2} />
+                    <VerticalShenshaList tags={baziData?.shenSha?.month || []} maxItems={(baziData?.shenSha?.month || []).length} />
                   </div>
                 </div>
 
@@ -265,7 +271,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.day || []} maxItems={2} />
+                    <VerticalShenshaList tags={baziData?.shenSha?.day || []} maxItems={(baziData?.shenSha?.day || []).length} />
                   </div>
                 </div>
 
@@ -281,7 +287,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     </span>
                   </div>
                   <div className="pt-1 md:pt-2">
-                    <VerticalShenshaList tags={baziData?.shenSha?.hour || []} maxItems={2} />
+                    <VerticalShenshaList tags={baziData?.shenSha?.hour || []} maxItems={(baziData?.shenSha?.hour || []).length} />
                   </div>
                 </div>
               </div>

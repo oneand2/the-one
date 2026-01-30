@@ -141,7 +141,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
               key={item.id}
               onClick={() => {
                 if (hasSubTabs) {
-                  setSubNavGroup((prev) => (prev === item.id ? null : (item.id as 'mbti')));
+                  setSubNavGroup(item.id as 'mbti');
+                  onTabChange('bazi');
                   return;
                 }
                 setSubNavGroup(null);

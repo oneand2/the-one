@@ -400,9 +400,45 @@ export async function POST(req: Request) {
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          let inThinkBlock = false;
+          let pending = '';
+
+          const stripThink = (chunkText: string) => {
+            const text = pending + chunkText;
+            pending = '';
+            let output = '';
+            let i = 0;
+
+            while (i < text.length) {
+              if (!inThinkBlock) {
+                const start = text.indexOf('<think>', i);
+                if (start === -1) {
+                  const keepFrom = Math.max(i, text.length - 6);
+                  output += text.slice(i, keepFrom);
+                  pending = text.slice(keepFrom);
+                  return output;
+                }
+                output += text.slice(i, start);
+                i = start + 7;
+                inThinkBlock = true;
+              } else {
+                const end = text.indexOf('</think>', i);
+                if (end === -1) {
+                  const keepFrom = Math.max(i, text.length - 7);
+                  pending = text.slice(keepFrom);
+                  return output;
+                }
+                i = end + 8;
+                inThinkBlock = false;
+              }
+            }
+            return output;
+          };
+
           let hasContent = false;
           for await (const chunk of stream) {
-            const text = chunk.choices[0]?.delta?.content ?? '';
+            const rawText = chunk.choices[0]?.delta?.content ?? '';
+            const text = useMeditation ? stripThink(rawText) : rawText;
             if (text) {
               hasContent = true;
               controller.enqueue(encoder.encode(text));

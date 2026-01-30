@@ -3,6 +3,9 @@ import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData } from '@/types/import-data';
 
+export const runtime = 'nodejs';
+export const maxDuration = 120;
+
 const COINS_BASE = 2;
 const COINS_REASONING = 2;
 const COINS_MEDITATION = 20;

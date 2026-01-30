@@ -1516,11 +1516,12 @@ export function generateClassicalBaziData(input: BaziInput): ClassicalBaziData {
   // 神煞（扩展为四柱）- 以日干为基准，增加位置参数和月支
   const yearZhi = pillars.year.zhi;
   const monthZhi = pillars.month.zhi;
+  const allGans = [pillars.year.gan, pillars.month.gan, pillars.day.gan, pillars.hour.gan];
   const shenSha = {
-    year: getShenSha('year', pillars.year.gan, pillars.year.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
-    month: getShenSha('month', pillars.month.gan, pillars.month.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
-    day: getShenSha('day', pillars.day.gan, pillars.day.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan),
-    hour: getShenSha('hour', pillars.hour.gan, pillars.hour.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan)
+    year: getShenSha('year', pillars.year.gan, pillars.year.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan, allGans),
+    month: getShenSha('month', pillars.month.gan, pillars.month.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan, allGans),
+    day: getShenSha('day', pillars.day.gan, pillars.day.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan, allGans),
+    hour: getShenSha('hour', pillars.hour.gan, pillars.hour.zhi, dayMasterGan, monthZhi, yearZhi, pillars.day.zhi, pillars.year.gan, allGans)
   };
 
   // 十二长生（星运）
@@ -1715,7 +1716,7 @@ const SHEN_SHA_RULES = {
   // 进神 (日柱专有)
   jinShen: ['甲子', '甲午', '己卯', '己酉'],
   // 阴阳差错 (日柱专有)
-  yinYangChaCuo: ['丙子', '丁丑', '戊寅', '辛卯', '壬辰', '癸巳', '丙午', '丁未', '戊申', '辛酉', '壬戌', '癸亥'],
+  yinYangChaCuo: ['丙子', '丙午', '丁丑', '丁未', '戊寅', '戊申', '辛卯', '辛酉', '壬辰', '壬戌', '癸巳', '癸亥'],
   // 孤鸾煞 (日柱专有)
   guLuan: ['丁巳', '戊申', '戊午', '辛亥', '壬子', '丙午', '壬辰', '癸巳']
 };
@@ -1737,7 +1738,8 @@ function getShenShaResult(
   monthZhi: string,
   yearZhi: string,
   dayZhi: string,
-  yearGan?: string
+  yearGan?: string,
+  allGans?: string[]
 ): { list: string[]; audit: ShenShaMatch[] } {
   const shenShaSet = new Set<string>();
   const audit: ShenShaMatch[] = [];
@@ -1751,15 +1753,37 @@ function getShenShaResult(
   };
 
   const baseZhis = Array.from(new Set([yearZhi, dayZhi].filter(Boolean)));
+  const yearBase = yearZhi ? [yearZhi] : [];
+  const dayBase = dayZhi ? [dayZhi] : [];
   const sanHeRules = [
     { group: ['申', '子', '辰'], peach: '酉', yima: '寅', huagai: '辰', jiang: '子', jiesha: '巳', zaisha: '午', wangshen: '亥' },
     { group: ['寅', '午', '戌'], peach: '卯', yima: '申', huagai: '戌', jiang: '午', jiesha: '亥', zaisha: '子', wangshen: '巳' },
-    { group: ['巳', '酉', '丑'], peach: '午', yima: '亥', huagai: '丑', jiang: '酉', jiesha: '申', zaisha: '卯', wangshen: '申' },
-    { group: ['亥', '卯', '未'], peach: '子', yima: '巳', huagai: '未', jiang: '卯', jiesha: '寅', zaisha: '酉', wangshen: '寅' }
+    { group: ['巳', '酉', '丑'], peach: '午', yima: '亥', huagai: '丑', jiang: '酉', jiesha: '寅', zaisha: '卯', wangshen: '申' },
+    { group: ['亥', '卯', '未'], peach: '子', yima: '巳', huagai: '未', jiang: '卯', jiesha: '申', zaisha: '酉', wangshen: '寅' }
   ];
 
   const matchSanHeRule = (ruleKey: keyof (typeof sanHeRules)[number]) => {
     for (const base of baseZhis) {
+      const rule = sanHeRules.find(item => item.group.includes(base));
+      if (rule && rule[ruleKey] === zhi) {
+        return base;
+      }
+    }
+    return null;
+  };
+
+  const matchSanHeRuleByYear = (ruleKey: keyof (typeof sanHeRules)[number]) => {
+    for (const base of yearBase) {
+      const rule = sanHeRules.find(item => item.group.includes(base));
+      if (rule && rule[ruleKey] === zhi) {
+        return base;
+      }
+    }
+    return null;
+  };
+
+  const matchSanHeRuleByDay = (ruleKey: keyof (typeof sanHeRules)[number]) => {
+    for (const base of dayBase) {
       const rule = sanHeRules.find(item => item.group.includes(base));
       if (rule && rule[ruleKey] === zhi) {
         return base;
@@ -1783,18 +1807,17 @@ function getShenShaResult(
   // 2. 通用神煞 (以日干查地支) - 天乙/文昌/羊刃/禄等
   // ==========================================
 
-  // 天乙贵人 (以日干/年干查地支)
+  // 天乙贵人（仅以日干查地支）
   const tianYiMatch = (baseGan?: string) => {
     if (!baseGan) return false;
-    if ((baseGan === '甲' || baseGan === '戊') && (zhi === '丑' || zhi === '未')) return true;
+    if ((baseGan === '甲' || baseGan === '戊' || baseGan === '庚') && (zhi === '丑' || zhi === '未')) return true;
     if ((baseGan === '乙' || baseGan === '己') && (zhi === '子' || zhi === '申')) return true;
     if ((baseGan === '丙' || baseGan === '丁') && (zhi === '亥' || zhi === '酉')) return true;
     if ((baseGan === '壬' || baseGan === '癸') && (zhi === '卯' || zhi === '巳')) return true;
-    if ((baseGan === '庚' || baseGan === '辛') && (zhi === '午' || zhi === '寅')) return true;
+    if (baseGan === '辛' && (zhi === '寅' || zhi === '午')) return true;
     return false;
   };
   if (tianYiMatch(dayGan)) pushSha('天乙贵人', `日干${dayGan}查贵人`);
-  if (tianYiMatch(yearGan)) pushSha('天乙贵人', `年干${yearGan}查贵人`);
 
   // 禄神（以日干查地支）
   const luShen: { [key: string]: string } = {
@@ -1820,37 +1843,20 @@ function getShenShaResult(
   };
   if (guoYin[dayGan] === zhi) pushSha('国印贵人', '以日干查地支');
 
-  // 德秀贵人
-  const deXiu: { [key: string]: string[] } = {
-    '甲': ['寅', '午'], '乙': ['巳', '酉'],
-    '丙': ['申', '子'], '丁': ['亥', '卯'],
-    '戊': ['申', '子'], '己': ['亥', '卯'],
-    '庚': ['寅', '午'], '辛': ['巳', '酉'],
-    '壬': ['寅', '午'], '癸': ['巳', '酉']
-  };
-  if (deXiu[dayGan]?.includes(zhi)) pushSha('德秀贵人', '以日干查地支');
-
-  // 福星贵人
-  const fuXing: { [key: string]: string } = {
-    '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午',
-    '戊': '巳', '己': '午', '庚': '申', '辛': '酉',
-    '壬': '亥', '癸': '子'
-  };
-  if (fuXing[dayGan] === zhi) pushSha('福星贵人', '以日干查地支');
-
-  // 金舆
+  // 金舆（禄前二位：以日干/年干查地支）
   const jinYu: { [key: string]: string } = {
     '甲': '辰', '乙': '巳', '丙': '未', '丁': '未',
-    '戊': '未', '己': '未', '庚': '戌', '辛': '戌',
-    '壬': '丑', '癸': '丑'
+    '戊': '未', '己': '申', '庚': '戌', '辛': '亥',
+    '壬': '丑', '癸': '寅'
   };
-  if (jinYu[dayGan] === zhi) pushSha('金舆', '以日干查地支');
+  if (jinYu[dayGan] === zhi) pushSha('金舆', `以日干${dayGan}查地支`);
+  if (yearGan && jinYu[yearGan] === zhi) pushSha('金舆', `以年干${yearGan}查地支`);
 
   // 羊刃
   const yangRen: { [key: string]: string } = {
-    '甲': '卯', '乙': '辰', '丙': '午', '丁': '未',
-    '戊': '午', '己': '未', '庚': '酉', '辛': '戌',
-    '壬': '子', '癸': '丑'
+    '甲': '卯', '乙': '寅', '丙': '午', '丁': '巳',
+    '戊': '午', '己': '巳', '庚': '酉', '辛': '申',
+    '壬': '子', '癸': '亥'
   };
   if (yangRen[dayGan] === zhi) pushSha('羊刃', '以日干查地支');
 
@@ -1904,8 +1910,10 @@ function getShenShaResult(
   const yiMaBase = matchSanHeRule('yima');
   if (yiMaBase) pushSha('驿马', `以${yiMaBase}支查驿马`);
 
-  const huaGaiBase = matchSanHeRule('huagai');
-  if (huaGaiBase) pushSha('华盖', `以${huaGaiBase}支查华盖`);
+  const huaGaiBaseYear = matchSanHeRuleByYear('huagai');
+  if (huaGaiBaseYear) pushSha('华盖', `以${huaGaiBaseYear}支查华盖`);
+  const huaGaiBaseDay = matchSanHeRuleByDay('huagai');
+  if (huaGaiBaseDay) pushSha('华盖', `以${huaGaiBaseDay}支查华盖`);
 
   const jiangBase = matchSanHeRule('jiang');
   if (jiangBase) pushSha('将星', `以${jiangBase}支查将星`);
@@ -1919,14 +1927,30 @@ function getShenShaResult(
   const wangShenBase = matchSanHeRule('wangshen');
   if (wangShenBase) pushSha('亡神', `以${wangShenBase}支查亡神`);
 
-  // 天喜 (以年支/日支查地支)
-  const tianXiMap: { [key: string]: string } = {
-    '子': '酉', '丑': '申', '寅': '未', '卯': '午',
-    '辰': '巳', '巳': '辰', '午': '卯', '未': '寅',
-    '申': '丑', '酉': '子', '戌': '亥', '亥': '戌'
+  // 红鸾/天喜（以年支为准，天喜为红鸾对冲）
+  const yearOrder = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+  const hongLuanOrder = ['卯', '寅', '丑', '子', '亥', '戌', '酉', '申', '未', '午', '巳', '辰'];
+  const hongLuanMap: { [key: string]: string } = Object.fromEntries(
+    yearOrder.map((y, i) => [y, hongLuanOrder[i]])
+  );
+  const chongMap: { [key: string]: string } = {
+    '子': '午', '午': '子', '丑': '未', '未': '丑',
+    '寅': '申', '申': '寅', '卯': '酉', '酉': '卯',
+    '辰': '戌', '戌': '辰', '巳': '亥', '亥': '巳'
   };
-  const tianXiBase = baseZhis.find(base => tianXiMap[base] === zhi);
-  if (tianXiBase) pushSha('天喜', `以${tianXiBase}支查天喜`);
+  const hongLuanZhi = yearZhi ? hongLuanMap[yearZhi] : undefined;
+  if (hongLuanZhi === zhi) pushSha('红鸾', `以年支${yearZhi}查红鸾`);
+  const tianXiZhi = hongLuanZhi ? chongMap[hongLuanZhi] : undefined;
+  if (tianXiZhi === zhi) pushSha('天喜', `以年支${yearZhi}查天喜`);
+
+  // 寡宿（只以年支查地支）
+  const guaXiu: { [key: string]: string } = {
+    '亥': '戌', '子': '戌', '丑': '戌',
+    '寅': '丑', '卯': '丑', '辰': '丑',
+    '巳': '辰', '午': '辰', '未': '辰',
+    '申': '未', '酉': '未', '戌': '未'
+  };
+  if (yearZhi && guaXiu[yearZhi] === zhi) pushSha('寡宿', `以年支${yearZhi}查寡宿`);
 
   // 去重并返回
   return { list: Array.from(shenShaSet), audit };
@@ -1940,9 +1964,10 @@ function getShenSha(
   monthZhi: string,
   yearZhi: string,
   dayZhi: string,
-  yearGan?: string
+  yearGan?: string,
+  allGans?: string[]
 ): string[] {
-  return getShenShaResult(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan).list;
+  return getShenShaResult(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan, allGans).list;
 }
 
 export function auditShenShaForPillars(baziData: ClassicalBaziData) {
@@ -1951,6 +1976,12 @@ export function auditShenShaForPillars(baziData: ClassicalBaziData) {
   const monthZhi = baziData.pillars.month.zhi;
   const dayGan = baziData.pillars.day.gan;
   const dayZhi = baziData.pillars.day.zhi;
+  const allGans = [
+    baziData.pillars.year.gan,
+    baziData.pillars.month.gan,
+    baziData.pillars.day.gan,
+    baziData.pillars.hour.gan
+  ];
   const pillars = (['year', 'month', 'day', 'hour'] as const).reduce((acc, key) => {
     const pillar = baziData.pillars[key];
     acc[key] = getShenShaResult(
@@ -1961,7 +1992,8 @@ export function auditShenShaForPillars(baziData: ClassicalBaziData) {
       monthZhi,
       yearZhi,
       dayZhi,
-      yearGan
+      yearGan,
+      allGans
     );
     return acc;
   }, {} as Record<'year' | 'month' | 'day' | 'hour', { list: string[]; audit: ShenShaMatch[] }>);
@@ -1977,9 +2009,10 @@ function calculateShenShaForPillar(
   monthZhi: string,
   yearZhi: string,
   dayZhi: string,
-  yearGan?: string
+  yearGan?: string,
+  allGans?: string[]
 ): string[] {
-  return getShenSha(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan);
+  return getShenSha(location, gan, zhi, dayGan, monthZhi, yearZhi, dayZhi, yearGan, allGans);
 }
 
 // 辅助函数：获取十二长生
@@ -3036,7 +3069,13 @@ export function calculateLuckCycles(
             baziData.pillars?.month?.zhi,
             baziData.pillars?.year?.zhi,
             baziData.pillars?.day?.zhi,
-            baziData.pillars?.year?.gan
+            baziData.pillars?.year?.gan,
+            [
+              baziData.pillars?.year?.gan,
+              baziData.pillars?.month?.gan,
+              baziData.pillars?.day?.gan,
+              baziData.pillars?.hour?.gan
+            ]
           )
         : [];
 
@@ -3080,7 +3119,13 @@ export function calculateLuckCycles(
             baziData.pillars?.month?.zhi,
             baziData.pillars?.year?.zhi,
             baziData.pillars?.day?.zhi,
-            baziData.pillars?.year?.gan
+            baziData.pillars?.year?.gan,
+            [
+              baziData.pillars?.year?.gan,
+              baziData.pillars?.month?.gan,
+              baziData.pillars?.day?.gan,
+              baziData.pillars?.hour?.gan
+            ]
           )
         : [];
 
@@ -3096,7 +3141,13 @@ export function calculateLuckCycles(
               baziData.pillars?.month?.zhi,
               baziData.pillars?.year?.zhi,
               baziData.pillars?.day?.zhi,
-              baziData.pillars?.year?.gan
+              baziData.pillars?.year?.gan,
+              [
+                baziData.pillars?.year?.gan,
+                baziData.pillars?.month?.gan,
+                baziData.pillars?.day?.gan,
+                baziData.pillars?.hour?.gan
+              ]
             )
           : [];
 

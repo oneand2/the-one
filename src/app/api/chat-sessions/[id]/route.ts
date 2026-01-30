@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
 // 获取特定会话的所有消息
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
 
     // 验证会话是否属于当前用户
     const { data: session, error: sessionError } = await supabase
@@ -49,8 +49,8 @@ export async function GET(
 
 // 更新会话标题
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -60,7 +60,7 @@ export async function PATCH(
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    const { id: sessionId } = params;
+    const { id: sessionId } = await params;
     const body = await req.json();
     const { title } = body;
 

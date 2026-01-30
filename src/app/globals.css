@@ -30,6 +30,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* 全局隐藏滚动条但保留滚动能力 */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
 /* 八字干支书法字体 */
 .font-calligraphy {
   font-family: var(--font-ma-shan-zheng), serif;

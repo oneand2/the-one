@@ -2,10 +2,9 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import type { TabType } from '@/types/tabs';
 
 const SUBMENU_LEAVE_DELAY_MS = 180;
-
-type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 interface SidebarProps {
   activeTab: TabType;

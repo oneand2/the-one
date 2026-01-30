@@ -10,7 +10,7 @@ import { MbtiTestView } from '@/components/MbtiTestView';
 import { WorldNewsView } from '@/components/WorldNewsView';
 import { MobileNav } from '@/components/MobileNav';
 import { useSearchParams } from 'next/navigation';
-type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
+import type { TabType } from '@/types/tabs';
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),

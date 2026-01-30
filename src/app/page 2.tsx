@@ -7,7 +7,7 @@ import { BaZiView } from '@/components/BaZiView';
 import { LiuYaoView } from '@/components/LiuYaoView';
 import { JueXingCangView } from '@/components/JueXingCangView';
 import { MbtiTestView } from '@/components/MbtiTestView';
-type TabType = 'bazi' | 'mbti' | 'liuyao' | 'liuji';
+import type { TabType } from '@/types/tabs';
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),

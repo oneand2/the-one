@@ -43,13 +43,21 @@ export function LoginForm({ next }: Props) {
   }
 
   return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
-      <input type="hidden" name="next" value={next} />
-      {error && (
-        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-700 font-sans text-center">{error}</p>
-        </div>
-      )}
+    <>
+      {/* 标题区 */}
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-serif text-stone-800 tracking-wider mb-2">
+          {mode === 'login' ? '登录' : '注册'}
+        </h2>
+      </div>
+
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <input type="hidden" name="next" value={next} />
+        {error && (
+          <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700 font-sans text-center">{error}</p>
+          </div>
+        )}
       {mode === 'signup' && (
         <div>
           <label htmlFor="nickname" className="block text-sm font-sans text-stone-700 mb-2">
@@ -138,12 +146,25 @@ export function LoginForm({ next }: Props) {
         </button>
         <button
           type="button"
-          onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
+          onClick={() => {
+            setMode(mode === 'login' ? 'signup' : 'login');
+            setError(null);
+          }}
           className="w-full py-2 text-sm text-stone-500 hover:text-stone-800 font-sans transition-colors"
         >
           {mode === 'login' ? '还没有账号？去注册' : '已有账号？去登录'}
         </button>
       </div>
+
+      {/* 提示信息 */}
+      {mode === 'signup' && (
+        <div className="mt-4 text-center">
+          <p className="text-xs text-stone-400 font-sans">
+            注册后需验证邮箱方可登录
+          </p>
+        </div>
+      )}
     </form>
+    </>
   );
 }

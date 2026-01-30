@@ -6,7 +6,7 @@ import { Sparkles, Hand } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { tossOnce, getYaoInfo, type YaoInfo, type YaoValue } from '@/utils/liuyaoLogic';
 import { CoinAnimation } from './CoinAnimation';
-import { analyzeHexagram, getYaoPositionName, type HexagramAnalysis } from '@/utils/iching-logic';
+import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
 
 export const LiuYaoView: React.FC = () => {
@@ -481,47 +481,41 @@ export const LiuYaoView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 卦辞 */}
-                  {hexagramAnalysis.mainHexagram && (
-                    <div className="text-center max-w-md mx-auto">
-                      <p className="text-xs text-[#999999] font-sans mb-2">卦辞</p>
-                      <p className="text-sm text-[#666666] font-serif leading-relaxed">
-                        {hexagramAnalysis.mainHexagram.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* 动爻详解（核心重点） */}
-                  {hexagramAnalysis.hasMovingLines ? (
+                  {/* 解卦依据（按动爻规则） */}
+                  {hexagramAnalysis.interpretation && (
                     <div className="max-w-md mx-auto space-y-4">
-                      <p className="text-xs text-[#999999] font-sans text-center mb-4">
-                        变爻详解
+                      <p className="text-xs text-[#999999] font-sans text-center mb-2">
+                        {hexagramAnalysis.interpretation.title}
                       </p>
-                      
-                      {hexagramAnalysis.movingLineTexts.map((text, index) => {
-                        const position = hexagramAnalysis.movingPositions[index];
-                        const positionName = getYaoPositionName(position);
-                        
-                        return (
-                          <motion.div
-                            key={position}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 1 + index * 0.2 }}
-                            className="p-4 border-l-2 border-stone-700"
-                          >
-                            <p className="text-sm text-[#333333] font-serif font-medium">
+
+                      {hexagramAnalysis.interpretation.type === 'yaoci' ? (
+                        <div className="space-y-4">
+                          {hexagramAnalysis.interpretation.texts.map((text, index) => (
+                            <motion.div
+                              key={`${text}-${index}`}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 1 + index * 0.2 }}
+                              className="p-4 border-l-2 border-stone-700"
+                            >
+                              <p className="text-sm text-[#333333] font-serif font-medium">
+                                {text}
+                              </p>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center space-y-3">
+                          {hexagramAnalysis.interpretation.texts.map((text, index) => (
+                            <p
+                              key={`${text}-${index}`}
+                              className="text-sm text-[#666666] font-serif leading-relaxed"
+                            >
                               {text}
                             </p>
-                          </motion.div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-center max-w-md mx-auto">
-                      <p className="text-sm text-[#999999] font-sans italic">
-                        此卦静爻，无变卦。请参阅本卦卦辞。
-                      </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
 

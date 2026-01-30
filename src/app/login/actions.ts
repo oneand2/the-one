@@ -50,6 +50,6 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   }
   return {
     redirectUrl:
-      '/login?message=注册成功！请检查邮箱并点击验证链接&next=' + encodeURIComponent(nextUrl),
+      '/login?message=注册成功！请检查邮箱并点击验证链接。如果没有收到邮件，请检查邮箱的垃圾箱&next=' + encodeURIComponent(nextUrl),
   };
 }

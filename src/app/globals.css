@@ -58,3 +58,29 @@ body {
     height: calc(100vh - 12rem - var(--mobile-nav-height, 60px) - 24px);
   }
 }
+
+/* 自定义滚动条样式 - 用于侧边栏（极简无边框风格） */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 113, 108, 0.15) transparent;
+  scroll-behavior: smooth;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(120, 113, 108, 0.15);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(120, 113, 108, 0.25);
+}

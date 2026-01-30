@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
 import InstallPrompt from "@/components/InstallPrompt";
+import { GetCoinsModalLayer } from "@/components/GetCoinsModalLayer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,15 +38,19 @@ export const metadata: Metadata = {
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
+    shortcut: ["/icon-192.png"],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  themeColor: "#fbf9f4",
   appleWebApp: {
     // 👇 关键：这是 iPhone 桌面上显示的 App 名字，必须改成 "二"
     title: "二",
     capable: true,
     statusBarStyle: "default",
   },
+};
+
+export const viewport = {
+  themeColor: "#fbf9f4",
 };
 
 export default function RootLayout({
@@ -68,6 +73,7 @@ export default function RootLayout({
         >
           <AuthButton />
         </div>
+        <GetCoinsModalLayer />
         {children}
         <InstallPrompt />
       </body>

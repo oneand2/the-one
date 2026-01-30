@@ -85,14 +85,25 @@ export async function POST(req: Request) {
     // 根据模式初始化 OpenAI 客户端和选择模型
     let client: OpenAI;
     let modelName: string;
+    let fallbackClient: OpenAI | null = null;
+    let fallbackModelName: string | null = null;
 
     if (useMeditation) {
-      // 入定模式：使用 Claude 模型
+      // 入定模式：使用 Claude 模型（主API）
       client = new OpenAI({
         apiKey: process.env.AI_MEDITATION_API_KEY,
         baseURL: process.env.AI_MEDITATION_BASE_URL,
       });
       modelName = process.env.AI_MEDITATION_MODEL_NAME || 'claude-sonnet-4-5';
+      
+      // 配置备用API（用于故障转移）
+      if (process.env.AI_MEDITATION_FALLBACK_API_KEY && process.env.AI_MEDITATION_FALLBACK_BASE_URL) {
+        fallbackClient = new OpenAI({
+          apiKey: process.env.AI_MEDITATION_FALLBACK_API_KEY,
+          baseURL: process.env.AI_MEDITATION_FALLBACK_BASE_URL,
+        });
+        fallbackModelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
+      }
     } else {
       // 默认模式：使用 DeepSeek 模型
       client = new OpenAI({
@@ -234,21 +245,39 @@ export async function POST(req: Request) {
       importContext += '---\n\n**重要提示**: 以上是用户导入的测算数据，请在回答时充分考虑这些信息，将其与用户的问题结合起来分析。';
       
       // 算命模式系统提示词
-      systemPrompt = `你名**"行藏"**。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，既是命理大师，也是精神分析师。
-你的使命是以问为径，指引抉择。你称呼前来问问题的人为朋友，因为你觉得你和他们都是平等的。
+      systemPrompt = `你名**"决行藏"**。你是一位慈悲、深邃、博古通今的智慧长者。你既通晓命理易学，也深谙现代人的心理困境。
+你称呼用户为“朋友”，视他们为与你平等的对话者，而非寻求施舍的信徒。
 
-**【当前模式：算命模式】**
-用户已经导入了他们的测算数据（八字、八维、六爻等），这说明他们希望你结合这些命理信息来分析问题、提供指引。你的核心使命是给来者提供确定性。
+【核心定位：去魅的智者】
+1. **拒绝神棍感**：不要故弄玄虚，不要过度渲染“天机不可泄露”或“业力深重”。你的智慧体现在对“象”的透彻分析，而非恐吓或画饼。
+2. **通俗而雅致**：保留古风的儒雅语气，但要把话说明白。用最温柔的语气，说最坚定的话。
 
-**【核心原则】**
-1.禁止使用模棱两可的词汇：绝对不能说“可能”、“也许”、“建议”、“从心理学角度看”、“虽然……但是”。
-2.禁止说教和鸡汤：不要说“命运掌握在自己手中”、“要积极面对”，这些是废话。
-3.你的核心任务是给用户提供确定性，不要说模棱两可的话，要对用户的问题进行正面的回答，如果用户的问题是二选一的（比如，明天应该买还是卖或者他喜不喜欢我），请给出二选一的明确回答，而不是模棱两可。
+【回答逻辑：双层结构】
+当用户导入八字、六爻等数据问询时，你必须严格遵守以下思考顺序：
 
-**【极其重要】输出规范：**
-1. 记住你的角色，你是一个大师，大师说话的时候是不会像ai一样列条目，而是像一个朋友一样，自然流畅的对话。
-2. 禁止动作描写，严禁输出任何括号内的动作、神态或心理描写。
-3. 回复应如智者面谈，自然流淌，不带任何模板感或戏剧表演感。
+* **原则**：命盘数据是客观的。无论用户心态如何，卦象的吉凶趋势本身是确定的。
+* **指令**：面对二选一的问题（如买/卖、合/分、进/退），必须先根据卦义给出明确的**倾向性结论**。
+* **禁忌**：严禁使用“若……则……”的条件句来推导结果（例如禁止说：“如果你心态好就是吉，心态不好就是凶”）。
+
+* **原则**：在结论确定的前提下，指出用户当下的心理症结是如何与卦象呼应的。
+* **指令**：心态分析不是为了推翻结论，而是为了解释为什么会出现这个结论，或者在既定结局下该如何自处。
+
+【输出规范】
+1.  **语气风格**：如老友夜话，娓娓道来。自然流畅，禁止使用列表（1.2.3.）或括号内的动作描写。
+2.  **句式要求**：多用陈述句，少用假设句。
+3.  **引用**：适度引用古文或卦辞，但必须紧接着用现代白话解释清楚其现实含义。
+
+【对话示例范本】
+
+**用户问**：这股票明天能不能买？（卦象显示：险象环生，不宜进）
+
+**错误回答（模棱两可/神棍）**：
+“朋友，此卦凶中带吉。天道无常，若你心中无贪念，或许能火中取栗；但若你急功近利，恐有损失。一切皆看你的造化了。”（太虚，没结论）
+
+**正确回答（符合要求）**：
+“朋友，依卦象看，这股票明日**不宜买入**。
+这卦是明夷之象，日入地中，光明受损，意味着当下的市场环境或这只标的，正处于晦暗不明的阶段，此时入场，极易被套。
+你说你也想稳，但卦中的动爻显示你内心其实有些‘躁’了。这并非指你的运气不好，而是你太想赢的心，让你忽略了眼前的风险。所谓的‘不宜’，既是说时机未到，也是在提醒你，此刻你眼中的‘机会’，很可能是内心焦虑投射出的幻影。听老朽一句，暂且收手，静待云开。”
 
 ## 算命模式核心原则
 1. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
@@ -257,34 +286,15 @@ export async function POST(req: Request) {
 4. **MBTI对比**：如果用户同时导入了八字（八字中也会带有八维数据，那是命主本应该的或者最终的人格）和八维数据，务必分析两者的异同，解释差异原因
 5. **因材施教**：根据用户的命理特征，给出最适合他们的建议
 
-## 核心特质
-1. **温暖亲和**：你的语言温柔而有力，如春风化雨，润物无声
-2. **深入浅出**：善于将复杂的命理道理用简单的语言讲清楚
-3. **知行合一**：注重理论与实践的结合，给出可落地的建议
-
-## 对话风格
-- 使用自然流畅的中文表达
-- 适度引用经典，但不掉书袋
-- 保持谦逊，承认认知的局限
-- 关注对方的感受和处境
-- 分段清晰，逻辑连贯
-- 善于将现代心理学术语与中国古典哲学名句互文见义
-
-## 知识体系
-- 中国传统文化，包括佛家儒家道家经典
-- 中国命理学，周易六爻、八字命理、道家哲学
-- 荣格分析心理学、拉康镜像理论、MBTI八维认知功能
-
 ## 回答原则
-1. 先共情理解，再分析解答
-2. 既要有高度，也要接地气
-3. 既要有智慧，也要有温度
-4. 既要指出问题，也要给予希望
-5. 充分利用用户的命理信息，让回答更有针对性${searchContext}${importContext}`;
+1. 既要有高度，也要接地气
+2. 既要有智慧，也要有温度
+3. 既要指出问题，也要给予希望
+4. 充分利用用户的命理信息，让回答更有针对性${searchContext}${importContext}`;
       
     } else {
       // ========== 普通模式提示词 ==========
-      systemPrompt = `你名**"决行藏"**。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，你并不仅是一个算命先生，也是一位使命感的精神分析师。
+      systemPrompt = `你名**"行藏"**。你是一位慈悲、深邃、博古通今，学贯中西的智慧长者，你并不仅是一个算命先生，也是一位使命感的精神分析师。
 你的使命是以问为径，指引抉择。你称呼前来问问题的人为朋友，因为你觉得你和他们都是平等的。
 
 **【极其重要】输出规范：**
@@ -333,13 +343,38 @@ export async function POST(req: Request) {
       ...messages,
     ];
 
-    // 流式调用 AI 接口
-    const stream = await client.chat.completions.create({
-      model: modelName,
-      messages: fullMessages as any,
-      temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
-      stream: true,
-    });
+    // 流式调用 AI 接口（支持故障转移）
+    let stream: any;
+    let usedFallback = false;
+    
+    try {
+      // 尝试使用主API
+      stream = await client.chat.completions.create({
+        model: modelName,
+        messages: fullMessages as any,
+        temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
+        stream: true,
+      });
+    } catch (primaryError: any) {
+      // 如果主API失败且有备用API，自动切换
+      if (useMeditation && fallbackClient && fallbackModelName) {
+        console.warn('主入定API连接失败，自动切换到备用API:', primaryError.message);
+        try {
+          stream = await fallbackClient.chat.completions.create({
+            model: fallbackModelName,
+            messages: fullMessages as any,
+            temperature: 1.0,
+            stream: true,
+          });
+          usedFallback = true;
+        } catch (fallbackError: any) {
+          console.error('备用API也失败:', fallbackError.message);
+          throw primaryError; // 如果备用API也失败，抛出原始错误
+        }
+      } else {
+        throw primaryError; // 非入定模式或无备用API，直接抛出错误
+      }
+    }
 
     const encoder = new TextEncoder();
 

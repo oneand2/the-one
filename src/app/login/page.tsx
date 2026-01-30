@@ -22,10 +22,10 @@ export default async function LoginPage({
   return (
     <div className="min-h-screen bg-[#FBF9F4] flex items-center justify-center px-6">
       <div className="w-full max-w-md">
-        {/* 标题区 */}
+        {/* 主标题 */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif text-stone-800 tracking-wider mb-3">
-            注册
+            欢迎
           </h1>
           <p className="text-sm text-stone-500 font-sans">
             世界即道场，让我们一起修行
@@ -44,13 +44,6 @@ export default async function LoginPage({
         {/* 登录表单 */}
         <div className="bg-white/40 backdrop-blur-sm rounded-2xl shadow-sm p-8 border border-stone-200/50">
           <LoginForm next={next} />
-
-          {/* 提示信息 */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-stone-400 font-sans">
-              注册后需验证邮箱方可登录
-            </p>
-          </div>
         </div>
 
         {/* 返回首页 */}

@@ -11,6 +11,13 @@ export interface HexagramAnalysis {
   movingLineTexts: string[];
   movingPositions: number[];
   hasMovingLines: boolean;
+  interpretation: HexagramInterpretation | null;
+}
+
+export interface HexagramInterpretation {
+  title: string;
+  texts: string[];
+  type: 'guaci' | 'yaoci';
 }
 
 /**
@@ -68,12 +75,127 @@ export function analyzeHexagram(yaos: YaoValue[]): HexagramAnalysis {
     });
   }
 
+  const interpretation = buildInterpretation({
+    mainHexagram: mainHexagram || null,
+    transformedHexagram,
+    movingPositions,
+  });
+
   return {
     mainHexagram: mainHexagram || null,
     transformedHexagram,
     movingLineTexts,
     movingPositions,
     hasMovingLines: movingPositions.length > 0,
+    interpretation,
+  };
+}
+
+function buildInterpretation(params: {
+  mainHexagram: Hexagram | null;
+  transformedHexagram: Hexagram | null;
+  movingPositions: number[];
+}): HexagramInterpretation | null {
+  const { mainHexagram, transformedHexagram, movingPositions } = params;
+  if (!mainHexagram) return null;
+
+  const movingCount = movingPositions.length;
+  const staticPositions = [0, 1, 2, 3, 4, 5].filter(pos => !movingPositions.includes(pos));
+
+  if (movingCount === 0) {
+    return {
+      title: '本卦卦辞',
+      texts: [mainHexagram.description],
+      type: 'guaci',
+    };
+  }
+
+  if (movingCount === 1) {
+    const pos = movingPositions[0];
+    return {
+      title: `本卦${getYaoPositionName(pos)}爻爻辞`,
+      texts: [mainHexagram.lines[pos]],
+      type: 'yaoci',
+    };
+  }
+
+  if (movingCount === 2) {
+    const pos = Math.max(...movingPositions);
+    return {
+      title: `本卦${getYaoPositionName(pos)}爻爻辞`,
+      texts: [mainHexagram.lines[pos]],
+      type: 'yaoci',
+    };
+  }
+
+  if (movingCount === 3) {
+    if (transformedHexagram) {
+      return {
+        title: '本卦与变卦卦辞',
+        texts: [
+          `本卦：${mainHexagram.description}`,
+          `变卦：${transformedHexagram.description}`,
+        ],
+        type: 'guaci',
+      };
+    }
+    return {
+      title: '本卦卦辞',
+      texts: [mainHexagram.description],
+      type: 'guaci',
+    };
+  }
+
+  if (movingCount === 4) {
+    const pos = staticPositions.length > 0 ? Math.min(...staticPositions) : null;
+    if (pos !== null && transformedHexagram) {
+      return {
+        title: `变卦${getYaoPositionName(pos)}爻爻辞`,
+        texts: [transformedHexagram.lines[pos]],
+        type: 'yaoci',
+      };
+    }
+  }
+
+  if (movingCount === 5) {
+    const pos = staticPositions[0];
+    if (pos !== undefined && transformedHexagram) {
+      return {
+        title: `变卦${getYaoPositionName(pos)}爻爻辞`,
+        texts: [transformedHexagram.lines[pos]],
+        type: 'yaoci',
+      };
+    }
+  }
+
+  if (movingCount === 6) {
+    if (mainHexagram.name === '乾') {
+      return {
+        title: '用九',
+        texts: ['用九：见群龙无首，吉。'],
+        type: 'yaoci',
+      };
+    }
+    if (mainHexagram.name === '坤') {
+      return {
+        title: '用六',
+        texts: ['用六：利永贞。'],
+        type: 'yaoci',
+      };
+    }
+    if (transformedHexagram) {
+      return {
+        title: '变卦卦辞',
+        texts: [transformedHexagram.description],
+        type: 'guaci',
+      };
+    }
+  }
+
+  return {
+    title: '本卦卦辞',
+    texts: [mainHexagram.description],
+    type: 'guaci',
   };
 }
 

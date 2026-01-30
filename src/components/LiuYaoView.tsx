@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Hand } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { tossOnce, getYaoInfo, type YaoInfo, type YaoValue } from '@/utils/liuyaoLogic';
 import { CoinAnimation } from './CoinAnimation';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
@@ -11,6 +11,7 @@ import type { ImportData } from '@/types/import-data';
 
 export const LiuYaoView: React.FC = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [question, setQuestion] = useState<string>('');
   const [isQuestionSet, setIsQuestionSet] = useState<boolean>(false);
   const [yaos, setYaos] = useState<YaoInfo[]>([]);
@@ -18,8 +19,18 @@ export const LiuYaoView: React.FC = () => {
   const [currentTossResult, setCurrentTossResult] = useState<YaoValue | null>(null);
   const [showCoinAnimation, setShowCoinAnimation] = useState(false);
   const [hexagramAnalysis, setHexagramAnalysis] = useState<HexagramAnalysis | null>(null);
+  const prefillAppliedRef = useRef(false);
   
   const pendingImportKey = 'juexingcang-import-pending';
+  const presetQuestion = searchParams.get('question');
+
+  useEffect(() => {
+    if (prefillAppliedRef.current) return;
+    if (presetQuestion && !isQuestionSet) {
+      setQuestion(presetQuestion);
+      prefillAppliedRef.current = true;
+    }
+  }, [presetQuestion, isQuestionSet]);
 
   // 从数值反推硬币组合
   const getCoinsFromValue = (value: YaoValue): number[] => {
@@ -240,12 +251,12 @@ export const LiuYaoView: React.FC = () => {
                     handleConfirmQuestion();
                   }
                 }}
-                placeholder="一念既起"
+                placeholder="请从此处输入问题"
                 className="w-full text-center text-stone-700 font-sans text-base bg-transparent border-0 border-b-2 border-stone-300 focus:border-stone-700 focus:outline-none transition-colors duration-300 py-3"
               />
             </div>
 
-            {/* 卦象自生按钮 */}
+            {/* 起卦按钮 */}
             <motion.button
               onClick={handleConfirmQuestion}
               disabled={!question.trim()}
@@ -253,7 +264,7 @@ export const LiuYaoView: React.FC = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
-              卦象自生
+              起卦
             </motion.button>
           </motion.div>
         ) : (

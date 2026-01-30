@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 interface WorldNews {
   id: string;
@@ -87,10 +88,15 @@ const DateSegmentSelect: React.FC<{
 };
 
 export const WorldNewsView: React.FC = () => {
+  const router = useRouter();
   const [newsList, setNewsList] = useState<WorldNews[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const dailyFortuneQuestion = '我今日时运如何？';
+  const handleDailyFortune = () => {
+    router.push(`/?tab=liuyao&question=${encodeURIComponent(dailyFortuneQuestion)}`);
+  };
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -634,6 +640,22 @@ export const WorldNewsView: React.FC = () => {
             </div>
           );
         })()}
+      </div>
+
+      {/* 占问按钮区域 */}
+      <div className="mt-3 pt-3 border-t border-stone-200/50 pb-20 md:pb-10">
+        <div className="flex justify-center">
+          <button
+            onClick={handleDailyFortune}
+            className="min-w-[280px] px-6 py-3 rounded-md border border-stone-800 bg-stone-800
+              text-[14px] tracking-wide text-stone-100 font-normal
+              hover:bg-stone-700 hover:border-stone-700
+              active:bg-stone-900
+              transition-all duration-200 shadow-sm hover:shadow"
+          >
+            占问今日休咎
+          </button>
+        </div>
       </div>
     </motion.div>
   );

@@ -99,6 +99,7 @@ const ClassicalReportContent: React.FC = () => {
   });
 
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     // 每次 URL 参数变化都清空旧数据、进入 loading，避免仍显示上一次排盘
@@ -241,6 +242,125 @@ const ClassicalReportContent: React.FC = () => {
       setSaveStatus('error');
       console.error('保存八字失败:', e);
     }
+  };
+
+  const handleAnalyzeBazi = async () => {
+    // 防止重复点击
+    if (isAnalyzing) {
+      console.log('正在处理中，请勿重复点击');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    
+    // 1. 先保存八字
+    setSaveStatus('saving');
+    const params: Record<string, string> = {};
+    searchParams.forEach((v, k) => {
+      params[k] = v;
+    });
+    try {
+      const res = await fetch('/api/records/classical', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ params }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        if (res.status === 401) throw new Error('请先登录');
+        throw new Error((body as { error?: string })?.error || '保存失败');
+      }
+      setSaveStatus('saved');
+
+      // 2. 准备导入数据 - 需要重新构造 BaziInput 并分析
+      if (baziData) {
+        // 从 URL 参数重新构造 input
+        const mode = searchParams.get('mode');
+        let input: BaziInput;
+        
+        if (mode === 'bazi') {
+          // 八字模式
+          const gans = (searchParams.get('gans') || '').split(',');
+          const zhis = (searchParams.get('zhis') || '').split(',');
+          input = {
+            year: 2000,
+            month: 1,
+            day: 1,
+            hour: 12,
+            minute: 0,
+            directBazi: { gans, zhis }
+          };
+        } else {
+          // 日期模式
+          const year = parseInt(searchParams.get('year') || '2000');
+          const month = parseInt(searchParams.get('month') || '1');
+          const day = parseInt(searchParams.get('day') || '1');
+          const hour = parseInt(searchParams.get('hour') || '12');
+          const minute = parseInt(searchParams.get('minute') || '0');
+          
+          input = {
+            year, month, day, hour, minute,
+            location: searchParams.get('province') && searchParams.get('city') ? {
+              province: searchParams.get('province') || '',
+              city: searchParams.get('city') || '',
+              longitude: parseFloat(searchParams.get('longitude') || '116.4')
+            } : undefined
+          };
+        }
+
+        // 导入 analyzeBazi 并分析
+        const { analyzeBazi } = await import('@/utils/baziLogic');
+        const result = analyzeBazi(input);
+
+        // 构造十神比例和天干比例
+        const shishenRatio: Record<string, number> = {};
+        if (result.ssDistribution) {
+          const total = Object.values(result.ssDistribution).reduce((sum, val) => sum + (val as number), 0);
+          if (total > 0) {
+            Object.entries(result.ssDistribution).forEach(([key, val]) => {
+              shishenRatio[key] = (val as number) / total;
+            });
+          }
+        }
+
+        const ganRatio: Record<string, number> = {};
+        const gans = [baziData.pillars.year.gan, baziData.pillars.month.gan, baziData.pillars.day.gan, baziData.pillars.hour.gan];
+        gans.forEach(gan => {
+          ganRatio[gan] = (ganRatio[gan] || 0) + 0.25;
+        });
+
+        const importData = {
+          bazi: [{
+            type: 'bazi' as const,
+            pillars: baziData.pillars,
+            strength: result.strength,
+            strengthPercent: result.peerEnergyPercent,
+            favorable: [result.climateGod, result.trueGod].filter(Boolean),
+            unfavorable: [],
+            shishenRatio,
+            ganRatio,
+            relationships: {},
+            predictedMBTI: result.mbti,
+            name: displayInfo.name,
+            gender: displayInfo.gender,
+            birthDate: displayInfo.solarDate !== '未知日期' ? displayInfo.solarDate : undefined,
+          }]
+        };
+
+        // 3. 存储到 localStorage（先清空旧数据，避免累积）
+        localStorage.removeItem('juexingcang-import-pending');
+        localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
+
+        // 4. 跳转到决行藏界面
+        router.push('/?tab=liuji');
+      }
+    } catch (e) {
+      setSaveStatus('error');
+      setIsAnalyzing(false);
+      console.error('保存或导入八字失败:', e);
+    }
+    // 注意：跳转后页面会卸载，所以不需要在这里 setIsAnalyzing(false)
   };
 
   if (loading) {
@@ -592,7 +712,7 @@ const ClassicalReportContent: React.FC = () => {
         <LuckTimeline data={luckCycles} baziData={baziData} />
       </motion.div>
 
-      {/* 保存该八字 + 返回 - 底部操作 */}
+      {/* 保存该八字 + 解析该八字 + 返回 - 底部操作 */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -604,9 +724,17 @@ const ClassicalReportContent: React.FC = () => {
             type="button"
             onClick={handleSaveBazi}
             disabled={saveStatus === 'saving'}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#44403C] hover:bg-[#57534E] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#78716c] hover:bg-[#292524] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : '保存该八字'}
+          </button>
+          <button
+            type="button"
+            onClick={handleAnalyzeBazi}
+            disabled={isAnalyzing || saveStatus === 'saving'}
+            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#44403C] hover:bg-[#57534E] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isAnalyzing ? '正在解析...' : '解析该八字'}
           </button>
           {saveStatus === 'error' && (
             <span className="text-sm text-amber-600 font-sans">保存失败，请先登录或稍后重试</span>

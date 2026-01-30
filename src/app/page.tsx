@@ -19,7 +19,7 @@ const Sidebar = dynamic(
 
 const HomeContent: React.FC = () => {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('mbti');
+  const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
@@ -109,7 +109,7 @@ const HomeContent: React.FC = () => {
           </motion.header>
 
           {/* 内容区域 */}
-          <div className="px-6 pb-20">
+          <div className="px-6 mobile-content-bottom">
             <div className="max-w-md mx-auto">
               <AnimatePresence mode="wait">
                 {activeTab === 'guanshi' ? (

@@ -4,7 +4,7 @@ import { createClient } from '@/utils/supabase/server';
 // 保存消息到会话
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient();
@@ -14,7 +14,7 @@ export async function POST(
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    const sessionId = params.id;
+    const { id: sessionId } = await params;
     const body = await req.json();
     const { messages } = body;
 

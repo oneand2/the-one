@@ -459,13 +459,21 @@ export async function POST(req: Request) {
           };
 
           let hasContent = false;
-          for await (const chunk of stream) {
-            const rawText = chunk.choices[0]?.delta?.content ?? '';
-            const text = useMeditation ? stripThink(rawText) : rawText;
-            if (text) {
-              hasContent = true;
-              controller.enqueue(encoder.encode(text));
+          try {
+            for await (const chunk of stream) {
+              const rawText = chunk.choices[0]?.delta?.content ?? '';
+              const text = useMeditation ? stripThink(rawText) : rawText;
+              if (text) {
+                hasContent = true;
+                controller.enqueue(encoder.encode(text));
+              }
             }
+          } catch (streamError) {
+            const message =
+              streamError instanceof Error
+                ? streamError.message
+                : '上游流式响应异常';
+            controller.enqueue(encoder.encode(`\n\n【流式响应中断】${message}`));
           }
           if (useMeditation && !disableThinkStrip) {
             if (!inThinkBlock && pending) {
@@ -492,7 +500,10 @@ export async function POST(req: Request) {
           }
           controller.close();
         } catch (e) {
-          controller.error(e);
+          const message =
+            e instanceof Error ? e.message : '未知错误';
+          controller.enqueue(encoder.encode(`\n\n【服务异常】${message}`));
+          controller.close();
         }
       },
     });

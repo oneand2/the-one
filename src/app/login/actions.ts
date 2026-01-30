@@ -1,5 +1,6 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 
 export type AuthResult = { redirectUrl?: string; error?: string };
@@ -34,7 +35,14 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
-  const baseRedirect = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const headerList = await headers();
+  const forwardedProto = headerList.get('x-forwarded-proto');
+  const forwardedHost = headerList.get('x-forwarded-host');
+  const host = forwardedHost || headerList.get('host');
+  const proto = forwardedProto || (host?.includes('localhost') ? 'http' : 'https');
+  const baseUrl = siteUrl || (host ? `${proto}://${host}` : 'http://localhost:3000');
+  const baseRedirect = `${baseUrl}/auth/callback?next=${encodeURIComponent(nextUrl)}`;
   const redirectWithInvite = inviteCode ? `${baseRedirect}&inviteCode=${encodeURIComponent(inviteCode)}` : baseRedirect;
   const { error } = await supabase.auth.signUp({
     email,

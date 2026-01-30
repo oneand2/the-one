@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
+import { GetCoinsModalLayer } from "@/components/GetCoinsModalLayer";
 import InstallPrompt from "@/components/InstallPrompt";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
           <AuthButton />
         </div>
         {children}
+        <GetCoinsModalLayer />
         <InstallPrompt />
       </body>
     </html>

@@ -9,7 +9,7 @@ type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
 
 interface SidebarProps {
   activeTab: TabType;
-  onTabChange: (tab: TabType) => void;
+  onTabChange: React.Dispatch<React.SetStateAction<TabType>>;
   isCollapsed: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;

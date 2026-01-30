@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
 import InstallPrompt from "@/components/InstallPrompt";
+import { GetCoinsModalLayer } from "@/components/GetCoinsModalLayer";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,23 +28,16 @@ const maShanZheng = Ma_Shan_Zheng({
 });
 
 export const metadata: Metadata = {
-  // 👇 网页标签页显示的标题
   title: "二 - 让自己 让世界变得更好",
-  applicationName: "二",
   description: "相信终有一天，人与人之间会彼此理解。",
   manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
-    ],
-    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
-  },
   themeColor: "#fbf9f4",
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-icon.png",
+  },
   appleWebApp: {
-    // 👇 关键：这是 iPhone 桌面上显示的 App 名字，必须改成 "二"
     title: "二",
-    capable: true,
     statusBarStyle: "default",
   },
 };
@@ -62,12 +56,13 @@ export default function RootLayout({
         <div
           className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
           style={{
-            paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
-            paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
+            paddingTop: 'max(4px, env(safe-area-inset-top, 0px))',
+            paddingRight: 'max(8px, env(safe-area-inset-right, 0px))',
           }}
         >
           <AuthButton />
         </div>
+        <GetCoinsModalLayer />
         {children}
         <InstallPrompt />
       </body>

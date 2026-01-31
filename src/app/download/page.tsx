@@ -203,10 +203,43 @@ export default function DownloadPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-stone-600 font-sans leading-relaxed">
+              <p className="text-sm text-stone-600 font-sans leading-relaxed mb-6">
                 桌面端暂无独立客户端，建议使用现代浏览器（Chrome、Safari、Edge 等）访问本网站，
                 体验已针对桌面端进行优化。
               </p>
+
+              {/* 二维码部分 */}
+              <div className="pt-6 border-t border-stone-100">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  {/* 二维码 */}
+                  <div className="flex-shrink-0">
+                    <div className="relative">
+                      <div className="w-32 h-32 bg-white rounded-xl border-2 border-stone-200 p-2 shadow-sm">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent('https://www.the-one-and-the-two.com/download')}`}
+                          alt="下载页面二维码"
+                          className="w-full h-full"
+                        />
+                      </div>
+                      {/* 装饰角标 */}
+                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-stone-800 rounded-full flex items-center justify-center">
+                        <Smartphone className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 说明文字 */}
+                  <div className="flex-1 text-center sm:text-left">
+                    <h3 className="text-base font-sans text-stone-800 mb-2">
+                      扫码手机访问
+                    </h3>
+                    <p className="text-sm text-stone-600 font-sans leading-relaxed">
+                      使用手机扫描二维码，即可在移动设备上访问下载页面。
+                      iOS 用户将看到"添加到主屏幕"教程，Android 用户可直接下载安装包。
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}

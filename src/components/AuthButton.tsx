@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle } from 'lucide-react';
+import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle, Download } from 'lucide-react';
 import { CopperCoinIcon } from './CopperCoinIcon';
 
 export function AuthButton() {
@@ -159,6 +159,14 @@ export function AuthButton() {
               >
                 <UserCircle className="w-4 h-4 text-stone-500" />
                 个人设置
+              </Link>
+              <Link
+                href="/download"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 font-sans"
+              >
+                <Download className="w-4 h-4 text-stone-500" />
+                客户端下载
               </Link>
               <Link
                 href="/my/classical"

@@ -7,13 +7,11 @@ import { Smartphone, Monitor, Share, Plus, Download, ArrowRight } from 'lucide-r
 
 export default function DownloadPage() {
   const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
 
   useEffect(() => {
     const ua = navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(ua)) {
       setDeviceType('ios');
-      setShowIOSGuide(true);
     } else if (/android/.test(ua)) {
       setDeviceType('android');
     } else {
@@ -21,14 +19,6 @@ export default function DownloadPage() {
     }
   }, []);
 
-  const handleDownloadAPK = () => {
-    const link = document.createElement('a');
-    link.href = '/app-release.apk';
-    link.download = 'the-one.apk';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   return (
     <div className="min-h-screen bg-[#FBF9F4] px-4 py-12">
@@ -171,14 +161,15 @@ export default function DownloadPage() {
                   点击下方按钮下载安装包，下载完成后打开文件进行安装
                 </p>
 
-                <button
-                  onClick={handleDownloadAPK}
+                <a
+                  href="/app-release.apk"
+                  download="the-one.apk"
                   className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-stone-800 text-white rounded-xl hover:bg-stone-700 transition-all duration-300 group"
                 >
                   <Download className="w-5 h-5" />
                   <span className="text-base font-sans">下载安卓客户端</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
+                </a>
 
                 {/* 安装提示 */}
                 <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">

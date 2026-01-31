@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>八字真太阳时修复测试</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            font-family: serif;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #6b7280; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <h1>八字真太阳时修复测试</h1>
+    
+    <div class="test-case">
+        <h3>测试案例：1998年10月25日19:05，吉林长春</h3>
+        <p class="info">经度：125.3° | 时差：约+21分钟</p>
+        <button onclick="runTest()">运行测试</button>
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        // 使用与应用相同的逻辑测试
+        import { Solar } from 'https://cdn.jsdelivr.net/npm/lunar-javascript@1.6.12/+esm';
+
+        const TRUE_SOLAR_BASE_LONGITUDE = 120;
+
+        function getBaziFromSolar(solar, longitude) {
+            const baseBazi = solar.getLunar().getEightChar();
+            let timeGan = baseBazi.getTimeGan();
+            let timeZhi = baseBazi.getTimeZhi();
+
+            if (typeof longitude === 'number' && !Number.isNaN(longitude)) {
+                const longitudeDiff = longitude - TRUE_SOLAR_BASE_LONGITUDE;
+                
+                if (Math.abs(longitudeDiff) >= 0.0001) {
+                    const minutesDiff = (longitudeDiff / 15) * 60;
+                    
+                    const originalHour = solar.getHour();
+                    const originalMinute = solar.getMinute();
+                    const totalMinutes = originalHour * 60 + originalMinute + minutesDiff;
+                    
+                    let correctedHour = Math.floor(totalMinutes / 60);
+                    let correctedMinute = Math.floor(totalMinutes % 60);
+                    
+                    if (correctedMinute < 0) {
+                        correctedMinute += 60;
+                        correctedHour -= 1;
+                    }
+                    
+                    correctedHour = ((correctedHour % 24) + 24) % 24;
+                    
+                    const correctedSolar = Solar.fromYmdHms(
+                        solar.getYear(),
+                        solar.getMonth(),
+                        solar.getDay(),
+                        correctedHour,
+                        correctedMinute,
+                        0
+                    );
+                    
+                    const correctedBazi = correctedSolar.getLunar().getEightChar();
+                    timeGan = correctedBazi.getTimeGan();
+                    timeZhi = correctedBazi.getTimeZhi();
+                }
+            }
+
+            return {
+                yearGan: baseBazi.getYearGan(),
+                yearZhi: baseBazi.getYearZhi(),
+                monthGan: baseBazi.getMonthGan(),
+                monthZhi: baseBazi.getMonthZhi(),
+                dayGan: baseBazi.getDayGan(),
+                dayZhi: baseBazi.getDayZhi(),
+                hourGan: timeGan,
+                hourZhi: timeZhi
+            };
+        }
+
+        window.runTest = function() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p class="info">测试中...</p>';
+
+            try {
+                // 测试：1998年10月25日19:05，吉林长春
+                const solar = Solar.fromYmdHms(1998, 10, 25, 19, 5, 0);
+                const result = getBaziFromSolar(solar, 125.3);
+
+                const bazi = `${result.yearGan}${result.yearZhi} ${result.monthGan}${result.monthZhi} ${result.dayGan}${result.dayZhi} ${result.hourGan}${result.hourZhi}`;
+                const expected = '戊寅 壬戌 乙巳 丙戌';
+                const isCorrect = bazi === expected;
+
+                let html = `
+                    <p class="info">计算结果：</p>
+                    <p class="result ${isCorrect ? 'success' : 'error'}">${bazi}</p>
+                    <p class="info">预期结果：</p>
+                    <p class="result">${expected}</p>
+                    <p class="${isCorrect ? 'success' : 'error'}" style="font-size: 18px; margin-top: 20px;">
+                        ${isCorrect ? '✓ 测试通过！时柱正确为丙戌' : '✗ 测试失败！'}
+                    </p>
+                `;
+
+                // 额外信息
+                html += `
+                    <div style="margin-top: 20px; padding: 15px; background: #f9fafb; border-radius: 6px;">
+                        <p class="info" style="margin: 5px 0;"><strong>详细分析：</strong></p>
+                        <p class="info" style="margin: 5px 0;">原始时间：19:05</p>
+                        <p class="info" style="margin: 5px 0;">真太阳时修正：+${((125.3 - 120) / 15 * 60).toFixed(1)}分钟</p>
+                        <p class="info" style="margin: 5px 0;">修正后时间：19:26（用于判定时辰）</p>
+                        <p class="info" style="margin: 5px 0;">时辰：戌时（19:00-20:59）</p>
+                        <p class="info" style="margin: 5px 0;">日干：乙（日柱天干）</p>
+                        <p class="info" style="margin: 5px 0;">时支：戌</p>
+                        <p class="info" style="margin: 5px 0;">时干：丙（根据日干推时干：乙日的戌时起丙戌）</p>
+                    </div>
+                `;
+
+                resultDiv.innerHTML = html;
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error">测试出错：${error.message}</p>`;
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>

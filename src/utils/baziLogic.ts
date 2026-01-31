@@ -5,28 +5,57 @@ import { Solar, Lunar as LunarJS, EightChar, LunarUtil, SixtyCycle } from 'lunar
 
 const TRUE_SOLAR_BASE_LONGITUDE = 120;
 
-const applyTrueSolarCorrection = (solar: any, longitude?: number) => {
-  if (typeof longitude !== 'number' || Number.isNaN(longitude)) {
-    return solar;
-  }
-  const longitudeDiff = longitude - TRUE_SOLAR_BASE_LONGITUDE;
-  if (Math.abs(longitudeDiff) < 0.0001) {
-    return solar;
-  }
-  // 每15度经度对应1小时，转换为分钟
-  return solar.next((longitudeDiff / 15) * 60);
-};
-
+/**
+ * 根据经度计算真太阳时修正后的时辰
+ * 注意：只修正时辰，不改变日期
+ */
 const getBaziFromSolar = (solar: any, longitude?: number) => {
   const baseBazi = solar.getLunar().getEightChar();
   let timeGan = baseBazi.getTimeGan();
   let timeZhi = baseBazi.getTimeZhi();
 
+  // 如果提供了经度，则计算真太阳时修正
   if (typeof longitude === 'number' && !Number.isNaN(longitude)) {
-    const correctedSolar = applyTrueSolarCorrection(solar, longitude);
-    const correctedBazi = correctedSolar.getLunar().getEightChar();
-    timeGan = correctedBazi.getTimeGan();
-    timeZhi = correctedBazi.getTimeZhi();
+    const longitudeDiff = longitude - TRUE_SOLAR_BASE_LONGITUDE;
+    
+    // 只有经度差异显著时才进行修正
+    if (Math.abs(longitudeDiff) >= 0.0001) {
+      // 每15度经度对应1小时，计算时间差（单位：分钟）
+      const minutesDiff = (longitudeDiff / 15) * 60;
+      
+      // 计算修正后的时间（用于判定时辰）
+      const originalHour = solar.getHour();
+      const originalMinute = solar.getMinute();
+      const totalMinutes = originalHour * 60 + originalMinute + minutesDiff;
+      
+      // 修正后的小时和分钟（可能会超过24小时或小于0）
+      let correctedHour = Math.floor(totalMinutes / 60);
+      let correctedMinute = Math.floor(totalMinutes % 60);
+      
+      // 处理分钟的负数情况
+      if (correctedMinute < 0) {
+        correctedMinute += 60;
+        correctedHour -= 1;
+      }
+      
+      // 处理小时的跨日情况（但保持在同一天内，因为真太阳时修正最多±2小时）
+      // 用于排时柱时，只需要知道是哪个时辰，不需要改变日期
+      correctedHour = ((correctedHour % 24) + 24) % 24;
+      
+      // 用修正后的时间创建新的Solar对象（日期不变，只改时间）
+      const correctedSolar = Solar.fromYmdHms(
+        solar.getYear(),
+        solar.getMonth(),
+        solar.getDay(),
+        correctedHour,
+        correctedMinute,
+        0
+      );
+      
+      const correctedBazi = correctedSolar.getLunar().getEightChar();
+      timeGan = correctedBazi.getTimeGan();
+      timeZhi = correctedBazi.getTimeZhi();
+    }
   }
 
   return {

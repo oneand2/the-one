@@ -25,11 +25,26 @@ export async function GET(request: Request) {
     if (error || !data) {
       return NextResponse.json({ error: error?.message || '未找到' }, { status: 404 });
     }
-    const p = (data.input_data as { type?: string; function_scores?: Record<string, number> }) || {};
+    const p = (data.input_data as { 
+      type?: string; 
+      function_scores?: Record<string, number>;
+      user_slots?: unknown;
+      function_strengths?: Record<string, number>;
+      ideal_strengths?: Record<string, number>;
+      insights?: unknown[];
+      fit_score?: number;
+      shadow_type?: string;
+    }) || {};
     return NextResponse.json({
       id: data.id,
       type: p.type ?? '',
       function_scores: p.function_scores ?? {},
+      user_slots: p.user_slots,
+      function_strengths: p.function_strengths,
+      ideal_strengths: p.ideal_strengths,
+      insights: p.insights,
+      fit_score: p.fit_score,
+      shadow_type: p.shadow_type,
       created_at: data.created_at,
     });
   }
@@ -47,12 +62,40 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  const list = (data || []).map((row: { id: string; input_data: { type?: string; function_scores?: Record<string, number> }; created_at: string }) => {
-    const p = (row.input_data && typeof row.input_data === 'object' ? row.input_data : {}) as { type?: string; function_scores?: Record<string, number> };
+  const list = (data || []).map((row: { 
+    id: string; 
+    input_data: { 
+      type?: string; 
+      function_scores?: Record<string, number>;
+      user_slots?: unknown;
+      function_strengths?: Record<string, number>;
+      ideal_strengths?: Record<string, number>;
+      insights?: unknown[];
+      fit_score?: number;
+      shadow_type?: string;
+    }; 
+    created_at: string 
+  }) => {
+    const p = (row.input_data && typeof row.input_data === 'object' ? row.input_data : {}) as { 
+      type?: string; 
+      function_scores?: Record<string, number>;
+      user_slots?: unknown;
+      function_strengths?: Record<string, number>;
+      ideal_strengths?: Record<string, number>;
+      insights?: unknown[];
+      fit_score?: number;
+      shadow_type?: string;
+    };
     return {
       id: row.id,
       type: p.type ?? '',
       function_scores: p.function_scores ?? {},
+      user_slots: p.user_slots,
+      function_strengths: p.function_strengths,
+      ideal_strengths: p.ideal_strengths,
+      insights: p.insights,
+      fit_score: p.fit_score,
+      shadow_type: p.shadow_type,
       created_at: row.created_at,
     };
   });
@@ -66,7 +109,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '未登录' }, { status: 401 });
   }
 
-  let body: { type?: string; function_scores?: Record<string, number> };
+  let body: { 
+    type?: string; 
+    function_scores?: Record<string, number>;
+    user_slots?: unknown;
+    function_strengths?: Record<string, number>;
+    ideal_strengths?: Record<string, number>;
+    insights?: unknown[];
+    fit_score?: number;
+    shadow_type?: string;
+  };
   try {
     body = await request.json();
   } catch {
@@ -88,7 +140,16 @@ export async function POST(request: Request) {
     .insert({
       user_id: user.id,
       type: RECORD_TYPE,
-      input_data: { type, function_scores },
+      input_data: { 
+        type, 
+        function_scores,
+        user_slots: body.user_slots,
+        function_strengths: body.function_strengths,
+        ideal_strengths: body.ideal_strengths,
+        insights: body.insights,
+        fit_score: body.fit_score,
+        shadow_type: body.shadow_type,
+      },
     })
     .select('id, created_at')
     .single();

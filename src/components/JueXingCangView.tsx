@@ -884,13 +884,36 @@ export const JueXingCangView: React.FC = () => {
       {/* 主内容区 */}
       <div className="relative z-10 flex flex-col h-full min-h-0 max-w-4xl mx-auto w-full px-6">
         
-        {/* 顶部标题区 - 书法风格 */}
+        {/* 顶部标题区 - 与见天地统一，到页面顶端高度固定 py-16 */}
         <motion.div
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="pt-8 sm:pt-10 pb-4 sm:pb-5"
+          className="pt-16 pb-4 sm:pb-5"
         >
+          {/* Logo 与标语 - 与见天地/见自己统一 */}
+          <div className="max-w-md mx-auto text-center space-y-4 mb-6 sm:mb-8">
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              {/* 老阴 - 两条虚线，粗细与行距与 page 其他卦象一致 */}
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto mb-4 text-[#2c2c2c]">
+                <rect x="0" y="20" width="44" height="20" />
+                <rect x="56" y="20" width="44" height="20" />
+                <rect x="0" y="60" width="44" height="20" />
+                <rect x="56" y="60" width="44" height="20" />
+              </svg>
+            </motion.div>
+            <h1 className="text-3xl font-serif text-[#333333] leading-tight">
+              决行藏
+            </h1>
+            <p className="text-sm text-stone-600 font-sans text-center">
+              用之则行，舍之则藏
+            </p>
+          </div>
+
           {/* 移动端顶部工具栏 */}
           <div className="md:hidden flex items-center justify-between mb-4 px-4">
             <button

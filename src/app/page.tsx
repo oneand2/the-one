@@ -25,7 +25,7 @@ const HomeContent: React.FC = () => {
   // 仅从 URL 同步到 state，不反向用 effect 覆盖 URL，避免与入链/导航冲突导致横跳
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'liuji'];
+    const validTabs: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'juexingcang'];
     if (tabParam && validTabs.includes(tabParam as TabType)) {
       setActiveTab(tabParam as TabType);
     }
@@ -47,7 +47,7 @@ const HomeContent: React.FC = () => {
         <Sidebar 
           activeTab={activeTab} 
           onTabChange={handleTabChange}
-          isJuexingcangActive={activeTab === 'liuji'}
+          isJuexingcangActive={activeTab === 'juexingcang'}
           isCollapsed={isCollapsed}
           onMouseEnter={() => setIsCollapsed(false)}
           onMouseLeave={() => setIsCollapsed(true)}
@@ -83,7 +83,7 @@ const HomeContent: React.FC = () => {
                     <rect x="0" y="60" width="44" height="20" />
                     <rect x="56" y="60" width="44" height="20" />
                   </svg>
-                ) : activeTab === 'liuji' ? (
+                ) : activeTab === 'juexingcang' ? (
                   // 老阴 - 四象（粗细与少阴一致，rect 44x20）
                   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="44" height="20" />
@@ -101,7 +101,7 @@ const HomeContent: React.FC = () => {
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'liuji' ? '决行藏' : '六爻占卜'}
+                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'juexingcang' ? '决行藏' : '六爻占卜'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
                 {activeTab === 'guanshi' 
@@ -112,7 +112,7 @@ const HomeContent: React.FC = () => {
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'mbti'
                   ? '知己即知天，请成为自己的答案'
-                  : activeTab === 'liuji'
+                  : activeTab === 'juexingcang'
                   ? '用之则行，舍之则藏'
                   : '所信即所见，请相信相信的力量'}
               </p>
@@ -168,9 +168,9 @@ const HomeContent: React.FC = () => {
                   >
                     <MbtiTestView />
                   </motion.div>
-                ) : activeTab === 'liuji' ? (
+                ) : activeTab === 'juexingcang' ? (
                   <motion.div
-                    key="liuji-content"
+                    key="juexingcang-content"
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -12 }}

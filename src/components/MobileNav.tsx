@@ -55,7 +55,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
       subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }, { id: 'liuyao', label: '六爻' }],
     },
     {
-      id: 'liuji',
+      id: 'juexingcang',
       label: '决行藏',
       icon: (
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
@@ -142,9 +142,9 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
             <button
               key={item.id}
               onClick={() => {
-                if (item.id === 'liuji') {
+                if (item.id === 'juexingcang') {
                   setSubNavGroup(null);
-                  onTabChange('liuji');
+                  onTabChange('juexingcang');
                   return;
                 }
                 if (hasSubTabs) {

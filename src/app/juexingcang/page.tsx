@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function JueXingCangPage() {
   const router = useRouter();
   useEffect(() => {
-    router.replace('/?tab=liuji');
+    router.replace('/?tab=juexingcang');
   }, [router]);
   return (
     <div className="min-h-screen bg-[#fbf9f4] flex items-center justify-center">

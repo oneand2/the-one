@@ -17,7 +17,7 @@ interface SidebarProps {
 
 type TabItem = 
   | { id: 'guanshi' | 'wendao'; label: string; subTabs?: never }
-  | { id: 'liuji'; label: string; subTabs?: never }
+  | { id: 'juexingcang'; label: string; subTabs?: never }
   | { id: 'guanxin'; label: string; subTabs: Array<{ id: TabType; label: string }> };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuexingcangActive, isCollapsed, onMouseEnter, onMouseLeave }) => {
@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
         { id: 'liuyao' as TabType, label: '六爻' },
       ]
     },
-    { id: 'liuji' as const, label: '决行藏' },
+    { id: 'juexingcang' as const, label: '决行藏' },
   ];
 
   return (
@@ -227,7 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
                         onTabChange(tab.subTabs[0].id);
                       } else {
                         const tabId = tab.id;
-                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'liuji') {
+                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'juexingcang') {
                           onTabChange(tabId);
                         }
                       }
@@ -239,7 +239,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
                       style={{
                         fontSize: '15px',
                         letterSpacing: '0.35em',
-                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'liuji' && activeTab === tab.id) || (tab.id === 'liuji' && isJuexingcangActive)
+                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'juexingcang' && activeTab === tab.id) || (tab.id === 'juexingcang' && isJuexingcangActive)
                           ? '#57534e' 
                           : '#a8a29e',
                         fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
@@ -252,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
                     </span>
                     
                     {/* 选中指示器 */}
-                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'liuji' && activeTab === tab.id) || (tab.id === 'liuji' && isJuexingcangActive)) && (
+                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'juexingcang' && activeTab === tab.id) || (tab.id === 'juexingcang' && isJuexingcangActive)) && (
                       <motion.div
                         layoutId="activeIndicator"
                         style={{

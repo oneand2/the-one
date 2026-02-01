@@ -179,7 +179,7 @@ export const LiuYaoView: React.FC = () => {
     };
 
     void saveRecord();
-    router.push('/?tab=liuji');
+    router.push('/?tab=juexingcang');
   };
 
   // 当6个爻都摇完后，自动解卦

@@ -166,6 +166,38 @@ export const BaZiView: React.FC = () => {
   const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1);
   const hourOptions = Array.from({ length: 24 }, (_, i) => i);
 
+  const foreignTimezoneOptions = [
+    { label: '西十二区', offset: -12 },
+    { label: '西十一区', offset: -11 },
+    { label: '西十区', offset: -10 },
+    { label: '西九区', offset: -9 },
+    { label: '西八区', offset: -8 },
+    { label: '西七区', offset: -7 },
+    { label: '西六区', offset: -6 },
+    { label: '西五区', offset: -5 },
+    { label: '西四区', offset: -4 },
+    { label: '西三区', offset: -3 },
+    { label: '西二区', offset: -2 },
+    { label: '西一区', offset: -1 },
+    { label: '零时区', offset: 0 },
+    { label: '东一区', offset: 1 },
+    { label: '东二区', offset: 2 },
+    { label: '东三区', offset: 3 },
+    { label: '东四区', offset: 4 },
+    { label: '东五区', offset: 5 },
+    { label: '东六区', offset: 6 },
+    { label: '东七区', offset: 7 },
+    { label: '东八区', offset: 8 },
+    { label: '东九区', offset: 9 },
+    { label: '东十区', offset: 10 },
+    { label: '东十一区', offset: 11 },
+    { label: '东十二区', offset: 12 }
+  ];
+
+  const foreignTimezoneCoordinates = Object.fromEntries(
+    foreignTimezoneOptions.map((item) => [item.label, item.offset * 15])
+  );
+
   const cityCoordinates: Record<string, number> = {
     // 直辖市
     '北京市': 116.4, '上海市': 121.5, '天津市': 117.2, '重庆市': 106.5,
@@ -226,6 +258,7 @@ export const BaZiView: React.FC = () => {
     // 港澳台
     '香港特别行政区': 114.2, '澳门特别行政区': 113.5,
     '台北市': 121.5, '新北市': 121.5, '桃园市': 121.3, '台中市': 120.7, '台南市': 120.2, '高雄市': 120.3, '基隆市': 121.7, '新竹市': 120.96, '嘉义市': 120.4, '新竹县': 121.0, '苗栗县': 120.8, '彰化县': 120.5, '南投县': 120.7, '云林县': 120.5, '嘉义县': 120.5, '屏东县': 120.5, '宜兰县': 121.6, '花莲县': 121.6, '台东县': 121.1, '澎湖县': 119.6, '金门县': 118.3, '连江县': 119.9,
+    ...foreignTimezoneCoordinates
   };
 
   const getCityLongitude = (cityName: string): number => {
@@ -620,7 +653,7 @@ export const BaZiView: React.FC = () => {
     const [tempProvince, setTempProvince] = useState(selectedProvince);
     const [tempCity, setTempCity] = useState(selectedCity);
 
-    const provinceData: Record<string, string[]> = {
+    const domesticProvinceData: Record<string, string[]> = {
       '北京市': ['北京市'],
       '上海市': ['上海市'],
       '广东省': ['广州市', '深圳市', '珠海市', '汕头市', '韶关市', '佛山市', '江门市', '湛江市', '茂名市', '肇庆市', '惠州市', '梅州市', '汕尾市', '河源市', '阳江市', '清远市', '东莞市', '中山市', '潮州市', '揭阳市', '云浮市'],
@@ -657,7 +690,13 @@ export const BaZiView: React.FC = () => {
       '台湾省': ['台北市', '新北市', '桃园市', '台中市', '台南市', '高雄市', '基隆市', '新竹市', '嘉义市', '新竹县', '苗栗县', '彰化县', '南投县', '云林县', '嘉义县', '屏东县', '宜兰县', '花莲县', '台东县', '澎湖县', '金门县', '连江县'],
     };
 
-    const provinces = Object.keys(provinceData);
+    const foreignTimezones = foreignTimezoneOptions.map((item) => item.label);
+    const provinceData: Record<string, string[]> = {
+      ...domesticProvinceData,
+      '国外': foreignTimezones
+    };
+
+    const domesticProvinces = Object.keys(domesticProvinceData);
     const cities = tempProvince ? provinceData[tempProvince] || [] : [];
 
     return (
@@ -692,22 +731,31 @@ export const BaZiView: React.FC = () => {
                       className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans focus:outline-none focus:ring-0"
                     >
                       <option value="">不填写</option>
-                      {provinces.map(province => (
-                        <option key={province} value={province}>
-                          {province}
-                        </option>
-                      ))}
+                      <optgroup label="国内">
+                        {domesticProvinces.map(province => (
+                          <option key={province} value={province}>
+                            {province}
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="国外">
+                        <option value="国外">国外时区</option>
+                      </optgroup>
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm text-[#666666] font-sans mb-2 block">城市</label>
+                    <label className="text-sm text-[#666666] font-sans mb-2 block">
+                      {tempProvince === '国外' ? '时区' : '城市'}
+                    </label>
                     <select
                       value={tempCity}
                       onChange={(e) => setTempCity(e.target.value)}
                       disabled={!tempProvince}
                       className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans focus:outline-none focus:ring-0 disabled:bg-[#f0f0f0] disabled:cursor-not-allowed"
                     >
-                      <option value="">请选择城市</option>
+                      <option value="">
+                        {tempProvince === '国外' ? '请选择时区' : '请选择城市'}
+                      </option>
                       {cities.map(city => (
                         <option key={city} value={city}>
                           {city}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaZiView } from '@/components/BaZiView';
@@ -9,7 +9,7 @@ import { JueXingCangView } from '@/components/JueXingCangView';
 import { MbtiTestView } from '@/components/MbtiTestView';
 import { WorldNewsView } from '@/components/WorldNewsView';
 import { MobileNav } from '@/components/MobileNav';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { TabType } from '@/types/tabs';
 
 const Sidebar = dynamic(
@@ -18,9 +18,11 @@ const Sidebar = dynamic(
 );
 
 const HomeContent: React.FC = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const hasSyncedRef = useRef(false);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab') as TabType | null;
@@ -28,7 +30,18 @@ const HomeContent: React.FC = () => {
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
+    hasSyncedRef.current = true;
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!hasSyncedRef.current) return;
+    const tabParam = searchParams.get('tab');
+    if (tabParam !== activeTab) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', activeTab);
+      router.replace(`/?${params.toString()}`);
+    }
+  }, [activeTab, router, searchParams]);
 
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">

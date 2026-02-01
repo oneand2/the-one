@@ -79,6 +79,7 @@ export function analyzeHexagram(yaos: YaoValue[]): HexagramAnalysis {
     mainHexagram: mainHexagram || null,
     transformedHexagram,
     movingPositions,
+    yaos,
   });
 
   return {
@@ -95,8 +96,9 @@ function buildInterpretation(params: {
   mainHexagram: Hexagram | null;
   transformedHexagram: Hexagram | null;
   movingPositions: number[];
+  yaos: YaoValue[];
 }): HexagramInterpretation | null {
-  const { mainHexagram, transformedHexagram, movingPositions } = params;
+  const { mainHexagram, transformedHexagram, movingPositions, yaos } = params;
   if (!mainHexagram) return null;
 
   const movingCount = movingPositions.length;
@@ -120,10 +122,24 @@ function buildInterpretation(params: {
   }
 
   if (movingCount === 2) {
-    const pos = Math.max(...movingPositions);
+    const [posA, posB] = [...movingPositions].sort((a, b) => a - b);
+    const yaoA = yaos[posA];
+    const yaoB = yaos[posB];
+    const isYinA = yaoA === 6;
+    const isYinB = yaoB === 6;
+    let primaryPos = posB;
+    let secondaryPos = posA;
+    // 一阴一阳：取阴爻为主；同阴同阳：取高位为主
+    if (isYinA !== isYinB) {
+      primaryPos = isYinA ? posA : posB;
+      secondaryPos = isYinA ? posB : posA;
+    } else {
+      primaryPos = Math.max(posA, posB);
+      secondaryPos = Math.min(posA, posB);
+    }
     return {
-      title: `本卦${getYaoPositionName(pos)}爻爻辞`,
-      texts: [mainHexagram.lines[pos]],
+      title: `本卦${getYaoPositionName(posA)}爻与${getYaoPositionName(posB)}爻爻辞（以${getYaoPositionName(primaryPos)}爻为主）`,
+      texts: [mainHexagram.lines[primaryPos], mainHexagram.lines[secondaryPos]],
       type: 'yaoci',
     };
   }

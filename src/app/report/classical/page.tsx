@@ -354,7 +354,7 @@ const ClassicalReportContent: React.FC = () => {
         localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
 
         // 4. 跳转到决行藏界面
-        router.push('/?tab=liuji');
+        router.push('/juexingcang');
       }
     } catch (e) {
       setSaveStatus('error');

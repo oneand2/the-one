@@ -22,6 +22,18 @@ create policy "用户仅能读写自己的档案"
 -- 且「被邀请人注册时」给邀请人加 200 需在 callback 里用 service role 完成（见应用代码）。
 
 -- 邀请奖励：用安全函数在数据库内完成增币，避免依赖 service role key
+create table if not exists invite_rewards (
+  id uuid primary key default gen_random_uuid(),
+  new_user_id uuid not null references auth.users(id) on delete cascade,
+  inviter_id uuid not null references auth.users(id) on delete cascade,
+  invite_code text not null,
+  reward int not null,
+  created_at timestamptz not null default now(),
+  unique (new_user_id)
+);
+
+create index if not exists idx_invite_rewards_inviter_id on invite_rewards(inviter_id);
+
 create or replace function apply_invite_reward(p_invite_code text, p_new_user_id uuid, p_reward int default 200)
 returns boolean
 language plpgsql
@@ -30,6 +42,7 @@ set search_path = public
 as $$
 declare
   v_inviter_id uuid;
+  v_inserted int;
 begin
   if p_invite_code is null or length(trim(p_invite_code)) = 0 then
     return false;
@@ -48,9 +61,19 @@ begin
     return false;
   end if;
 
-  update user_profiles
-  set coins_balance = coins_balance + p_reward
-  where user_id = v_inviter_id;
+  insert into invite_rewards (new_user_id, inviter_id, invite_code, reward)
+  values (p_new_user_id, v_inviter_id, trim(upper(p_invite_code)), p_reward)
+  on conflict (new_user_id) do nothing;
+
+  get diagnostics v_inserted = row_count;
+  if v_inserted = 0 then
+    return false;
+  end if;
+
+  insert into user_profiles (user_id, coins_balance)
+  values (v_inviter_id, p_reward)
+  on conflict (user_id) do update
+  set coins_balance = user_profiles.coins_balance + p_reward;
 
   return true;
 end;

@@ -19,6 +19,23 @@ export async function login(formData: FormData): Promise<AuthResult> {
   if (error) {
     return { error: '登录失败，请检查邮箱和密码' };
   }
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const inviteCode = (user?.user_metadata?.invite_code as string | undefined)?.trim()?.toUpperCase();
+    if (user && inviteCode) {
+      const { error: rewardErr } = await supabase.rpc('apply_invite_reward', {
+        p_invite_code: inviteCode,
+        p_new_user_id: user.id,
+        p_reward: 200,
+      });
+      if (rewardErr) {
+        console.error('Invite reward (login): rpc failed', rewardErr);
+      }
+    }
+  } catch (err) {
+    console.error('Invite reward (login): unexpected error', err);
+  }
   return { redirectUrl: nextUrl };
 }
 

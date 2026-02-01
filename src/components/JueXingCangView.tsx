@@ -1868,11 +1868,11 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
           yaos: record.hexagram_info?.yaos || [],
           mainHexagram: {
             title: record.hexagram_info?.mainHexagram || '',
-            description: record.hexagram_info?.mainDescription || '',
+            description: record.hexagram_info?.mainDescription || record.hexagram_info?.mainHexagram?.description || '',
           },
           transformedHexagram: record.hexagram_info?.transformedHexagram ? {
             title: record.hexagram_info.transformedHexagram,
-            description: '',
+            description: record.hexagram_info?.transformedDescription || record.hexagram_info?.transformedHexagram?.description || '',
           } : undefined,
           hasMovingLines: record.hexagram_info?.hasMovingLines || false,
           movingLineTexts: record.hexagram_info?.movingLineTexts || [],

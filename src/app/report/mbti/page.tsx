@@ -6,16 +6,31 @@ import { MbtiTestView, TestResult, calculateShadowType } from '@/components/Mbti
 
 const COGNITIVE_FUNCTIONS = ['Se', 'Si', 'Ne', 'Ni', 'Te', 'Ti', 'Fe', 'Fi'] as const;
 
-function buildTestResult(type: string, function_scores: Record<string, number>): TestResult {
+function buildTestResult(data: {
+  type: string;
+  function_scores: Record<string, number>;
+  user_slots?: unknown;
+  function_strengths?: Record<string, number>;
+  ideal_strengths?: Record<string, number>;
+  insights?: unknown[];
+  fit_score?: number;
+  shadow_type?: string;
+}): TestResult {
   const scores: Record<string, number> = {};
   COGNITIVE_FUNCTIONS.forEach((f) => {
-    scores[f] = typeof function_scores[f] === 'number' ? function_scores[f] : 0;
+    scores[f] = typeof data.function_scores[f] === 'number' ? data.function_scores[f] : 0;
   });
+  
   return {
-    type: type as TestResult['type'],
-    score: 0,
-    shadowType: calculateShadowType(type as TestResult['type']),
+    type: data.type as TestResult['type'],
+    score: data.fit_score || 0,
+    shadowType: data.shadow_type ? (data.shadow_type as TestResult['type']) : calculateShadowType(data.type as TestResult['type']),
     functionScores: scores as TestResult['functionScores'],
+    userSlots: data.user_slots as TestResult['userSlots'],
+    functionStrengths: data.function_strengths as TestResult['functionStrengths'],
+    idealStrengths: data.ideal_strengths as TestResult['idealStrengths'],
+    insights: data.insights as TestResult['insights'],
+    fitScore: data.fit_score,
   };
 }
 
@@ -38,8 +53,9 @@ function ReportMbtiContent() {
         if (!r.ok) throw new Error('未找到或无权查看');
         return r.json();
       })
-      .then((data: { type: string; function_scores: Record<string, number> }) => {
-        setResult(buildTestResult(data.type, data.function_scores || {}));
+      .then((data) => {
+        console.log('读取到的MBTI数据:', data);
+        setResult(buildTestResult(data));
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));

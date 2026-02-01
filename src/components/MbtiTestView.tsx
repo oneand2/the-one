@@ -1071,25 +1071,35 @@ function MbtiResultActions({
   const handleSave = async () => {
     setSaveStatus('saving');
     try {
+      const payload = {
+        type: result.type,
+        function_scores: result.functionScores,
+        // 新增数据
+        user_slots: result.userSlots,
+        function_strengths: result.functionStrengths,
+        ideal_strengths: result.idealStrengths,
+        insights: result.insights,
+        fit_score: result.score,
+        shadow_type: result.shadowType,
+      };
+      console.log('保存MBTI数据:', payload);
       const res = await fetch('/api/records/mbti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          type: result.type,
-          function_scores: result.functionScores,
-          // 新增数据
-          user_slots: result.userSlots,
-          function_strengths: result.functionStrengths,
-          ideal_strengths: result.idealStrengths,
-          insights: result.insights,
-          fit_score: result.score,
-          shadow_type: result.shadowType,
-        }),
+        body: JSON.stringify(payload),
       });
-      if (res.ok) setSaveStatus('saved');
-      else setSaveStatus('error');
-    } catch {
+      if (res.ok) {
+        const data = await res.json();
+        console.log('保存成功:', data);
+        setSaveStatus('saved');
+      } else {
+        const error = await res.json();
+        console.error('保存失败:', error);
+        setSaveStatus('error');
+      }
+    } catch (err) {
+      console.error('保存异常:', err);
       setSaveStatus('error');
     }
   };

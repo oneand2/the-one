@@ -83,6 +83,12 @@ export interface LiuyaoImportData {
   };
   hasMovingLines: boolean;
   movingLineTexts: string[];
+  /** 按动爻规则得出的解卦依据（卦辞或爻辞），优先于 movingLineTexts 使用 */
+  interpretation?: {
+    title: string;
+    texts: string[];
+    type: 'guaci' | 'yaoci';
+  };
   aiResult?: string;
   divineDate?: string;
 }

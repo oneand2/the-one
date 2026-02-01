@@ -9,7 +9,6 @@ const SUBMENU_LEAVE_DELAY_MS = 180;
 interface SidebarProps {
   activeTab: TabType;
   onTabChange: React.Dispatch<React.SetStateAction<TabType>>;
-  onJuexingcangNavigate?: () => void;
   isJuexingcangActive?: boolean;
   isCollapsed: boolean;
   onMouseEnter: () => void;
@@ -21,7 +20,7 @@ type TabItem =
   | { id: 'liuji'; label: string; subTabs?: never }
   | { id: 'guanxin'; label: string; subTabs: Array<{ id: TabType; label: string }> };
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onJuexingcangNavigate, isJuexingcangActive, isCollapsed, onMouseEnter, onMouseLeave }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuexingcangActive, isCollapsed, onMouseEnter, onMouseLeave }) => {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -226,11 +225,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onJuex
                       if ('subTabs' in tab && tab.subTabs) {
                         // 如果有子菜单，点击时切换到第一个子选项
                         onTabChange(tab.subTabs[0].id);
-                      } else if (tab.id === 'liuji' && onJuexingcangNavigate) {
-                        onJuexingcangNavigate();
                       } else {
                         const tabId = tab.id;
-                        if (tabId === 'guanshi' || tabId === 'wendao') {
+                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'liuji') {
                           onTabChange(tabId);
                         }
                       }

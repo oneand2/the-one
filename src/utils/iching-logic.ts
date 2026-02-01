@@ -123,20 +123,9 @@ function buildInterpretation(params: {
 
   if (movingCount === 2) {
     const [posA, posB] = [...movingPositions].sort((a, b) => a - b);
-    const yaoA = yaos[posA];
-    const yaoB = yaos[posB];
-    const isYinA = yaoA === 6;
-    const isYinB = yaoB === 6;
-    let primaryPos = posB;
-    let secondaryPos = posA;
-    // 一阴一阳：取阴爻为主；同阴同阳：取高位为主
-    if (isYinA !== isYinB) {
-      primaryPos = isYinA ? posA : posB;
-      secondaryPos = isYinA ? posB : posA;
-    } else {
-      primaryPos = Math.max(posA, posB);
-      secondaryPos = Math.min(posA, posB);
-    }
+    // 以位置靠上的那一爻为主
+    const primaryPos = Math.max(posA, posB);
+    const secondaryPos = Math.min(posA, posB);
     return {
       title: `本卦${getYaoPositionName(posA)}爻与${getYaoPositionName(posB)}爻爻辞（以${getYaoPositionName(primaryPos)}爻为主）`,
       texts: [mainHexagram.lines[primaryPos], mainHexagram.lines[secondaryPos]],
@@ -147,7 +136,7 @@ function buildInterpretation(params: {
   if (movingCount === 3) {
     if (transformedHexagram) {
       return {
-        title: '本卦与变卦卦辞',
+        title: '本卦与变卦卦辞（以本卦为主）',
         texts: [
           `本卦：${mainHexagram.description}`,
           `变卦：${transformedHexagram.description}`,
@@ -163,11 +152,16 @@ function buildInterpretation(params: {
   }
 
   if (movingCount === 4) {
-    const pos = staticPositions.length > 0 ? Math.min(...staticPositions) : null;
-    if (pos !== null && transformedHexagram) {
+    // 以变卦中两个静爻的爻辞来断，以位置靠下的那一爻为主
+    if (staticPositions.length === 2 && transformedHexagram) {
+      const lowerPos = Math.min(...staticPositions);
+      const upperPos = Math.max(...staticPositions);
       return {
-        title: `变卦${getYaoPositionName(pos)}爻爻辞`,
-        texts: [transformedHexagram.lines[pos]],
+        title: `变卦${getYaoPositionName(lowerPos)}爻与${getYaoPositionName(upperPos)}爻静爻爻辞（以${getYaoPositionName(lowerPos)}爻为主）`,
+        texts: [
+          transformedHexagram.lines[lowerPos],
+          transformedHexagram.lines[upperPos],
+        ],
         type: 'yaoci',
       };
     }

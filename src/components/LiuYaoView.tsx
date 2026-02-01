@@ -116,6 +116,13 @@ export const LiuYaoView: React.FC = () => {
           : undefined,
         hasMovingLines: hexagramAnalysis?.hasMovingLines ?? false,
         movingLineTexts: hexagramAnalysis?.movingLineTexts ?? [],
+        interpretation: hexagramAnalysis?.interpretation
+          ? {
+              title: hexagramAnalysis.interpretation.title,
+              texts: hexagramAnalysis.interpretation.texts,
+              type: hexagramAnalysis.interpretation.type,
+            }
+          : undefined,
       }],
     };
 
@@ -133,6 +140,13 @@ export const LiuYaoView: React.FC = () => {
       transformedDescription: hexagramAnalysis?.transformedHexagram?.description || '',
       hasMovingLines: hexagramAnalysis?.hasMovingLines ?? false,
       movingLineTexts: hexagramAnalysis?.movingLineTexts ?? [],
+      interpretation: hexagramAnalysis?.interpretation
+        ? {
+            title: hexagramAnalysis.interpretation.title,
+            texts: hexagramAnalysis.interpretation.texts,
+            type: hexagramAnalysis.interpretation.type,
+          }
+        : undefined,
       yaos: yaos.map((yao, index) => ({
         position: index,
         name: yao.name,
@@ -165,7 +179,7 @@ export const LiuYaoView: React.FC = () => {
     };
 
     void saveRecord();
-    router.push('/juexingcang');
+    router.push('/?tab=liuji');
   };
 
   // 当6个爻都摇完后，自动解卦

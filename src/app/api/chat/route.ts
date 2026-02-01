@@ -239,20 +239,24 @@ export async function POST(req: Request) {
         }
       }
       
-      // 六爻数据
+      // 六爻数据（解卦依据按动爻规则：三爻动用本卦+变卦卦辞等）
       if (liuyaoList.length > 0) {
         liuyaoList.forEach((liuyao, index) => {
           importContext += `### 六爻占卜信息（第${index + 1}条）\n\n`;
           importContext += `**所问之事**: ${liuyao.question}\n\n`;
           importContext += `**本卦**: ${liuyao.mainHexagram.title}\n`;
-          importContext += `**卦辞**: ${liuyao.mainHexagram.description}\n\n`;
+          importContext += `**本卦卦辞**: ${liuyao.mainHexagram.description}\n\n`;
           
           if (liuyao.hasMovingLines && liuyao.transformedHexagram) {
-            importContext += `**变卦**: ${liuyao.transformedHexagram.title}\n\n`;
+            importContext += `**变卦**: ${liuyao.transformedHexagram.title}\n`;
+            importContext += `**变卦卦辞**: ${liuyao.transformedHexagram.description}\n\n`;
           }
-          
-          if (liuyao.movingLineTexts.length > 0) {
-            importContext += `**动爻**: ${liuyao.movingLineTexts.join('；')}\n\n`;
+          // 按动爻规则得出的解卦依据（如三爻动=本卦+变卦卦辞，非三个爻辞）
+          if (liuyao.interpretation?.texts?.length) {
+            importContext += `**解卦依据（${liuyao.interpretation.title}）**:\n`;
+            liuyao.interpretation.texts.forEach((t) => { importContext += `${t}\n\n`; });
+          } else if (liuyao.movingLineTexts?.length > 0) {
+            importContext += `**动爻爻辞**: ${liuyao.movingLineTexts.join('；')}\n\n`;
           }
           
           if (liuyao.aiResult) {

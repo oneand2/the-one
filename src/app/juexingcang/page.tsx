@@ -1,9 +1,5 @@
-import { JueXingCangView } from '@/components/JueXingCangView';
+import { JueXingCangLayout } from './JueXingCangLayout';
 
 export default function JueXingCangPage() {
-  return (
-    <div className="min-h-screen bg-[#fbf9f4]">
-      <JueXingCangView />
-    </div>
-  );
+  return <JueXingCangLayout />;
 }

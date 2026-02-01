@@ -9,16 +9,19 @@ const SUBMENU_LEAVE_DELAY_MS = 180;
 interface SidebarProps {
   activeTab: TabType;
   onTabChange: React.Dispatch<React.SetStateAction<TabType>>;
+  onJuexingcangNavigate?: () => void;
+  isJuexingcangActive?: boolean;
   isCollapsed: boolean;
   onMouseEnter: () => void;
   onMouseLeave: () => void;
 }
 
 type TabItem = 
-  | { id: 'guanshi' | 'wendao' | 'liuji'; label: string; subTabs?: never }
+  | { id: 'guanshi' | 'wendao'; label: string; subTabs?: never }
+  | { id: 'liuji'; label: string; subTabs?: never }
   | { id: 'guanxin'; label: string; subTabs: Array<{ id: TabType; label: string }> };
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isCollapsed, onMouseEnter, onMouseLeave }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, onJuexingcangNavigate, isJuexingcangActive, isCollapsed, onMouseEnter, onMouseLeave }) => {
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -223,10 +226,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                       if ('subTabs' in tab && tab.subTabs) {
                         // 如果有子菜单，点击时切换到第一个子选项
                         onTabChange(tab.subTabs[0].id);
+                      } else if (tab.id === 'liuji' && onJuexingcangNavigate) {
+                        onJuexingcangNavigate();
                       } else {
-                        // 无子菜单，直接切换
                         const tabId = tab.id;
-                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'liuji') {
+                        if (tabId === 'guanshi' || tabId === 'wendao') {
                           onTabChange(tabId);
                         }
                       }
@@ -238,7 +242,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                       style={{
                         fontSize: '15px',
                         letterSpacing: '0.35em',
-                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id 
+                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'liuji' && activeTab === tab.id) || (tab.id === 'liuji' && isJuexingcangActive)
                           ? '#57534e' 
                           : '#a8a29e',
                         fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
@@ -251,7 +255,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isColl
                     </span>
                     
                     {/* 选中指示器 */}
-                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || activeTab === tab.id) && (
+                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'liuji' && activeTab === tab.id) || (tab.id === 'liuji' && isJuexingcangActive)) && (
                       <motion.div
                         layoutId="activeIndicator"
                         style={{

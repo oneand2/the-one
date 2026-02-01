@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter, usePathname } from 'next/navigation';
 import type { TabType } from '@/types/tabs';
 
 interface MobileNavProps {
@@ -11,13 +12,17 @@ interface MobileNavProps {
 
 const iconClass = 'w-[30px] h-[30px] flex-shrink-0';
 
+type NavItemId = TabType | 'juexingcang';
+
 export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) => {
+  const router = useRouter();
+  const pathname = usePathname();
   const [subNavGroup, setSubNavGroup] = useState<'mbti' | null>(null);
   const navItems: Array<{
-    id: TabType;
+    id: NavItemId;
     label: string;
     icon: React.ReactNode;
-    subTabs?: Array< { id: TabType; label: string }>;
+    subTabs?: Array<{ id: TabType; label: string }>;
   }> = [
     {
       id: 'guanshi',
@@ -53,7 +58,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
       subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }, { id: 'liuyao', label: '六爻' }],
     },
     {
-      id: 'liuji',
+      id: 'juexingcang',
       label: '决行藏',
       icon: (
         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" className={iconClass}>
@@ -66,7 +71,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
     },
   ];
 
-  const getActiveId = (itemId: TabType) => {
+  const getActiveId = (itemId: NavItemId) => {
+    if (itemId === 'juexingcang') return pathname === '/juexingcang';
     if (itemId === 'mbti' && (activeTab === 'bazi' || activeTab === 'mbti' || activeTab === 'liuyao')) return true;
     return activeTab === itemId;
   };
@@ -140,6 +146,10 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
             <button
               key={item.id}
               onClick={() => {
+                if (item.id === 'juexingcang') {
+                  router.push('/juexingcang');
+                  return;
+                }
                 if (hasSubTabs) {
                   setSubNavGroup(item.id as 'mbti');
                   onTabChange('bazi');

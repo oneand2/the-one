@@ -1,1 +1,1 @@
-export type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'liuji' | 'wendao';
+export type TabType = 'guanshi' | 'bazi' | 'mbti' | 'liuyao' | 'wendao';

@@ -15,7 +15,7 @@ const Sidebar = dynamic(
 export function JueXingCangLayout() {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const activeTab: TabType = 'guanshi';
+  const activeTab: TabType = 'juexingcang';
 
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">
@@ -24,7 +24,6 @@ export function JueXingCangLayout() {
         <Sidebar
           activeTab={activeTab}
           onTabChange={(tab) => router.push(`/?tab=${tab}`)}
-          onJuexingcangNavigate={() => router.push('/juexingcang')}
           isJuexingcangActive
           isCollapsed={isCollapsed}
           onMouseEnter={() => setIsCollapsed(false)}

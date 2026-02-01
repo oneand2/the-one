@@ -61,7 +61,9 @@ export async function GET(request: Request) {
     return {
       id: row.id,
       question: p.question ?? '',
+      hexagram_info: p.hexagram_info ?? {},
       date: p.date ?? '',
+      ai_result: typeof p.ai_result === 'string' ? p.ai_result : '',
       created_at: row.created_at,
     };
   });

@@ -82,6 +82,7 @@ export const JueXingCangView: React.FC = () => {
   const lastSendRef = useRef<{ content: string; at: number }>({ content: '', at: 0 });
   const idRef = useRef(0);
   const prefillAppliedRef = useRef(false);
+  const importAppliedRef = useRef(false);
   /** 用户是否在"跟读底部"（在底部附近未主动上滑），仅在为 true 时自动滚到底 */
   const userFollowsBottomRef = useRef(true);
   const [insuffOpen, setInsuffOpen] = useState(false);
@@ -327,9 +328,13 @@ export const JueXingCangView: React.FC = () => {
   useEffect(() => {
     const cleanupTimers: number[] = [];
     const initializeWithImportData = async () => {
+      if (importAppliedRef.current) return;
+      importAppliedRef.current = true;
       try {
         const cached = localStorage.getItem(pendingImportKey);
         if (!cached) return;
+        // Remove immediately to avoid duplicate imports on double-run effects.
+        localStorage.removeItem(pendingImportKey);
         const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
         if (getImportCount(normalized) > 0) {
           setImportData((prev) => mergeImportData(prev, normalized));
@@ -354,8 +359,6 @@ export const JueXingCangView: React.FC = () => {
         }
       } catch (error) {
         console.warn('读取导入缓存失败:', error);
-      } finally {
-        localStorage.removeItem(pendingImportKey);
       }
     };
 

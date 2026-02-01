@@ -353,54 +353,48 @@ const applyGearingSystem = (rawData: UserRawData): UserRawData => {
 };
 
 // ═══════════════════════════════════════════════════════════
-// 步骤2：最佳拟合度计算 (Template Matching)
-// 使用欧几里得距离比对用户数据与16个标准类型
+// 步骤2：最佳拟合度计算 (Radar Matching)
+// 直接使用雷达图强度与16个标准类型对比
 // ═══════════════════════════════════════════════════════════
-const calculateBestFitType = (rawData: UserRawData): { type: MBTIType; fitScore: number } => {
+const calculateBestFitType = (
+  userStrengths: { [key in CognitiveFunction]: number }
+): { type: MBTIType; fitScore: number } => {
   let bestType: MBTIType = 'INFJ';
   let minDistance = Infinity;
-  
+
   MBTI_TYPES.forEach(mbtiType => {
-    const standardStack = MBTI_FUNCTION_STACKS[mbtiType];
+    const idealStrengths = calculateIdealStrengths(mbtiType, userStrengths);
     let totalDistance = 0;
-    
-    // 计算欧几里得距离
-    // 比较每个位置上，用户得分最高的功能与标准类型的差异
-    for (let slotIndex = 0; slotIndex < 8; slotIndex++) {
-      const standardFunc = standardStack[slotIndex];
-      
-      // 获取用户在该位置的所有功能得分
-      const userScoresAtSlot: { func: CognitiveFunction; score: number }[] = [];
-      COGNITIVE_FUNCTIONS.forEach(func => {
-        userScoresAtSlot.push({ func, score: rawData.slotScores[func][slotIndex] });
-      });
-      
-      // 按得分排序
-      userScoresAtSlot.sort((a, b) => b.score - a.score);
-      
-      // 计算与标准功能的距离
-      // 如果用户在该位置的最高分功能与标准功能相同，距离为0
-      // 否则，计算标准功能在用户排名中的位置差距
-      // 获取用户在该位置的最高分功能与标准功能的排名
-      const standardFuncRank = userScoresAtSlot.findIndex(s => s.func === standardFunc);
-      
-      // 位置差距 + 分数差距
-      const positionPenalty = standardFuncRank * 2;
-      const scoreDiff = (userScoresAtSlot[0]?.score || 0) - (rawData.slotScores[standardFunc][slotIndex] || 0);
-      
-      totalDistance += positionPenalty + Math.abs(scoreDiff) * 0.1;
-    }
-    
+    let maxDistance = 0;
+
+    COGNITIVE_FUNCTIONS.forEach(func => {
+      const userValue = userStrengths[func] || 0;
+      const idealValue = idealStrengths[func] || 0;
+      totalDistance += Math.abs(userValue - idealValue);
+      maxDistance += Math.max(userValue, idealValue);
+    });
+
     if (totalDistance < minDistance) {
       minDistance = totalDistance;
       bestType = mbtiType;
     }
   });
-  
+
   // 计算拟合度分数 (0-100)
-  const maxPossibleDistance = 8 * 14 + 8 * 5; // 理论最大距离
-  const fitScore = Math.max(0, Math.min(100, 100 - (minDistance / maxPossibleDistance) * 100));
-  
+  const idealStrengths = calculateIdealStrengths(bestType, userStrengths);
+  let maxDistance = 0;
+  let totalDistance = 0;
+  COGNITIVE_FUNCTIONS.forEach(func => {
+    const userValue = userStrengths[func] || 0;
+    const idealValue = idealStrengths[func] || 0;
+    totalDistance += Math.abs(userValue - idealValue);
+    maxDistance += Math.max(userValue, idealValue);
+  });
+  const fitScore = Math.max(
+    0,
+    Math.min(100, 100 - (totalDistance / Math.max(1, maxDistance)) * 100)
+  );
+
   return { type: bestType, fitScore };
 };
 
@@ -1243,6 +1237,13 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
     }
   };
 
+  // 切题后自动回到页面顶部
+  useEffect(() => {
+    if (testStatus === 'testing') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentQuestionIndex, testStatus]);
+
   // 计算最终结果 - 使用新的三步算法
   const calculateResult = () => {
     // ═══════════════════════════════════════════════════════════
@@ -1256,14 +1257,15 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
     const correctedData = applyGearingSystem(rawData);
     
     // ═══════════════════════════════════════════════════════════
-    // Step 2: 最佳拟合度计算 (Template Matching)
-    // ═══════════════════════════════════════════════════════════
-    const { type: bestFitType, fitScore } = calculateBestFitType(correctedData);
-    
-    // ═══════════════════════════════════════════════════════════
-    // Step 3: 能量强度计算 (For Radar Chart)
+    // Step 2: 能量强度计算 (For Radar Chart)
     // ═══════════════════════════════════════════════════════════
     const functionStrengths = calculateFunctionStrengths(correctedData);
+    
+    // ═══════════════════════════════════════════════════════════
+    // Step 3: 最佳拟合度计算 (Radar Matching)
+    // ═══════════════════════════════════════════════════════════
+    const { type: bestFitType, fitScore } = calculateBestFitType(functionStrengths);
+    
     // 传入用户强度，让标准线与用户实测在同一量级
     const idealStrengths = calculateIdealStrengths(bestFitType, functionStrengths);
     

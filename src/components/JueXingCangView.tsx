@@ -92,6 +92,7 @@ export const JueXingCangView: React.FC = () => {
   const [importData, setImportData] = useState<ImportData>({});
   const [showBaziImportedNotice, setShowBaziImportedNotice] = useState(false);
   const [showLiuyaoImportedNotice, setShowLiuyaoImportedNotice] = useState(false);
+  const [showMeditationWarning, setShowMeditationWarning] = useState(false);
   const pendingImportKey = 'juexingcang-import-pending';
   const inputPresetKey = 'juexingcang-input-preset';
 
@@ -927,9 +928,57 @@ export const JueXingCangView: React.FC = () => {
 
           {/* 按钮组 */}
           <div className="flex items-center justify-center gap-4 sm:gap-5 mb-4 sm:mb-5">
+            {/* 入定模式提示 */}
+            <AnimatePresence>
+              {showMeditationWarning && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute top-20 left-1/2 -translate-x-1/2 z-50"
+                >
+                  <div className="relative px-6 py-3.5 rounded-xl bg-white/95 backdrop-blur-md border border-stone-200 shadow-lg shadow-stone-900/10">
+                    {/* 装饰角 */}
+                    <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-stone-300 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-stone-300 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-stone-300 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-stone-300 rounded-br-lg" />
+                    
+                    <div className="flex items-center gap-3">
+                      {/* 呼吸动画的圆点 */}
+                      <motion.div
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          opacity: [0.5, 0.8, 0.5]
+                        }}
+                        transition={{ 
+                          duration: 2, 
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                        className="w-1.5 h-1.5 rounded-full bg-amber-500"
+                      />
+                      
+                      <span className="text-[13px] text-stone-700 tracking-[0.15em] font-light">
+                        入定模式不可以使用深思功能哦
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* 深思按钮 */}
             <button
-              onClick={() => setMindMode(isDeep ? 'none' : 'deep')}
+              onClick={() => {
+                if (isMeditation) {
+                  setShowMeditationWarning(true);
+                  setTimeout(() => setShowMeditationWarning(false), 3000);
+                  return;
+                }
+                setMindMode(isDeep ? 'none' : 'deep');
+              }}
               className="group relative"
             >
               <div className={`

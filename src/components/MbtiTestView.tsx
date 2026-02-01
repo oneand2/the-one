@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronDown, Sparkles, Sun, Moon, Zap, Save, Share2, AlertTriangle } from 'lucide-react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
@@ -1058,17 +1058,20 @@ function MbtiResultActions({
   onRestart,
   isStandaloneReport,
   onStandaloneReturn,
+  autoSave,
 }: {
   result: TestResult;
   onRestart: () => void;
   isStandaloneReport?: boolean;
   onStandaloneReturn?: () => void;
+  autoSave?: boolean;
 }) {
   const handleRestart = isStandaloneReport ? (onStandaloneReturn ?? (() => { window.location.href = '/'; })) : onRestart;
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [shareCopied, setShareCopied] = useState(false);
+  const hasAutoSaved = useRef(false);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     setSaveStatus('saving');
     try {
       const payload = {
@@ -1102,7 +1105,13 @@ function MbtiResultActions({
       console.error('保存异常:', err);
       setSaveStatus('error');
     }
-  };
+  }, [result]);
+
+  useEffect(() => {
+    if (!autoSave || hasAutoSaved.current || saveStatus !== 'idle') return;
+    hasAutoSaved.current = true;
+    handleSave();
+  }, [autoSave, saveStatus, handleSave]);
 
   const handleShare = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : '';
@@ -2341,6 +2350,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           onRestart={restart}
           isStandaloneReport={!!initialResult}
           onStandaloneReturn={onStandaloneReturn}
+          autoSave={!initialResult}
         />
       </motion.div>
     );

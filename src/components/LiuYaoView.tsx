@@ -9,7 +9,12 @@ import { CoinAnimation } from './CoinAnimation';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
 
-export const LiuYaoView: React.FC = () => {
+export interface LiuYaoViewProps {
+  /** 点击「凡事有因，于此寻果」后调用，用于切换到决行藏 tab 并同步 URL */
+  onNavigateToJuexingcang?: () => void;
+}
+
+export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [question, setQuestion] = useState<string>('');
@@ -179,7 +184,12 @@ export const LiuYaoView: React.FC = () => {
     };
 
     void saveRecord();
-    router.push('/?tab=juexingcang');
+    // 用页面提供的切换回调，与侧栏/MobileNav 一致（replaceState + setActiveTab），否则 router.push 不会更新 activeTab
+    if (onNavigateToJuexingcang) {
+      onNavigateToJuexingcang();
+    } else {
+      router.push('/?tab=juexingcang');
+    }
   };
 
   // 当6个爻都摇完后，自动解卦
@@ -335,7 +345,7 @@ export const LiuYaoView: React.FC = () => {
           </>
         )}
 
-        {/* 硬币动画 - 只在问题确认后显示 */}
+        {/* 硬币动画 - 只在问题确认后显示；pointer-events-none 避免 exit 时透明层挡住下方按钮 */}
         <AnimatePresence>
           {isQuestionSet && showCoinAnimation && currentTossResult && (
             <motion.div
@@ -343,6 +353,7 @@ export const LiuYaoView: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{ duration: 0.3 }}
+              className="pointer-events-none"
             >
               <CoinAnimation
                 finalResult={getCoinsFromValue(currentTossResult)}
@@ -352,7 +363,7 @@ export const LiuYaoView: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* 卦象显示 - 只在问题确认后显示 */}
+        {/* 卦象显示 - 只在问题确认后显示；relative z-10 确保按钮始终在可点击层 */}
         <AnimatePresence>
           {isQuestionSet && yaos.length > 0 && !showCoinAnimation && (
             <motion.div
@@ -360,7 +371,7 @@ export const LiuYaoView: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.6 }}
-              className="space-y-8"
+              className="space-y-8 relative z-10"
             >
               {/* 卦象图 */}
               <div className="w-full flex flex-col items-center space-y-4 py-8">
@@ -548,29 +559,33 @@ export const LiuYaoView: React.FC = () => {
                     </div>
                   )}
 
-                  {/* 决行藏解卦入口 */}
+                  {/* 决行藏解卦入口：父级 onClick 兜底，避免 motion/transform 导致按钮有时收不到点击 */}
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.2 }}
-                    className="mt-16 flex flex-col items-center gap-2"
+                    className="mt-16 flex flex-col items-center gap-2 cursor-pointer"
+                    onClick={handleDivine}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleDivine();
+                      }
+                    }}
                   >
-                    <motion.button
-                      onClick={handleDivine}
-                      className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg"
-                      style={{ 
-                        backgroundColor: '#78716c'
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDivine();
                       }}
-                      whileHover={{ 
-                        y: -2,
-                        backgroundColor: '#292524'
-                      }}
-                      whileTap={{ y: 0 }}
-                      transition={{ duration: 0.3 }}
+                      className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg bg-[#78716c] hover:bg-[#292524] hover:-translate-y-0.5 active:translate-y-0 transition-[background-color,transform] duration-300 cursor-pointer"
                     >
                       凡事有因，于此寻果
-                    </motion.button>
-                    <p className="text-xs text-stone-500 font-sans">进入决行藏继续解卦</p>
+                    </button>
+                    <p className="text-xs text-stone-500 font-sans pointer-events-none">进入决行藏继续解卦</p>
                   </motion.div>
                 </motion.div>
               )}

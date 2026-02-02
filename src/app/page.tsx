@@ -25,10 +25,8 @@ const Sidebar = dynamic(
 );
 
 const HomeContent: React.FC = () => {
-  // 首屏从 URL 读 tab（仅客户端），不依赖 useSearchParams，避免弱网下长时间 suspend 卡在「加载中」
-  const [activeTab, setActiveTab] = useState<TabType>(() =>
-    typeof window !== 'undefined' ? getTabFromUrl() : 'guanshi'
-  );
+  // 首屏固定为 guanshi，保证服务端与客户端首帧一致，避免 hydration 报错；useEffect 中再从 URL 同步真实 tab
+  const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
@@ -193,7 +191,7 @@ const HomeContent: React.FC = () => {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <LiuYaoView />
+                    <LiuYaoView onNavigateToJuexingcang={() => handleTabChange('juexingcang')} />
                   </motion.div>
                 )}
               </AnimatePresence>

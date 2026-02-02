@@ -343,24 +343,25 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
         if (getImportCount(normalized) > 0) {
           setImportData((prev) => mergeImportData(prev, normalized));
+          // 先立刻显示「已将数据导入」提示，再在后台创建会话，避免提示被 createNewSession 延迟
+          if ((normalized.bazi?.length ?? 0) > 0) {
+            setShowBaziImportedNotice(true);
+            const timer = window.setTimeout(() => {
+              setShowBaziImportedNotice(false);
+            }, 4000);
+            cleanupTimers.push(timer);
+          }
+          if ((normalized.liuyao?.length ?? 0) > 0) {
+            setShowLiuyaoImportedNotice(true);
+            const timer = window.setTimeout(() => {
+              setShowLiuyaoImportedNotice(false);
+            }, 4000);
+            cleanupTimers.push(timer);
+          }
           const newSession = await createNewSession();
           if (!newSession) {
             console.warn('自动创建会话失败，对话可能不会被保存');
           }
-        }
-        if ((normalized.bazi?.length ?? 0) > 0) {
-          setShowBaziImportedNotice(true);
-          const timer = window.setTimeout(() => {
-            setShowBaziImportedNotice(false);
-          }, 4000);
-          cleanupTimers.push(timer);
-        }
-        if ((normalized.liuyao?.length ?? 0) > 0) {
-          setShowLiuyaoImportedNotice(true);
-          const timer = window.setTimeout(() => {
-            setShowLiuyaoImportedNotice(false);
-          }, 4000);
-          cleanupTimers.push(timer);
         }
       } catch (error) {
         console.warn('读取导入缓存失败:', error);
@@ -1601,11 +1602,11 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
             {/* 提示文字 */}
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4">
               <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
-                回车发送
+              从见自己-六爻界面输入问题再导入此处
               </span>
               <div className="w-px h-2 bg-stone-300 hidden sm:block" />
               <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
-                Shift + 回车换行
+              可获得更优质的回答哦
               </span>
             </div>
           </div>

@@ -1,7 +1,8 @@
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { cookies } from 'next/headers';
 
 const PROFILE_TABLE = 'user_profiles';
 const INITIAL_COINS = 50;
@@ -18,7 +19,39 @@ export async function GET(request: NextRequest) {
   const origin = requestUrl.origin;
 
   if (code) {
-    const supabase = await createClient();
+    const cookieStore = await cookies();
+    
+    // 创建一个响应对象，用于正确设置 cookies
+    let response = NextResponse.redirect(`${origin}${next}`);
+
+    // 使用 createServerClient 并正确处理 cookies
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            // 将 cookies 设置到响应中
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+            // 同时也设置到 cookieStore 中
+            try {
+              cookiesToSet.forEach(({ name, value, options }) => {
+                cookieStore.set(name, value, options);
+              });
+            } catch (e) {
+              // 在某些情况下可能会失败，但响应中的 cookies 是最重要的
+            }
+          },
+        },
+      }
+    );
+    
+    // exchangeCodeForSession 会自动通过上面的 setAll 设置 session cookies
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error && data?.user) {
@@ -78,7 +111,9 @@ export async function GET(request: NextRequest) {
           console.error('Invite reward: unexpected error', err);
         }
       }
-      return NextResponse.redirect(`${origin}${next}`);
+      
+      // 返回已经设置好 cookies 的重定向响应
+      return response;
     }
   }
 

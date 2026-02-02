@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BaZiView } from '@/components/BaZiView';
@@ -9,8 +9,15 @@ import { MbtiTestView } from '@/components/MbtiTestView';
 import { WorldNewsView } from '@/components/WorldNewsView';
 import { JueXingCangView } from '@/components/JueXingCangView';
 import { MobileNav } from '@/components/MobileNav';
-import { useSearchParams } from 'next/navigation';
 import type { TabType } from '@/types/tabs';
+
+const VALID_TABS: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'juexingcang'];
+
+function getTabFromUrl(): TabType {
+  if (typeof window === 'undefined') return 'guanshi';
+  const tabParam = new URLSearchParams(window.location.search).get('tab');
+  return tabParam && VALID_TABS.includes(tabParam as TabType) ? (tabParam as TabType) : 'guanshi';
+}
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),
@@ -18,18 +25,18 @@ const Sidebar = dynamic(
 );
 
 const HomeContent: React.FC = () => {
-  const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabType>('guanshi');
+  // 首屏从 URL 读 tab（仅客户端），不依赖 useSearchParams，避免弱网下长时间 suspend 卡在「加载中」
+  const [activeTab, setActiveTab] = useState<TabType>(() =>
+    typeof window !== 'undefined' ? getTabFromUrl() : 'guanshi'
+  );
   const [isCollapsed, setIsCollapsed] = useState(true);
 
-  // 仅从 URL 同步到 state，不反向用 effect 覆盖 URL，避免与入链/导航冲突导致横跳
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'juexingcang'];
-    if (tabParam && validTabs.includes(tabParam as TabType)) {
-      setActiveTab(tabParam as TabType);
-    }
-  }, [searchParams]);
+    setActiveTab(getTabFromUrl());
+    const onPopState = () => setActiveTab(getTabFromUrl());
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   // 用户在本页点击 tab 时，仅更新 state 和 URL，不触发 router 导航（避免决行藏切换卡顿）
   const handleTabChange: React.Dispatch<React.SetStateAction<TabType>> = (tabOrUpdater) => {
@@ -200,24 +207,4 @@ const HomeContent: React.FC = () => {
   );
 };
 
-// 可见的加载态，避免弱网/低端机长时间白屏（useSearchParams 会触发 suspend）
-const PageLoadingFallback: React.FC = () => (
-  <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fbf9f4] px-6">
-    <div className="text-center space-y-4">
-      <p className="text-xl md:text-2xl text-stone-600 font-serif">终有一天</p>
-      <p className="text-xl md:text-2xl text-stone-600 font-serif">人与人之间会相互理解</p>
-      <p className="text-sm text-stone-500 font-sans pt-2">加载中…</p>
-      <div className="flex justify-center pt-2" aria-hidden>
-        <span className="inline-block w-6 h-6 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
-      </div>
-    </div>
-  </div>
-);
-
-const Home: React.FC = () => (
-  <Suspense fallback={<PageLoadingFallback />}>
-    <HomeContent />
-  </Suspense>
-);
-
-export default Home;
+export default HomeContent;

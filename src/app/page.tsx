@@ -200,8 +200,22 @@ const HomeContent: React.FC = () => {
   );
 };
 
+// 可见的加载态，避免弱网/低端机长时间白屏（useSearchParams 会触发 suspend）
+const PageLoadingFallback: React.FC = () => (
+  <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fbf9f4] px-6">
+    <div className="text-center space-y-4">
+      <p className="text-xl md:text-2xl text-stone-600 font-serif">终有一天</p>
+      <p className="text-xl md:text-2xl text-stone-600 font-serif">人与人之间会相互理解</p>
+      <p className="text-sm text-stone-500 font-sans pt-2">加载中…</p>
+      <div className="flex justify-center pt-2" aria-hidden>
+        <span className="inline-block w-6 h-6 border-2 border-stone-300 border-t-stone-600 rounded-full animate-spin" />
+      </div>
+    </div>
+  </div>
+);
+
 const Home: React.FC = () => (
-  <Suspense fallback={<div className="min-h-screen bg-[#fbf9f4]" />}>
+  <Suspense fallback={<PageLoadingFallback />}>
     <HomeContent />
   </Suspense>
 );

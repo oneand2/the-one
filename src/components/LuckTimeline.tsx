@@ -183,7 +183,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                   </span>
                   <span className="text-stone-400">·</span>
                   <span className="text-sm md:text-base text-stone-500">
-                    {selectedYear.age}岁
+                    {selectedYear.ageZhouSui != null ? selectedYear.ageZhouSui : selectedYear.age}周岁
                   </span>
                 </div>
               </div>
@@ -332,7 +332,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     {cycle.isPreLuck ? (
                       <>
                         <div className="text-[9px] md:text-[11px] text-stone-400 mb-1 md:mb-2">
-                          {cycle.startAge}岁起运
+                          {(cycle.startAgeZhouSui != null ? cycle.startAgeZhouSui : cycle.startAge)}周岁起运
                         </div>
                         <div className="text-[10px] md:text-xs text-stone-300 mb-2 md:mb-4">
                           {cycle.years[0]?.year || cycle.startYear}-{cycle.years[cycle.years.length - 1]?.year || cycle.endYear}
@@ -344,7 +344,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                     ) : (
                       <>
                         <div className="text-[9px] md:text-[11px] text-stone-400 mb-0.5 md:mb-1">
-                          {cycle.startAge}岁起运
+                          {(cycle.startAgeZhouSui != null ? cycle.startAgeZhouSui : cycle.startAge)}周岁起运
                         </div>
                         <div className="text-[10px] md:text-xs text-stone-300 mb-3 md:mb-6">
                           {cycle.years[0]?.year || cycle.startYear}-{cycle.years[cycle.years.length - 1]?.year || cycle.endYear}
@@ -401,7 +401,7 @@ export default function LuckTimeline({ data, baziData }: { data: any[], baziData
                             <span className={`text-[10px] md:text-xs ${isCurrent ? 'text-stone-600 font-medium' : 'text-stone-500'}`}>
                               {year.year}
                             </span>
-                            <span className={`text-[10px] md:text-xs ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>{year.age}岁</span>
+                            <span className={`text-[10px] md:text-xs ${isCurrent ? 'text-stone-500' : 'text-stone-400'}`}>{year.ageZhouSui != null ? year.ageZhouSui : year.age}周岁</span>
                           </div>
 
                           {/* 干支 + 十神 */}

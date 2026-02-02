@@ -3054,6 +3054,8 @@ export function calculateLuckCycles(
     // 1. 获取大运列表 (Index 0 就是第一步大运，不要切片)
     const daYunList = yun.getDaYun();
     const birthYear = validSolar.getYear();
+    /** 周岁：某年年底(12月31日)时的实足年龄 = year - birthYear */
+    const zhouSuiAtYear = (year: number) => Math.max(0, year - birthYear);
     let startAge = 1;
     let startYear = birthYear;
     let firstValidIndex = 0;
@@ -3111,6 +3113,7 @@ export function calculateLuckCycles(
       preLuckYears.push({
         year: currentYear,
         age: age,
+        ageZhouSui: zhouSuiAtYear(currentYear),
         ganZhi: liunianGanZhi,
         xiaoYunGanZhi: xiaoYunGanZhi,
         gods: "小运",
@@ -3122,6 +3125,7 @@ export function calculateLuckCycles(
     const xiaoYunCycle = {
       isPreLuck: true,
       startAge: 1,
+      startAgeZhouSui: zhouSuiAtYear(birthYear),
       startYear: birthYear,
       endYear: startYear - 1,
       ganZhi: "小运",
@@ -3180,19 +3184,23 @@ export function calculateLuckCycles(
             )
           : [];
 
+        const y = ln.getYear();
         return {
-          year: ln.getYear(),
+          year: y,
           age: ln.getAge(),
+          ageZhouSui: zhouSuiAtYear(y),
           ganZhi: lnGanZhi,
           gods: "流年",
           shensha: lnShenshas
         };
       });
 
+      const dyStartYear = dy.getStartYear();
       return {
         isPreLuck: false,
         startAge: dy.getStartAge(),
-        startYear: dy.getStartYear(),
+        startAgeZhouSui: zhouSuiAtYear(dyStartYear),
+        startYear: dyStartYear,
         ganZhi: dyGanZhi,
         gan: dyGanZhi[0],
         zhi: dyGanZhi[1],

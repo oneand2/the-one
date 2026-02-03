@@ -8,6 +8,7 @@ import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle, Download } from 'lucide-react';
 import { CopperCoinIcon } from './CopperCoinIcon';
+import { isLifetimeVip } from '@/utils/vip';
 
 export function AuthButton() {
   const router = useRouter();
@@ -128,17 +129,17 @@ export function AuthButton() {
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-stone-100/50 transition-colors cursor-pointer"
-            title={vipExpiresAt === null ? '终身 VIP' : vipExpiresAt !== undefined && new Date(vipExpiresAt).getTime() > Date.now() ? 'VIP 会员' : '铜币余额，点击获取铜币'}
+            title={isLifetimeVip(vipExpiresAt) ? '终身 VIP' : vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now() ? 'VIP 会员' : '铜币余额，点击获取铜币'}
           >
-            {vipExpiresAt === null || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now()) ? (
+            {isLifetimeVip(vipExpiresAt) || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now()) ? (
               <>
                 <span className="text-sm font-sans text-stone-700 tabular-nums min-w-[2rem] text-right">
-                  {vipExpiresAt === null
+                  {isLifetimeVip(vipExpiresAt)
                     ? '终身VIP'
                     : (() => {
                         const now = new Date();
                         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                        const exp = new Date(vipExpiresAt).getTime();
+                        const exp = new Date(vipExpiresAt!).getTime();
                         const days = Math.ceil((exp - startOfToday.getTime()) / 86400000);
                         return days > 0 ? `${days}天 VIP` : 'VIP';
                       })()}

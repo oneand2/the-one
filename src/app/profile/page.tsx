@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
-import { ADMIN_EMAIL } from '@/utils/vip';
+import { ADMIN_EMAIL, isLifetimeVip } from '@/utils/vip';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -157,16 +157,16 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {(vipExpiresAt === null || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now())) ? (
+          {(isLifetimeVip(vipExpiresAt) || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now())) ? (
             <div>
               <label className="block text-sm font-sans text-stone-700 mb-2">会员状态</label>
               <p className="text-lg font-sans text-stone-800 tabular-nums">
-                {vipExpiresAt === null
+                {isLifetimeVip(vipExpiresAt)
                   ? '终身VIP'
                   : (() => {
                       const now = new Date();
                       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                      const exp = new Date(vipExpiresAt).getTime();
+                      const exp = new Date(vipExpiresAt!).getTime();
                       const days = Math.ceil((exp - startOfToday.getTime()) / 86400000);
                       return days > 0 ? `${days}天 VIP` : 'VIP';
                     })()}

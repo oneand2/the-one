@@ -40,12 +40,13 @@ export async function POST(request: Request) {
   }
 
   const expiresAt = getVipExpiresAt(duration);
+  const valueToStore = typeof expiresAt === 'string' ? expiresAt : expiresAt.toISOString();
   const { data: existing } = await admin.from(PROFILE_TABLE).select('user_id').eq('user_id', targetUser.id).single();
 
   if (existing) {
     const { error } = await admin
       .from(PROFILE_TABLE)
-      .update({ vip_expires_at: expiresAt == null ? null : expiresAt.toISOString() })
+      .update({ vip_expires_at: valueToStore })
       .eq('user_id', targetUser.id);
     if (error) {
       console.error('set-vip update error:', error);
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
       user_id: targetUser.id,
       nickname: '',
       coins_balance: INITIAL_COINS,
-      vip_expires_at: expiresAt == null ? null : expiresAt.toISOString(),
+      vip_expires_at: valueToStore,
     });
     if (error) {
       console.error('set-vip insert error:', error);
@@ -66,6 +67,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    message: duration === 'lifetime' ? '已设置为终身 VIP' : `已设置 VIP，到期时间：${expiresAt?.toISOString() ?? ''}`,
+    message: duration === 'lifetime' ? '已设置为终身 VIP' : `已设置 VIP，到期时间：${valueToStore}`,
   });
 }

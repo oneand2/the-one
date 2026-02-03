@@ -5,10 +5,17 @@ import { createClient } from '@/utils/supabase/server';
 
 export type AuthResult = { redirectUrl?: string; error?: string };
 
+const NO_EMAIL_SUFFIX = '@no-email.app';
+
 export async function login(formData: FormData): Promise<AuthResult> {
-  const email = formData.get('email') as string;
+  let email = (formData.get('email') as string)?.trim() ?? '';
   const password = formData.get('password') as string;
   const nextUrl = (formData.get('next') as string) || '/';
+
+  // IP 注册用户：输入的是「用户名」，自动拼接 @no-email.app
+  if (email && !email.includes('@')) {
+    email = `${email}${NO_EMAIL_SUFFIX}`;
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({

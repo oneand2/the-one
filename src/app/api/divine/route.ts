@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
+import { isVip } from '@/utils/vip';
 
 const COINS_DIVINE = 6;
 const PROFILE_TABLE = 'user_profiles';
@@ -14,15 +15,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    // 管理员邮箱无限铜币
+    // 管理员或 VIP 不消耗铜币
     const isAdmin = user.email === '892777353@qq.com';
-    
-    if (!isAdmin) {
-      let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance').eq('user_id', user.id).single();
-      if (!profile) {
-        await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
-        profile = { coins_balance: INITIAL_COINS };
-      }
+    let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance, vip_expires_at').eq('user_id', user.id).single();
+    if (!profile) {
+      await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
+      profile = { coins_balance: INITIAL_COINS, vip_expires_at: null };
+    }
+    const vip = isVip((profile as { vip_expires_at?: string | null }).vip_expires_at);
+    const skipCoins = isAdmin || vip;
+
+    if (!skipCoins) {
       const balance = (profile as { coins_balance?: number }).coins_balance ?? 0;
       if (balance < COINS_DIVINE) {
         return NextResponse.json(

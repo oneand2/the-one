@@ -15,7 +15,7 @@ export async function GET() {
 
   const { data: row } = await supabase
     .from(PROFILE_TABLE)
-    .select('nickname, coins_balance, invite_code')
+    .select('nickname, coins_balance, invite_code, vip_expires_at')
     .eq('user_id', user.id)
     .single();
 
@@ -24,6 +24,7 @@ export async function GET() {
       nickname: row.nickname ?? '',
       coins_balance: row.coins_balance ?? INITIAL_COINS,
       invite_code: row.invite_code ?? null,
+      vip_expires_at: (row as { vip_expires_at?: string | null }).vip_expires_at ?? null,
     });
   }
 
@@ -31,7 +32,7 @@ export async function GET() {
   const { data: inserted, error } = await supabase
     .from(PROFILE_TABLE)
     .insert({ user_id: user.id, nickname, coins_balance: INITIAL_COINS })
-    .select('nickname, coins_balance, invite_code')
+    .select('nickname, coins_balance, invite_code, vip_expires_at')
     .single();
 
   if (error) {
@@ -42,6 +43,7 @@ export async function GET() {
     nickname: inserted.nickname ?? '',
     coins_balance: inserted.coins_balance ?? INITIAL_COINS,
     invite_code: inserted.invite_code ?? null,
+    vip_expires_at: (inserted as { vip_expires_at?: string | null }).vip_expires_at ?? null,
   });
 }
 

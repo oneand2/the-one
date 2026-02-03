@@ -14,6 +14,7 @@ export function AuthButton() {
   const [user, setUser] = useState<User | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [coins, setCoins] = useState<number | null>(null);
+  const [vipExpiresAt, setVipExpiresAt] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -46,14 +47,17 @@ export function AuthButton() {
         if (p != null) {
           setNickname(p.nickname ?? '');
           setCoins(p.coins_balance ?? 0);
+          setVipExpiresAt(p.vip_expires_at ?? null);
         } else {
           setNickname(null);
           setCoins(null);
+          setVipExpiresAt(undefined);
         }
       })
       .catch(() => {
         setNickname(null);
         setCoins(null);
+        setVipExpiresAt(undefined);
       });
   };
 
@@ -61,6 +65,7 @@ export function AuthButton() {
     if (!user) {
       setNickname(null);
       setCoins(null);
+      setVipExpiresAt(undefined);
       return;
     }
     fetchProfile();
@@ -74,6 +79,7 @@ export function AuthButton() {
           if (p != null) {
             setNickname(p.nickname ?? '');
             setCoins(p.coins_balance ?? 0);
+            setVipExpiresAt(p.vip_expires_at ?? null);
           }
         })
         .catch(() => {});
@@ -122,12 +128,30 @@ export function AuthButton() {
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-stone-100/50 transition-colors cursor-pointer"
-            title="铜币余额，点击获取铜币"
+            title={vipExpiresAt === null ? '终身 VIP' : vipExpiresAt !== undefined && new Date(vipExpiresAt).getTime() > Date.now() ? 'VIP 会员' : '铜币余额，点击获取铜币'}
           >
-            <CopperCoinIcon className="w-4 h-4 text-amber-700/80 shrink-0" />
-            <span className="text-sm font-sans text-stone-700 tabular-nums min-w-[1.5rem] text-right">
-              {coins !== null ? coins : '…'}
-            </span>
+            {vipExpiresAt === null || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now()) ? (
+              <>
+                <span className="text-sm font-sans text-stone-700 tabular-nums min-w-[2rem] text-right">
+                  {vipExpiresAt === null
+                    ? '终身VIP'
+                    : (() => {
+                        const now = new Date();
+                        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        const exp = new Date(vipExpiresAt).getTime();
+                        const days = Math.ceil((exp - startOfToday.getTime()) / 86400000);
+                        return days > 0 ? `${days}天 VIP` : 'VIP';
+                      })()}
+                </span>
+              </>
+            ) : (
+              <>
+                <CopperCoinIcon className="w-4 h-4 text-amber-700/80 shrink-0" />
+                <span className="text-sm font-sans text-stone-700 tabular-nums min-w-[1.5rem] text-right">
+                  {coins !== null ? coins : '…'}
+                </span>
+              </>
+            )}
           </button>
           <button
             type="button"

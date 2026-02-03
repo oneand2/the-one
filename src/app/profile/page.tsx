@@ -4,17 +4,23 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { ADMIN_EMAIL } from '@/utils/vip';
 
 export default function ProfilePage() {
   const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [coins, setCoins] = useState<number | null>(null);
+  const [vipExpiresAt, setVipExpiresAt] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [vipTargetEmail, setVipTargetEmail] = useState('');
+  const [vipDuration, setVipDuration] = useState<'1m' | '3m' | '6m' | '1y' | 'lifetime'>('1m');
+  const [vipSubmitting, setVipSubmitting] = useState(false);
+  const [vipMessage, setVipMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -24,7 +30,7 @@ export default function ProfilePage() {
         return;
       }
       // 检查是否是管理员
-      if (user.email === '892777353@qq.com') {
+      if (user.email === ADMIN_EMAIL) {
         setIsAdmin(true);
       }
       fetch('/api/user/profile', { credentials: 'include' })
@@ -43,6 +49,7 @@ export default function ProfilePage() {
           setNickname(p.nickname ?? '');
           setInviteCode(p.invite_code ?? null);
           setCoins(p.coins_balance ?? 0);
+          setVipExpiresAt(p.vip_expires_at ?? null);
         })
         .catch((e) => setError(e instanceof Error ? e.message : '加载失败'))
         .finally(() => setLoading(false));
@@ -150,26 +157,44 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {coins !== null && (
+          {(vipExpiresAt === null || (vipExpiresAt && new Date(vipExpiresAt).getTime() > Date.now())) ? (
             <div>
-              <label className="block text-sm font-sans text-stone-700 mb-2">铜币余额</label>
-              <p className="text-lg font-sans text-stone-800 tabular-nums">{coins} 铜币</p>
-              <p className="text-xs text-stone-500 mt-1 mb-3">
-                六爻 AI 解卦 6 枚/次，决行藏每问 5 枚（深度思考 +2，联网 +3）
+              <label className="block text-sm font-sans text-stone-700 mb-2">会员状态</label>
+              <p className="text-lg font-sans text-stone-800 tabular-nums">
+                {vipExpiresAt === null
+                  ? '终身VIP'
+                  : (() => {
+                      const now = new Date();
+                      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      const exp = new Date(vipExpiresAt).getTime();
+                      const days = Math.ceil((exp - startOfToday.getTime()) / 86400000);
+                      return days > 0 ? `${days}天 VIP` : 'VIP';
+                    })()}
               </p>
-              <button
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
-                className="text-sm font-sans text-stone-600 hover:text-stone-800 underline"
-              >
-                获取铜币
-              </button>
+              <p className="text-xs text-stone-500 mt-1">VIP 使用任意功能不消耗铜币</p>
             </div>
+          ) : (
+            coins !== null && (
+              <div>
+                <label className="block text-sm font-sans text-stone-700 mb-2">铜币余额</label>
+                <p className="text-lg font-sans text-stone-800 tabular-nums">{coins} 铜币</p>
+                <p className="text-xs text-stone-500 mt-1 mb-3">
+                  六爻 AI 解卦 6 枚/次，决行藏每问 5 枚（深度思考 +2，联网 +3）
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
+                  className="text-sm font-sans text-stone-600 hover:text-stone-800 underline"
+                >
+                  获取铜币
+                </button>
+              </div>
+            )
           )}
 
           {/* 管理员入口 */}
           {isAdmin && (
-            <div className="pt-6 border-t border-stone-200">
+            <div className="pt-6 border-t border-stone-200 space-y-4">
               <label className="block text-sm font-sans text-stone-700 mb-3">管理员功能</label>
               <Link
                 href="/admin/news"
@@ -177,6 +202,64 @@ export default function ProfilePage() {
               >
                 📰 发布新闻
               </Link>
+              <div className="pt-4 border-t border-stone-100">
+                <p className="text-sm font-sans text-stone-700 mb-2">设置用户为 VIP</p>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="email"
+                    value={vipTargetEmail}
+                    onChange={(e) => setVipTargetEmail(e.target.value)}
+                    placeholder="目标用户邮箱"
+                    className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-800 font-sans text-sm focus:outline-none focus:border-stone-600"
+                  />
+                  <select
+                    value={vipDuration}
+                    onChange={(e) => setVipDuration(e.target.value as '1m' | '3m' | '6m' | '1y' | 'lifetime')}
+                    className="w-full px-4 py-2 border border-stone-300 rounded-lg text-stone-800 font-sans text-sm focus:outline-none focus:border-stone-600"
+                  >
+                    <option value="1m">1 个月</option>
+                    <option value="3m">3 个月</option>
+                    <option value="6m">6 个月</option>
+                    <option value="1y">1 年</option>
+                    <option value="lifetime">终身</option>
+                  </select>
+                  <button
+                    type="button"
+                    disabled={vipSubmitting || !vipTargetEmail.trim()}
+                    onClick={async () => {
+                      setVipMessage(null);
+                      setVipSubmitting(true);
+                      try {
+                        const res = await fetch('/api/admin/set-vip', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
+                          body: JSON.stringify({ target_email: vipTargetEmail.trim(), duration: vipDuration }),
+                        });
+                        const data = await res.json();
+                        if (res.ok) {
+                          setVipMessage((data as { message?: string }).message ?? '设置成功');
+                          setVipTargetEmail('');
+                        } else {
+                          setVipMessage((data as { error?: string }).error ?? '设置失败');
+                        }
+                      } catch {
+                        setVipMessage('网络错误');
+                      } finally {
+                        setVipSubmitting(false);
+                      }
+                    }}
+                    className="px-4 py-2 bg-stone-700 text-white font-sans text-sm rounded-lg hover:bg-stone-600 disabled:opacity-60"
+                  >
+                    {vipSubmitting ? '提交中…' : '设为 VIP'}
+                  </button>
+                </div>
+                {vipMessage && (
+                  <p className={`text-sm font-sans mt-2 ${vipMessage.startsWith('已') ? 'text-green-700' : 'text-red-700'}`}>
+                    {vipMessage}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

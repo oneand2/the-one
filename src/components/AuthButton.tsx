@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle, Download } from 'lucide-react';
 import { CopperCoinIcon } from './CopperCoinIcon';
 import { isLifetimeVip } from '@/utils/vip';
+import { clearRecordsCaches } from '@/utils/cache';
 
 export function AuthButton() {
   const router = useRouter();
@@ -101,19 +102,13 @@ export function AuthButton() {
   }, [menuOpen]);
 
   const handleSignOut = async () => {
+    clearRecordsCaches();
     const supabase = createClient();
     await supabase.auth.signOut();
     router.refresh();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center gap-3">
-        <div className="w-20 h-8 bg-stone-200/50 animate-pulse rounded-lg" />
-      </div>
-    );
-  }
-
+  // 不阻塞首屏：登录态在后台拉取，先展示按钮/登录入口，避免等 getUser 导致整页“卡住”
   return (
     <AnimatePresence mode="wait">
       {user ? (

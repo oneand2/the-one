@@ -7,6 +7,7 @@ import { generateClassicalBaziData, ClassicalBaziData, BaziInput, inferDateFromB
 import CircuitGraph from '@/components/CircuitGraph';
 import EnergySection from '@/components/EnergySection';
 import LuckTimeline from '@/components/LuckTimeline';
+import { clearCached, CACHE_KEYS } from '@/utils/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -237,6 +238,7 @@ const ClassicalReportContent: React.FC = () => {
         if (res.status === 401) throw new Error('请先登录');
         throw new Error((body as { error?: string })?.error || '保存失败');
       }
+      clearCached(CACHE_KEYS.RECORDS_CLASSICAL);
       setSaveStatus('saved');
     } catch (e) {
       setSaveStatus('error');
@@ -271,6 +273,7 @@ const ClassicalReportContent: React.FC = () => {
         if (res.status === 401) throw new Error('请先登录');
         throw new Error((body as { error?: string })?.error || '保存失败');
       }
+      clearCached(CACHE_KEYS.RECORDS_CLASSICAL);
       setSaveStatus('saved');
 
       // 2. 准备导入数据 - 需要重新构造 BaziInput 并分析

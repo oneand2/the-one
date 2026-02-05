@@ -6,6 +6,7 @@ import { ChevronRight, ChevronDown, Sparkles, Sun, Moon, Zap, Save, Share2, Aler
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
 import questionsData from '../../questions.json';
 import mbtiDataRaw from '../../mbti_final_cleaned.json';
+import { clearCached, CACHE_KEYS } from '@/utils/cache';
 
 // 文本智能分段函数 - 在句号处分段，避免段落过长
 const formatTextToParagraphs = (text: string, maxLength: number = 150): string[] => {
@@ -1089,6 +1090,7 @@ function MbtiResultActions({
       if (res.ok) {
         const data = await res.json();
         console.log('保存成功:', data);
+        clearCached(CACHE_KEYS.RECORDS_MBTI);
         setSaveStatus('saved');
       } else {
         const error = await res.json();

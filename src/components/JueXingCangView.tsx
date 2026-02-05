@@ -8,6 +8,7 @@ import { InsufficientCoinsModal } from './InsufficientCoinsModal';
 import { CopperCoinIcon } from './CopperCoinIcon';
 import { ImportData } from '@/types/import-data';
 import type { BaziInput } from '@/utils/baziLogic';
+import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 
 interface Message {
   id: string;
@@ -1783,24 +1784,33 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
 
   const loadRecords = async () => {
     setLoading(true);
+    const cachedBazi = getCached<unknown[]>(CACHE_KEYS.RECORDS_CLASSICAL);
+    const cachedMbti = getCached<unknown[]>(CACHE_KEYS.RECORDS_MBTI);
+    const cachedLiuyao = getCached<unknown[]>(CACHE_KEYS.RECORDS_LIUYAO);
+    if (Array.isArray(cachedBazi)) setBaziRecords(cachedBazi);
+    if (Array.isArray(cachedMbti)) setMbtiRecords(cachedMbti);
+    if (Array.isArray(cachedLiuyao)) setLiuyaoRecords(cachedLiuyao);
     try {
       const [baziRes, mbtiRes, liuyaoRes] = await Promise.all([
-        fetch('/api/records/classical'),
-        fetch('/api/records/mbti'),
-        fetch('/api/records/liuyao'),
+        fetch('/api/records/classical', { credentials: 'include' }),
+        fetch('/api/records/mbti', { credentials: 'include' }),
+        fetch('/api/records/liuyao', { credentials: 'include' }),
       ]);
 
       if (baziRes.ok) {
         const data = await baziRes.json();
         setBaziRecords(data);
+        setCached(CACHE_KEYS.RECORDS_CLASSICAL, data, RECORDS_TTL_MS);
       }
       if (mbtiRes.ok) {
         const data = await mbtiRes.json();
         setMbtiRecords(data);
+        setCached(CACHE_KEYS.RECORDS_MBTI, data, RECORDS_TTL_MS);
       }
       if (liuyaoRes.ok) {
         const data = await liuyaoRes.json();
         setLiuyaoRecords(data);
+        setCached(CACHE_KEYS.RECORDS_LIUYAO, data, RECORDS_TTL_MS);
       }
     } catch (error) {
       console.error('加载记录失败:', error);

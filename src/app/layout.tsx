@@ -1,30 +1,34 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
-import { GetCoinsModalLayer } from "@/components/GetCoinsModalLayer";
-import InstallPrompt from "@/components/InstallPrompt";
+import { DeferredLayoutExtras } from "@/components/DeferredLayoutExtras";
+import { PreconnectSupabase } from "@/components/PreconnectSupabase";
 import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const crimsonText = Crimson_Text({
   variable: "--font-crimson-text",
   subsets: ["latin"],
   weight: ["400", "600"],
+  display: "swap",
 });
 
 const maShanZheng = Ma_Shan_Zheng({
   variable: "--font-ma-shan-zheng",
   subsets: ["latin"],
   weight: ["400"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -59,6 +63,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${crimsonText.variable} ${maShanZheng.variable} antialiased relative`}
       >
+        <PreconnectSupabase />
         {/* 登录入口：定位在页面右上角，随页面滚动 */}
         <div
           className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
@@ -70,8 +75,7 @@ export default function RootLayout({
           <AuthButton />
         </div>
         {children}
-        <GetCoinsModalLayer />
-        <InstallPrompt />
+        <DeferredLayoutExtras />
       </body>
     </html>
   );

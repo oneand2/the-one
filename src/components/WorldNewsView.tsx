@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
 
 interface WorldNews {
   id: string;
@@ -99,6 +100,14 @@ export const WorldNewsView: React.FC = () => {
   };
 
   useEffect(() => {
+    // 先读缓存，第二次进入或刷新时立即展示，不卡顿
+    const cached = getCached<WorldNews[]>(CACHE_KEYS.WORLD_NEWS);
+    if (cached && cached.length > 0) {
+      setNewsList(cached);
+      setSelectedDate(cached[0].news_date);
+      setLoading(false);
+    }
+
     const fetchNews = async () => {
       try {
         const supabase = createClient();
@@ -108,14 +117,18 @@ export const WorldNewsView: React.FC = () => {
           .order('news_date', { ascending: false });
 
         if (fetchError) throw fetchError;
-        
-        setNewsList(data || []);
-        // 默认选择最新的日期
-        if (data && data.length > 0) {
-          setSelectedDate(data[0].news_date);
+
+        const list = data || [];
+        setNewsList(list);
+        if (list.length > 0) {
+          setSelectedDate(list[0].news_date);
         }
+        // 写入缓存，下次进入直接读
+        setCached(CACHE_KEYS.WORLD_NEWS, list);
       } catch (e) {
         setError(e instanceof Error ? e.message : '加载失败');
+        // 有缓存时即使请求失败也不清空已展示内容
+        if (!cached) setNewsList([]);
       } finally {
         setLoading(false);
       }

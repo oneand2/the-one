@@ -8,6 +8,7 @@ import { tossOnce, getYaoInfo, type YaoInfo, type YaoValue } from '@/utils/liuya
 import { CoinAnimation } from './CoinAnimation';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
+import { clearCached, CACHE_KEYS } from '@/utils/cache';
 
 export interface LiuYaoViewProps {
   /** 点击「凡事有因，于此寻果」后调用，用于切换到决行藏 tab 并同步 URL */
@@ -177,6 +178,8 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
         if (!response.ok) {
           const data = await response.json().catch(() => ({}));
           console.warn('保存六爻记录失败:', data?.error || response.statusText);
+        } else {
+          clearCached(CACHE_KEYS.RECORDS_LIUYAO);
         }
       } catch (error) {
         console.warn('保存六爻记录失败:', error);

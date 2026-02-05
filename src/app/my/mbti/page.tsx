@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,11 @@ export default function MyMbtiPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const cached = getCached<unknown[]>(CACHE_KEYS.RECORDS_MBTI);
+    if (cached && Array.isArray(cached)) {
+      setList(cached.map((row: { id: string; type?: string; function_scores?: Record<string, number>; input_data?: { type?: string; function_scores?: Record<string, number> }; created_at: string }) => normalizeMbtiItem(row)));
+      setLoading(false);
+    }
     fetch('/api/records/mbti', { credentials: 'include' })
       .then(async (r) => {
         if (r.ok) return r.json();
@@ -39,9 +45,16 @@ export default function MyMbtiPage() {
         if (r.status >= 500) throw new Error('拉取失败，请确认数据库 daoyoushuju 表中包含 input_data (jsonb) 字段');
         throw new Error(msg || '拉取失败');
       })
-      .then((data) => (Array.isArray(data) ? data.map(normalizeMbtiItem) : data))
-      .then(setList)
-      .catch((e) => setError(e.message))
+      .then((data) => {
+        const normalized = Array.isArray(data) ? data.map(normalizeMbtiItem) : data;
+        setList(normalized);
+        if (Array.isArray(data)) setCached(CACHE_KEYS.RECORDS_MBTI, data, RECORDS_TTL_MS);
+        return normalized;
+      })
+      .catch((e) => {
+        setError(e.message);
+        if (!cached) setList([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

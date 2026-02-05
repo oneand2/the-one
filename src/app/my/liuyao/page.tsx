@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS, recordsLiuyaoDetailKey } from '@/utils/cache';
 
 type ListItem = { id: string; question: string; date: string; created_at: string };
 type DetailRecord = { id: string; question: string; hexagram_info: Record<string, unknown>; date: string; ai_result: string; created_at: string };
@@ -18,6 +19,12 @@ function MyLiuyaoContent() {
 
   useEffect(() => {
     if (id) {
+      const detailKey = recordsLiuyaoDetailKey(id);
+      const cached = getCached<DetailRecord>(detailKey);
+      if (cached) {
+        setDetail(cached);
+        setLoading(false);
+      }
       fetch(`/api/records/liuyao?id=${encodeURIComponent(id)}`, { credentials: 'include' })
         .then(async (r) => {
           if (!r.ok) {
@@ -27,10 +34,21 @@ function MyLiuyaoContent() {
           }
           return r.json();
         })
-        .then(setDetail)
-        .catch((e) => setError(e.message))
+        .then((data) => {
+          setDetail(data);
+          setCached(detailKey, data, RECORDS_TTL_MS);
+        })
+        .catch((e) => {
+          setError(e.message);
+          if (!cached) setDetail(null);
+        })
         .finally(() => setLoading(false));
     } else {
+      const cached = getCached<ListItem[]>(CACHE_KEYS.RECORDS_LIUYAO);
+      if (cached && Array.isArray(cached)) {
+        setList(cached);
+        setLoading(false);
+      }
       fetch('/api/records/liuyao', { credentials: 'include' })
         .then(async (r) => {
           if (!r.ok) {
@@ -41,8 +59,14 @@ function MyLiuyaoContent() {
           }
           return r.json();
         })
-        .then(setList)
-        .catch((e) => setError(e.message))
+        .then((data) => {
+          setList(data);
+          setCached(CACHE_KEYS.RECORDS_LIUYAO, data, RECORDS_TTL_MS);
+        })
+        .catch((e) => {
+          setError(e.message);
+          if (!cached) setList([]);
+        })
         .finally(() => setLoading(false));
     }
   }, [id]);

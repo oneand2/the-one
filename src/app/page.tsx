@@ -1,13 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import { motion, AnimatePresence } from 'framer-motion';
-import { BaZiView } from '@/components/BaZiView';
-import { LiuYaoView } from '@/components/LiuYaoView';
-import { MbtiTestView } from '@/components/MbtiTestView';
-import { WorldNewsView } from '@/components/WorldNewsView';
-import { JueXingCangView } from '@/components/JueXingCangView';
+import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
 import type { TabType } from '@/types/tabs';
 
@@ -24,26 +19,66 @@ const Sidebar = dynamic(
   { ssr: false }
 );
 
+// 大组件按需加载，首屏只加载当前 tab，第二次进入或切换回来时从缓存/内存秒开
+const WorldNewsView = dynamic(
+  () => import('@/components/WorldNewsView').then((mod) => mod.WorldNewsView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+const BaZiView = dynamic(
+  () => import('@/components/BaZiView').then((mod) => mod.BaZiView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+const MbtiTestView = dynamic(
+  () => import('@/components/MbtiTestView').then((mod) => mod.MbtiTestView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+const JueXingCangView = dynamic(
+  () => import('@/components/JueXingCangView').then((mod) => mod.JueXingCangView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+const LiuYaoView = dynamic(
+  () => import('@/components/LiuYaoView').then((mod) => mod.LiuYaoView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+
+function TabLoading() {
+  return (
+    <div className="min-h-[280px] flex items-center justify-center text-stone-400 text-sm font-sans">
+      加载中…
+    </div>
+  );
+}
+
 const HomeContent: React.FC = () => {
-  // 首屏固定为 guanshi，保证服务端与客户端首帧一致，避免 hydration 报错；useEffect 中再从 URL 同步真实 tab
   const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
+  // 已访问过的 tab 保持挂载，切换回来时不再重新加载、不卡顿
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(() => new Set(['guanshi']));
 
   useEffect(() => {
-    setActiveTab(getTabFromUrl());
-    const onPopState = () => setActiveTab(getTabFromUrl());
+    const tab = getTabFromUrl();
+    setActiveTab(tab);
+    setVisitedTabs((prev) => new Set([...prev, tab]));
+    const onPopState = () => {
+      const t = getTabFromUrl();
+      setActiveTab(t);
+      setVisitedTabs((prev) => new Set([...prev, t]));
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // 用户在本页点击 tab 时，仅更新 state 和 URL，不触发 router 导航（避免决行藏切换卡顿）
-  const handleTabChange: React.Dispatch<React.SetStateAction<TabType>> = (tabOrUpdater) => {
-    const tab = typeof tabOrUpdater === 'function' ? tabOrUpdater(activeTab) : tabOrUpdater;
-    setActiveTab(tab);
-    const url = new URL(window.location.href);
-    url.searchParams.set('tab', tab);
-    window.history.replaceState(null, '', url.toString());
-  };
+  const handleTabChange = useCallback(
+    (tabOrUpdater: TabType | React.SetStateAction<TabType>) => {
+      const tab = typeof tabOrUpdater === 'function' ? tabOrUpdater(activeTab) : tabOrUpdater;
+      setActiveTab(tab);
+      setVisitedTabs((prev) => new Set([...prev, tab]));
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+    },
+    [activeTab]
+  );
 
   return (
     <div className="min-h-screen bg-[#fbf9f4] relative">
@@ -64,16 +99,16 @@ const HomeContent: React.FC = () => {
         <div className="w-full max-w-4xl">
           {/* Header - 所有 tab 共用，logo 标题瞬间切换，与其它 tab 一致 */}
           <motion.header
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.25 }}
             className="py-16 px-6"
           >
             <div className="max-w-md mx-auto text-center space-y-4">
               <motion.div
-                initial={{ scale: 0.8 }}
+                initial={{ scale: 0.98 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                transition={{ duration: 0.2 }}
               >
                 {activeTab === 'guanshi' ? (
                   // 老阳 - 两条实心横杠（粗细行距与少阴一致）
@@ -124,77 +159,53 @@ const HomeContent: React.FC = () => {
             </div>
           </motion.header>
 
-          {/* 内容区域 */}
+          {/* 内容区域：已访问的 tab 保持挂载仅隐藏，切换回来秒开不卡顿 */}
           <div className="px-6 mobile-content-bottom">
-            <div className="max-w-md mx-auto">
-              <AnimatePresence mode="wait">
-                {activeTab === 'guanshi' ? (
-                  <motion.div
-                    key="guanshi-content"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
+            <div className="max-w-md mx-auto relative">
+              {visitedTabs.has('guanshi') && (
+                <div className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
+                  <WorldNewsView />
+                </div>
+              )}
+              {visitedTabs.has('wendao') && (
+                <div
+                  className={
+                    activeTab === 'wendao'
+                      ? 'min-h-[320px] flex flex-col items-center justify-center py-16'
+                      : 'hidden'
+                  }
+                  aria-hidden={activeTab !== 'wendao'}
+                >
+                  <div className="w-12 h-px bg-stone-200/80 mb-6" />
+                  <p
+                    className="text-stone-500 text-sm font-serif tracking-wide text-center"
+                    style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
                   >
-                    <WorldNewsView />
-                  </motion.div>
-                ) : activeTab === 'wendao' ? (
-                  <motion.div
-                    key="wendao-content"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.3 }}
-                    className="min-h-[320px] flex flex-col items-center justify-center py-16"
-                  >
-                    <div className="w-12 h-px bg-stone-200/80 mb-6" />
-                    <p className="text-stone-500 text-sm font-serif tracking-wide text-center" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
-                      感谢您的支持<br />见众生功能正在开发中
-                    </p>
-                    <div className="w-8 h-px bg-stone-200/60 mt-6" />
-                  </motion.div>
-                ) : activeTab === 'bazi' ? (
-                  <motion.div
-                    key="bazi-content"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <BaZiView />
-                  </motion.div>
-                ) : activeTab === 'mbti' ? (
-                  <motion.div
-                    key="mbti-content"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <MbtiTestView />
-                  </motion.div>
-                ) : activeTab === 'juexingcang' ? (
-                  <motion.div
-                    key="juexingcang-content"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -12 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <JueXingCangView hideHeader />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="liuyao-content"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <LiuYaoView onNavigateToJuexingcang={() => handleTabChange('juexingcang')} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    感谢您的支持<br />见众生功能正在开发中
+                  </p>
+                  <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                </div>
+              )}
+              {visitedTabs.has('bazi') && (
+                <div className={activeTab === 'bazi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'bazi'}>
+                  <BaZiView />
+                </div>
+              )}
+              {visitedTabs.has('mbti') && (
+                <div className={activeTab === 'mbti' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'mbti'}>
+                  <MbtiTestView />
+                </div>
+              )}
+              {visitedTabs.has('juexingcang') && (
+                <div className={activeTab === 'juexingcang' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'juexingcang'}>
+                  <JueXingCangView hideHeader />
+                </div>
+              )}
+              {visitedTabs.has('liuyao') && (
+                <div className={activeTab === 'liuyao' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'liuyao'}>
+                  <LiuYaoView onNavigateToJuexingcang={() => handleTabChange('juexingcang')} />
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,11 @@ export default function MyClassicalPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const cached = getCached<unknown[]>(CACHE_KEYS.RECORDS_CLASSICAL);
+    if (cached && Array.isArray(cached)) {
+      setList(cached.map((row: { id: string; params?: Record<string, string>; input_data?: { params?: Record<string, string> }; created_at: string }) => normalizeClassicalItem(row)));
+      setLoading(false);
+    }
     fetch('/api/records/classical', { credentials: 'include' })
       .then(async (r) => {
         if (r.ok) return r.json();
@@ -29,9 +35,16 @@ export default function MyClassicalPage() {
         if (r.status >= 500) throw new Error('拉取失败，请确认数据库 daoyoushuju 表中包含 input_data (jsonb) 字段');
         throw new Error(msg || '拉取失败');
       })
-      .then((data) => (Array.isArray(data) ? data.map(normalizeClassicalItem) : data))
-      .then(setList)
-      .catch((e) => setError(e.message))
+      .then((data) => {
+        const normalized = Array.isArray(data) ? data.map(normalizeClassicalItem) : data;
+        setList(normalized);
+        if (Array.isArray(data)) setCached(CACHE_KEYS.RECORDS_CLASSICAL, data, RECORDS_TTL_MS);
+        return normalized;
+      })
+      .catch((e) => {
+        setError(e.message);
+        if (!cached) setList([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

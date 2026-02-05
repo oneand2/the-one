@@ -14,8 +14,10 @@ type RecordItem = {
   created_at: string;
 };
 
+type MbtiRow = { id: string; type?: string; function_scores?: Record<string, number>; input_data?: { type?: string; function_scores?: Record<string, number> }; created_at: string };
+
 /** API 可能返回已展开的 type/function_scores，或原始行的 input_data，统一归一为 RecordItem */
-function normalizeMbtiItem(row: { id: string; type?: string; function_scores?: Record<string, number>; input_data?: { type?: string; function_scores?: Record<string, number> }; created_at: string }): RecordItem {
+function normalizeMbtiItem(row: MbtiRow): RecordItem {
   const d = row.input_data && typeof row.input_data === 'object' ? row.input_data : {};
   return {
     id: row.id,
@@ -31,9 +33,9 @@ export default function MyMbtiPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const cached = getCached<unknown[]>(CACHE_KEYS.RECORDS_MBTI);
+    const cached = getCached<MbtiRow[]>(CACHE_KEYS.RECORDS_MBTI);
     if (cached && Array.isArray(cached)) {
-      setList(cached.map((row: { id: string; type?: string; function_scores?: Record<string, number>; input_data?: { type?: string; function_scores?: Record<string, number> }; created_at: string }) => normalizeMbtiItem(row)));
+      setList(cached.map(normalizeMbtiItem));
       setLoading(false);
     }
     fetch('/api/records/mbti', { credentials: 'include' })

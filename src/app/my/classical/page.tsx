@@ -9,8 +9,10 @@ export const dynamic = 'force-dynamic';
 
 type RecordItem = { id: string; params: Record<string, string>; created_at: string };
 
+type ClassicalRow = { id: string; params?: Record<string, string>; input_data?: { params?: Record<string, string> }; created_at: string };
+
 /** API 可能返回已展开的 params，或原始行的 input_data，统一归一为 RecordItem */
-function normalizeClassicalItem(row: { id: string; params?: Record<string, string>; input_data?: { params?: Record<string, string> }; created_at: string }): RecordItem {
+function normalizeClassicalItem(row: ClassicalRow): RecordItem {
   const params = row.params ?? (row.input_data && typeof row.input_data === 'object' ? (row.input_data.params as Record<string, string>) ?? {} : {});
   return { id: row.id, params: params || {}, created_at: row.created_at };
 }
@@ -21,9 +23,9 @@ export default function MyClassicalPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const cached = getCached<unknown[]>(CACHE_KEYS.RECORDS_CLASSICAL);
+    const cached = getCached<ClassicalRow[]>(CACHE_KEYS.RECORDS_CLASSICAL);
     if (cached && Array.isArray(cached)) {
-      setList(cached.map((row: { id: string; params?: Record<string, string>; input_data?: { params?: Record<string, string> }; created_at: string }) => normalizeClassicalItem(row)));
+      setList(cached.map(normalizeClassicalItem));
       setLoading(false);
     }
     fetch('/api/records/classical', { credentials: 'include' })

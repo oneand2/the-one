@@ -4,6 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
+import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
 import type { TabType } from '@/types/tabs';
 
 const VALID_TABS: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'juexingcang'];
@@ -161,8 +162,9 @@ const HomeContent: React.FC = () => {
 
           {/* 内容区域：已访问的 tab 保持挂载仅隐藏，切换回来秒开不卡顿 */}
           <div className="px-6 mobile-content-bottom">
-            <div className="max-w-md mx-auto relative">
-              {visitedTabs.has('guanshi') && (
+            <TabContentErrorBoundary>
+              <div className="max-w-md mx-auto relative">
+                {visitedTabs.has('guanshi') && (
                 <div className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
                   <WorldNewsView />
                 </div>
@@ -206,7 +208,8 @@ const HomeContent: React.FC = () => {
                   <LiuYaoView onNavigateToJuexingcang={() => handleTabChange('juexingcang')} />
                 </div>
               )}
-            </div>
+              </div>
+            </TabContentErrorBoundary>
           </div>
         </div>
       </main>

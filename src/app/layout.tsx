@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
 import { DeferredLayoutExtras } from "@/components/DeferredLayoutExtras";
 import { PreconnectSupabase } from "@/components/PreconnectSupabase";
+import { RootErrorBoundary } from "@/components/RootErrorBoundary";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,13 +45,16 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  themeColor: "#fbf9f4",
   appleWebApp: {
     // 👇 关键：这是 iPhone 桌面上显示的 App 名字，必须改成 "二"
     title: "二",
     capable: true,
     statusBarStyle: "default",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#fbf9f4",
 };
 
 export default function RootLayout({
@@ -63,19 +67,21 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${crimsonText.variable} ${maShanZheng.variable} antialiased relative`}
       >
-        <PreconnectSupabase />
-        {/* 登录入口：定位在页面右上角，随页面滚动 */}
-        <div
-          className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
-          style={{
-            paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
-            paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
-          }}
-        >
-          <AuthButton />
-        </div>
-        {children}
-        <DeferredLayoutExtras />
+        <RootErrorBoundary>
+          <PreconnectSupabase />
+          {/* 登录入口：定位在页面右上角，随页面滚动 */}
+          <div
+            className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
+            style={{
+              paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
+              paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',
+            }}
+          >
+            <AuthButton />
+          </div>
+          {children}
+          <DeferredLayoutExtras />
+        </RootErrorBoundary>
       </body>
     </html>
   );

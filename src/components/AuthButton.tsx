@@ -22,23 +22,60 @@ export function AuthButton() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const supabase = createClient();
+    let subscription: { unsubscribe: () => void } | undefined;
+    let pendingNullTimer: ReturnType<typeof setTimeout> | null = null;
+    try {
+      const supabase = createClient();
 
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      const applyUser = (u: User | null) => {
+        if (pendingNullTimer) {
+          clearTimeout(pendingNullTimer);
+          pendingNullTimer = null;
+        }
+        setUser(u);
+      };
+
+      const getUser = async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          setUser(user);
+        } catch {
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      getUser().catch(() => {
+        setUser(null);
+        setLoading(false);
+      });
+
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          const u = session?.user ?? null;
+          if (u) {
+            applyUser(u);
+            return;
+          }
+          // 未登录：延迟再确认一次，避免 token 刷新时短暂为 null 导致「反复横跳」
+          if (pendingNullTimer) clearTimeout(pendingNullTimer);
+          pendingNullTimer = setTimeout(() => {
+            pendingNullTimer = null;
+            supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+          }, 400);
+        }
+      );
+      subscription = sub;
+    } catch (_e) {
+      setUser(null);
       setLoading(false);
+    }
+
+    return () => {
+      subscription?.unsubscribe();
+      if (pendingNullTimer) clearTimeout(pendingNullTimer);
     };
-
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = () => {
@@ -103,9 +140,12 @@ export function AuthButton() {
 
   const handleSignOut = async () => {
     clearRecordsCaches();
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } finally {
+      router.refresh();
+    }
   };
 
   // 不阻塞首屏：登录态在后台拉取，先展示按钮/登录入口，避免等 getUser 导致整页“卡住”

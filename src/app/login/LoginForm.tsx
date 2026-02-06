@@ -225,6 +225,16 @@ export function LoginForm({ next }: Props) {
               className="w-full px-4 py-3 bg-white border border-stone-300 rounded-lg text-stone-800 font-sans text-sm focus:outline-none focus:border-stone-700 transition-colors"
               placeholder="••••••••"
             />
+            {mode === 'login' && (
+              <p className="mt-2 text-right">
+                <a
+                  href="/forgot-password"
+                  className="text-sm text-stone-500 hover:text-stone-800 font-sans"
+                >
+                  忘记密码？
+                </a>
+              </p>
+            )}
           </div>
           {showEmailSignupForm && (
             <div>

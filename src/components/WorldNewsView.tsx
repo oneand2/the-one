@@ -109,8 +109,15 @@ export const WorldNewsView: React.FC = () => {
     }
 
     const fetchNews = async () => {
+      let supabase;
       try {
-        const supabase = createClient();
+        supabase = createClient();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : '配置异常');
+        setLoading(false);
+        return;
+      }
+      try {
         const { data, error: fetchError } = await supabase
           .from('world_news')
           .select('*')
@@ -134,7 +141,13 @@ export const WorldNewsView: React.FC = () => {
       }
     };
 
-    fetchNews();
+    try {
+      fetchNews();
+    } catch (e) {
+      // 捕获 createClient 等同步抛错，避免 effect 抛错导致整页崩溃与重试循环
+      setError(e instanceof Error ? e.message : '加载失败');
+      setLoading(false);
+    }
   }, []);
 
   const formatDate = (dateStr: string) => {

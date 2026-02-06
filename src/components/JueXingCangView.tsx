@@ -157,20 +157,24 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
   const SCROLL_BOTTOM_THRESHOLD = 80;
 
-  // 加载会话列表
+  // 加载会话列表（未登录 401 属正常，一律静默、不刷控制台）
   const loadSessions = async () => {
     setIsLoadingSessions(true);
     try {
-      const response = await fetch('/api/chat-sessions');
+      const response = await fetch('/api/chat-sessions', { credentials: 'include' });
+      const status = response.status;
+      if (status === 401) {
+        setSessions([]);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setSessions(data);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('加载会话列表失败:', response.status, errorData);
       }
+      // 非 401 的其它错误也不打日志，避免与 401 混淆；真有问题可看网络面板
     } catch (error) {
-      console.error('加载会话列表失败:', error);
+      // 部分环境会把 401 当异常抛，不再用 console.error 刷屏
+      setSessions([]);
     } finally {
       setIsLoadingSessions(false);
     }
@@ -182,6 +186,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       const response = await fetch('/api/chat-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ title: '新对话' }),
       });
       

@@ -62,14 +62,23 @@ export async function PATCH(
 
     const { id: sessionId } = await params;
     const body = await req.json();
-    const { title } = body;
+    const { title, is_favorite } = body;
+
+    const updateData: { title?: string; is_favorite?: boolean; updated_at: string } = {
+      updated_at: new Date().toISOString()
+    };
+    
+    if (title !== undefined) {
+      updateData.title = title;
+    }
+    
+    if (is_favorite !== undefined) {
+      updateData.is_favorite = is_favorite;
+    }
 
     const { error } = await supabase
       .from('chat_sessions')
-      .update({ 
-        title,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', sessionId)
       .eq('user_id', user.id);
 

@@ -11,13 +11,32 @@ export async function GET() {
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
 
-    const { data: sessions, error } = await supabase
+    // 先尝试查询包含 is_favorite 字段，如果失败则查询不包含该字段
+    let { data: sessions, error } = await supabase
       .from('chat_sessions')
-      .select('id, title, created_at, updated_at')
+      .select('id, title, created_at, updated_at, is_favorite')
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
-    if (error) {
+    // 如果查询失败且错误信息包含 is_favorite，则尝试不查询该字段
+    if (error && error.message && error.message.includes('is_favorite')) {
+      const { data: sessionsWithoutFavorite, error: errorWithoutFavorite } = await supabase
+        .from('chat_sessions')
+        .select('id, title, created_at, updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+      
+      if (errorWithoutFavorite) {
+        console.error('获取会话列表失败:', errorWithoutFavorite);
+        return NextResponse.json({ error: '获取会话列表失败' }, { status: 500 });
+      }
+      
+      // 为每个会话添加默认的 is_favorite 字段
+      sessions = (sessionsWithoutFavorite || []).map((s: any) => ({
+        ...s,
+        is_favorite: false
+      }));
+    } else if (error) {
       console.error('获取会话列表失败:', error);
       return NextResponse.json({ error: '获取会话列表失败' }, { status: 500 });
     }

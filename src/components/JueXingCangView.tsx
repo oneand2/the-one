@@ -24,6 +24,7 @@ interface ChatSession {
   title: string;
   created_at: string;
   updated_at: string;
+  is_favorite?: boolean;
 }
 
 // 导入数据类型定义
@@ -171,11 +172,21 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       }
       if (response.ok) {
         const data = await response.json();
-        setSessions(data);
+        // 确保每个会话都有 is_favorite 字段（兼容旧数据）
+        const sessionsWithFavorite = (data || []).map((session: ChatSession) => ({
+          ...session,
+          is_favorite: session.is_favorite ?? false
+        }));
+        setSessions(sessionsWithFavorite);
+      } else {
+        // 非 401 错误时记录日志以便调试
+        const errorData = await response.json().catch(() => ({}));
+        console.error('加载会话列表失败:', status, errorData);
+        setSessions([]);
       }
-      // 非 401 的其它错误也不打日志，避免与 401 混淆；真有问题可看网络面板
     } catch (error) {
       // 部分环境会把 401 当异常抛，不再用 console.error 刷屏
+      console.error('加载会话列表异常:', error);
       setSessions([]);
     } finally {
       setIsLoadingSessions(false);
@@ -183,13 +194,14 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   };
 
   // 创建新会话
-  const createNewSession = async () => {
+  const createNewSession = async (title?: string) => {
     try {
+      const sessionTitle = title || '新对话';
       const response = await fetch('/api/chat-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title: '新对话' }),
+        body: JSON.stringify({ title: sessionTitle }),
       });
       
       if (response.ok) {
@@ -300,6 +312,41 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     }
   };
 
+  // 切换收藏状态 - 乐观更新，立即响应
+  const toggleFavorite = async (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+    
+    const newFavoriteStatus = !session.is_favorite;
+    const previousStatus = session.is_favorite;
+    
+    // 乐观更新：立即更新UI，无需等待服务器响应
+    setSessions(prev => prev.map(s => 
+      s.id === sessionId ? { ...s, is_favorite: newFavoriteStatus } : s
+    ));
+    
+    // 后台同步到服务器
+    try {
+      const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_favorite: newFavoriteStatus }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('更新收藏状态失败');
+      }
+    } catch (error) {
+      // 如果请求失败，回滚到之前的状态
+      console.error('切换收藏状态失败:', error);
+      setSessions(prev => prev.map(s => 
+        s.id === sessionId ? { ...s, is_favorite: previousStatus } : s
+      ));
+      // 可选：显示错误提示
+      alert('收藏操作失败，请稍后重试');
+    }
+  };
+
   // 开始编辑会话标题
   const startEditingTitle = (sessionId: string, currentTitle: string) => {
     setEditingSessionId(sessionId);
@@ -370,7 +417,16 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
             }, 4000);
             cleanupTimers.push(timer);
           }
-          const newSession = await createNewSession();
+          
+          // 如果有六爻数据，使用第一个六爻的问题作为会话标题
+          let sessionTitle: string | undefined;
+          if (normalized.liuyao && normalized.liuyao.length > 0 && normalized.liuyao[0].question) {
+            const question = normalized.liuyao[0].question;
+            // 限制标题长度，最多20个字符
+            sessionTitle = question.length > 20 ? question.slice(0, 20) + '...' : question;
+          }
+          
+          const newSession = await createNewSession(sessionTitle);
           if (!newSession) {
             console.warn('自动创建会话失败，对话可能不会被保存');
           }
@@ -478,7 +534,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       // 如果没有当前会话，创建新会话
       let sessionId = currentSessionId;
       if (!sessionId) {
-        const newSession = await createNewSession();
+        // 如果有六爻导入数据，使用六爻问题作为会话标题
+        let sessionTitle: string | undefined;
+        if (importData.liuyao && importData.liuyao.length > 0 && importData.liuyao[0].question) {
+          const question = importData.liuyao[0].question;
+          sessionTitle = question.length > 20 ? question.slice(0, 20) + '...' : question;
+        }
+        const newSession = await createNewSession(sessionTitle);
         if (newSession) {
           sessionId = newSession.id;
         } else {
@@ -562,8 +624,15 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           
           // 如果是第一条消息,自动生成会话标题
           const currentSession = sessions.find(s => s.id === sessionId);
-          if (currentSession?.title === '新对话' && userMessage.content) {
-            const titleText = userMessage.content.slice(0, 20) + (userMessage.content.length > 20 ? '...' : '');
+          if (currentSession && (currentSession.title === '新对话' || currentSession.title === '请帮我解卦') && userMessage.content) {
+            // 如果用户消息是"请帮我解卦"且有六爻导入数据，使用六爻问题作为标题
+            let titleText: string;
+            if (userMessage.content === '请帮我解卦' && importData.liuyao && importData.liuyao.length > 0 && importData.liuyao[0].question) {
+              const question = importData.liuyao[0].question;
+              titleText = question.length > 20 ? question.slice(0, 20) + '...' : question;
+            } else {
+              titleText = userMessage.content.slice(0, 20) + (userMessage.content.length > 20 ? '...' : '');
+            }
             await updateSessionTitle(sessionId, titleText);
           }
           
@@ -620,7 +689,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
             <div className="flex-shrink-0 px-5 pt-6 pb-4">
               {/* 新建对话按钮 */}
               <button
-                onClick={createNewSession}
+                onClick={() => createNewSession()}
                 className="w-full px-4 py-2.5 bg-stone-900 text-white text-[13px] rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-2 font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -699,8 +768,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                         />
                       ) : (
                         <>
-                          <div className="text-[13px] text-stone-900 truncate pr-14 leading-snug font-medium">
-                            {session.title}
+                          <div className="text-[13px] text-stone-900 truncate pr-20 leading-snug font-medium flex items-center gap-1.5">
+                            {session.is_favorite && (
+                              <svg className="w-3 h-3 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            )}
+                            <span className="truncate">{session.title}</span>
                           </div>
                           <div className="text-[11px] text-stone-400 mt-1">
                             {new Date(session.updated_at).toLocaleDateString('zh-CN', {
@@ -711,9 +785,25 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                         </>
                       )}
                       
-                      {/* 操作按钮 */}
+                      {/* 操作按钮 - 桌面端悬停时显示（收藏、编辑、删除） */}
                       {editingSessionId !== session.id && (
-                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-0.5 items-center z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(session.id);
+                            }}
+                            className={`p-1.5 rounded hover:bg-stone-200 transition-all duration-150 active:scale-95 ${
+                              session.is_favorite 
+                                ? 'text-amber-500' 
+                                : 'text-stone-500'
+                            }`}
+                            title={session.is_favorite ? '取消收藏' : '收藏'}
+                          >
+                            <svg className="w-3.5 h-3.5" fill={session.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={session.is_favorite ? 0 : 2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -726,7 +816,6 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                           </button>
-                          
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -860,8 +949,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                           }
                         `}
                       >
-                        <div className="text-xs text-stone-700 truncate pr-8 leading-relaxed">
-                          {session.title}
+                        <div className="text-xs text-stone-700 truncate pr-20 leading-relaxed flex items-center gap-1.5">
+                          {session.is_favorite && (
+                            <svg className="w-3 h-3 text-amber-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          )}
+                          <span className="truncate">{session.title}</span>
                         </div>
                         <div className="text-[10px] text-stone-400 mt-1">
                           {new Date(session.updated_at).toLocaleDateString('zh-CN', {
@@ -870,19 +964,41 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                           })}
                         </div>
                         
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (confirm('确定要删除这个对话吗？')) {
-                              deleteSession(session.id);
-                            }
-                          }}
-                          className="absolute right-2 top-2 p-1 rounded text-stone-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
+                        <div className="absolute right-2 top-2 flex gap-1 items-center">
+                          {/* 收藏按钮 - 始终可见 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(session.id);
+                            }}
+                            className={`p-1.5 rounded transition-all duration-150 active:scale-95 ${
+                              session.is_favorite 
+                                ? 'text-amber-500 hover:bg-amber-50' 
+                                : 'text-stone-500 hover:text-amber-500 hover:bg-stone-50'
+                            }`}
+                            title={session.is_favorite ? '取消收藏' : '收藏'}
+                          >
+                            <svg className="w-3.5 h-3.5" fill={session.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" strokeWidth={session.is_favorite ? 0 : 2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                            </svg>
+                          </button>
+                          
+                          {/* 删除按钮 */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('确定要删除这个对话吗？')) {
+                                deleteSession(session.id);
+                              }
+                            }}
+                            className="p-1.5 rounded text-stone-500 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="删除"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -967,7 +1083,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
               </svg>
-              <span className="text-xs">对话</span>
+              <span className="text-xs">历史对话</span>
             </button>
 
             {currentSessionId && (
@@ -986,7 +1102,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
               </svg>
-              <span className="text-xs">对话</span>
+              <span className="text-xs">历史对话</span>
             </button>
 
             {currentSessionId && (

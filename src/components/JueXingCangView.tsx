@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { InsufficientCoinsModal } from './InsufficientCoinsModal';
+import { JueXingCangTipModal } from './JueXingCangTipModal';
 import { CopperCoinIcon } from './CopperCoinIcon';
 import { ImportData } from '@/types/import-data';
 import type { BaziInput } from '@/utils/baziLogic';
@@ -88,7 +89,6 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const lastSendRef = useRef<{ content: string; at: number }>({ content: '', at: 0 });
   const idRef = useRef(0);
   const prefillAppliedRef = useRef(false);
-  const importAppliedRef = useRef(false);
   /** 用户是否在"跟读底部"（在底部附近未主动上滑），仅在为 true 时自动滚到底 */
   const userFollowsBottomRef = useRef(true);
   const [insuffOpen, setInsuffOpen] = useState(false);
@@ -100,8 +100,10 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [showBaziImportedNotice, setShowBaziImportedNotice] = useState(false);
   const [showLiuyaoImportedNotice, setShowLiuyaoImportedNotice] = useState(false);
   const [showMeditationWarning, setShowMeditationWarning] = useState(false);
+  const [showTipModal, setShowTipModal] = useState(false);
   const pendingImportKey = 'juexingcang-import-pending';
   const inputPresetKey = 'juexingcang-input-preset';
+  const tipModalDontShowKey = 'juexingcang-tip-dont-show';
 
   // 会话管理相关状态
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -339,16 +341,20 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   useEffect(() => {
     const cleanupTimers: number[] = [];
     const initializeWithImportData = async () => {
-      if (importAppliedRef.current) return;
-      importAppliedRef.current = true;
       try {
         const cached = localStorage.getItem(pendingImportKey);
         if (!cached) return;
+        
+        // 检测到新的导入数据时，清空当前会话和消息，以便创建新会话
+        setCurrentSessionId(null);
+        setMessages([]);
+        
         // Remove immediately to avoid duplicate imports on double-run effects.
         localStorage.removeItem(pendingImportKey);
         const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
         if (getImportCount(normalized) > 0) {
-          setImportData((prev) => mergeImportData(prev, normalized));
+          // 使用新的导入数据，替换之前的导入数据
+          setImportData(normalized);
           // 先立刻显示「已将数据导入」提示，再在后台创建会话，避免提示被 createNewSession 延迟
           if ((normalized.bazi?.length ?? 0) > 0) {
             setShowBaziImportedNotice(true);
@@ -385,19 +391,45 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     loadSessions();
   }, []);
 
+  // 检查是否需要显示提示窗口
   useEffect(() => {
-    if (prefillAppliedRef.current) return;
+    try {
+      const dontShow = localStorage.getItem(tipModalDontShowKey);
+      if (!dontShow) {
+        // 延迟一下显示，让页面先渲染完成
+        const timer = setTimeout(() => {
+          setShowTipModal(true);
+        }, 300);
+        return () => clearTimeout(timer);
+      }
+    } catch (error) {
+      console.warn('检查提示窗口设置失败:', error);
+    }
+  }, []);
+
+  // 处理不再显示提示
+  const handleDontShowTipAgain = () => {
+    try {
+      localStorage.setItem(tipModalDontShowKey, 'true');
+    } catch (error) {
+      console.warn('保存提示设置失败:', error);
+    }
+  };
+
+  useEffect(() => {
     try {
       const preset = localStorage.getItem(inputPresetKey);
-      if (!preset) return;
+      if (!preset) {
+        return;
+      }
+      // 检测到新的预设输入时，如果输入框为空则设置
+      // 每次检测到新的预设输入都会处理，因为处理完后会立即移除 localStorage 中的值
       if (!input.trim()) {
         setInput(preset);
+        localStorage.removeItem(inputPresetKey);
       }
     } catch (error) {
       console.warn('读取输入预填失败:', error);
-    } finally {
-      prefillAppliedRef.current = true;
-      localStorage.removeItem(inputPresetKey);
     }
   }, [input, inputPresetKey]);
 
@@ -495,7 +527,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       }
 
       const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      const decoder = new TextDecoder('utf-8', { fatal: false });
 
       if (!reader) throw new Error('无法读取响应');
 
@@ -513,7 +545,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
+        const chunk = decoder.decode(value, { stream: true });
         assistantMessage.content += chunk;
 
         setMessages(prev => {
@@ -1622,6 +1654,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         open={insuffOpen}
         needCoins={insuffNeed}
         onClose={() => setInsuffOpen(false)}
+      />
+      
+      {/* 使用提示模态框 */}
+      <JueXingCangTipModal
+        open={showTipModal}
+        onClose={() => setShowTipModal(false)}
+        onDontShowAgain={handleDontShowTipAgain}
       />
       
       {/* 导入数据模态框 */}

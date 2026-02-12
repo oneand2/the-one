@@ -170,13 +170,14 @@ export function AuthButton() {
               <>
                 <span className="text-sm font-sans text-stone-700 tabular-nums min-w-[2rem] text-right">
                   {isLifetimeVip(vipExpiresAt)
-                    ? '终身VIP'
+                    ? 'VIP'
                     : (() => {
                         const now = new Date();
                         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
                         const exp = new Date(vipExpiresAt!).getTime();
                         const days = Math.ceil((exp - startOfToday.getTime()) / 86400000);
-                        return days > 0 ? `${days}天 VIP` : 'VIP';
+                        // 只有不足30天才显示倒计时
+                        return days > 0 && days < 30 ? `${days}天VIP` : 'VIP';
                       })()}
                 </span>
               </>

@@ -2028,7 +2028,6 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
             shishenRatio,
             ganRatio,
             relationships: {},
-            predictedMBTI: result.mbti,
             energyProfile: functionScores,
             name: record.params.name,
             gender: record.params.gender,

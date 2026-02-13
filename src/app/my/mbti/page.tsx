@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 
@@ -28,6 +29,8 @@ function normalizeMbtiItem(row: MbtiRow): RecordItem {
 }
 
 export default function MyMbtiPage() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [list, setList] = useState<RecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,11 +57,15 @@ export default function MyMbtiPage() {
         return normalized;
       })
       .catch((e) => {
+        if (e.message === '请先登录') {
+          router.replace(`/login?next=${encodeURIComponent(pathname || '/my/mbti')}`);
+          return;
+        }
         setError(e.message);
         if (!cached) setList([]);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [router, pathname]);
 
   return (
     <div className="min-h-screen bg-[#FBF9F4] px-4 py-12">

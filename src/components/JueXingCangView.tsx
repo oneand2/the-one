@@ -10,6 +10,7 @@ import { CopperCoinIcon } from './CopperCoinIcon';
 import { ImportData } from '@/types/import-data';
 import type { BaziInput } from '@/utils/baziLogic';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import { fetchWithRetry } from '@/utils/fetchWithRetry';
 
 interface Message {
   id: string;
@@ -164,7 +165,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const loadSessions = async () => {
     setIsLoadingSessions(true);
     try {
-      const response = await fetch('/api/chat-sessions', { credentials: 'include' });
+      const response = await fetchWithRetry('/api/chat-sessions', { credentials: 'include' });
       const status = response.status;
       if (status === 401) {
         setSessions([]);
@@ -197,7 +198,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const createNewSession = async (title?: string) => {
     try {
       const sessionTitle = title || '新对话';
-      const response = await fetch('/api/chat-sessions', {
+      const response = await fetchWithRetry('/api/chat-sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -223,7 +224,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   // 加载会话消息
   const loadSessionMessages = async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/chat-sessions/${sessionId}`);
+      const response = await fetchWithRetry(`/api/chat-sessions/${sessionId}`);
       if (response.ok) {
         const data = await response.json();
         const loadedMessages: Message[] = data.map((msg: any) => ({
@@ -250,7 +251,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   // 删除会话
   const deleteSession = async (sessionId: string) => {
     try {
-      const response = await fetch(`/api/chat-sessions?id=${sessionId}`, {
+      const response = await fetchWithRetry(`/api/chat-sessions?id=${sessionId}`, {
         method: 'DELETE',
       });
       
@@ -269,7 +270,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   // 保存消息到当前会话
   const saveMessagesToSession = async (sessionId: string, newMessages: Message[]) => {
     try {
-      const response = await fetch(`/api/chat-sessions/${sessionId}/messages`, {
+      const response = await fetchWithRetry(`/api/chat-sessions/${sessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -298,7 +299,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   // 更新会话标题
   const updateSessionTitle = async (sessionId: string, title: string) => {
     try {
-      await fetch(`/api/chat-sessions/${sessionId}`, {
+      await fetchWithRetry(`/api/chat-sessions/${sessionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
@@ -327,7 +328,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     
     // 后台同步到服务器
     try {
-      const response = await fetch(`/api/chat-sessions/${sessionId}`, {
+      const response = await fetchWithRetry(`/api/chat-sessions/${sessionId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_favorite: newFavoriteStatus }),
@@ -555,7 +556,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       setIsLoading(true);
       userFollowsBottomRef.current = true;
 
-      const response = await fetch('/api/chat', {
+      const response = await fetchWithRetry('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -568,6 +569,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           useSearch,
           importData: getImportCount(importData) > 0 ? importData : undefined,
         }),
+        timeoutMs: 35000,
+        retries: 1,
       });
 
       if (!response.ok) {
@@ -2016,8 +2019,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
             ganRatio[gan] = (ganRatio[gan] || 0) + 0.25;
           });
 
-          const functionScores: Record<string, number> = {};
-          
+          // 不导入八字能量分布/八维与MBTI，避免决行藏分析八字推导的MBTI
           baziImports.push({
             type: 'bazi',
             pillars: result.pillars,
@@ -2028,7 +2030,6 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
             shishenRatio,
             ganRatio,
             relationships: {},
-            energyProfile: functionScores,
             name: record.params.name,
             gender: record.params.gender,
             birthDate: getBirthDateString(record.params),

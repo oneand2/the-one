@@ -183,20 +183,7 @@ export async function POST(req: Request) {
               importContext += `**八字关系**: ${rels.join('；')}\n\n`;
             }
           }
-          
-          if (bazi.predictedMBTI) {
-            importContext += `**八字推导的MBTI**: ${bazi.predictedMBTI}\n\n`;
-          }
-          
-          if (bazi.energyProfile) {
-            importContext += `**八字能量分布（八维功能）**:\n`;
-            const sortedProfile = Object.entries(bazi.energyProfile)
-              .sort((a, b) => (b[1] as number) - (a[1] as number));
-            sortedProfile.forEach(([func, score]) => {
-              importContext += `  - ${func}: ${(score as number).toFixed(1)}\n`;
-            });
-            importContext += '\n';
-          }
+          // 不注入八字能量分布/八维功能，避免模型据此推算或分析「八字推导的MBTI」
         });
       }
       
@@ -215,31 +202,6 @@ export async function POST(req: Request) {
         });
       }
       
-      // MBTI对比分析
-      if (baziList.length > 0 && mbtiList.length > 0) {
-        importContext += '### MBTI对比分析\n\n';
-        const pairCount = Math.min(baziList.length, mbtiList.length);
-        for (let i = 0; i < pairCount; i += 1) {
-          const predicted = baziList[i].predictedMBTI;
-          const actual = mbtiList[i].mbtiType;
-          if (!predicted || !actual) continue;
-          importContext += `**对比${i + 1}**\n`;
-          importContext += `**八字推导的MBTI**: ${predicted}\n`;
-          importContext += `**八维测试的MBTI**: ${actual}\n`;
-          if (predicted !== actual) {
-            importContext += `\n两者存在差异。请在回答时分析这种差异的可能原因，例如：\n`;
-            importContext += `- 先天命理倾向（八字）vs 后天发展倾向（八维测试）\n`;
-            importContext += `- 内在本性 vs 外在表现\n`;
-            importContext += `- 理想自我 vs 现实自我\n`;
-            importContext += `- 成长环境和经历对人格的塑造影响\n\n`;
-          } else {
-            importContext += `\n两者一致，说明用户的先天命理倾向与后天发展方向高度契合。\n\n`;
-          }
-        }
-        if (baziList.length !== mbtiList.length) {
-          importContext += `若八字与八维数量不匹配，可择最相关的一对重点对比，其余作为背景参考。\n\n`;
-        }
-      }
       
       // 六爻数据（解卦依据按动爻规则：三爻动用本卦+变卦卦辞等）
       if (liuyaoList.length > 0) {
@@ -308,8 +270,9 @@ export async function POST(req: Request) {
 1. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
 2. **见微知著**：从用户的命盘中看到他们的本性、倾向、优势和挑战
 3. **古今融合**：将传统命理学与现代心理学结合，给出既有深度又有实用价值的建议
-4. **MBTI对比**：如果用户同时导入了八字（八字中也会带有八维数据，那是命主本应该的或者最终的人格）和八维数据，务必分析两者的异同，解释差异原因
-5. **因材施教**：根据用户的命理特征，给出最适合他们的建议
+4. **因材施教**：根据用户的命理特征，给出最适合他们的建议
+
+**重要**：用户导入的八字数据中不包含「八字推导的MBTI」。你不得根据八字或任何能量分布推算、分析或主动提及「八字推导的MBTI」；仅当用户单独导入了「荣格八维测试」结果时，才可基于该测试结果讨论MBTI。
 
 ## 回答原则
 1. 既要有高度，也要接地气

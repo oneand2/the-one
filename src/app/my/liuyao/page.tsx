@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS, recordsLiuyaoDetailKey } from '@/utils/cache';
 
@@ -10,12 +10,20 @@ type ListItem = { id: string; question: string; date: string; created_at: string
 type DetailRecord = { id: string; question: string; hexagram_info: Record<string, unknown>; date: string; ai_result: string; created_at: string };
 
 function MyLiuyaoContent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
   const [list, setList] = useState<ListItem[]>([]);
   const [detail, setDetail] = useState<DetailRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const redirectToLogin = () => {
+    const base = pathname || '/my/liuyao';
+    const next = base + (typeof window !== 'undefined' && window.location.search ? window.location.search : '');
+    router.replace(`/login?next=${encodeURIComponent(next)}`);
+  };
 
   useEffect(() => {
     if (id) {
@@ -39,6 +47,10 @@ function MyLiuyaoContent() {
           setCached(detailKey, data, RECORDS_TTL_MS);
         })
         .catch((e) => {
+          if (e.message === '请先登录') {
+            redirectToLogin();
+            return;
+          }
           setError(e.message);
           if (!cached) setDetail(null);
         })
@@ -64,6 +76,10 @@ function MyLiuyaoContent() {
           setCached(CACHE_KEYS.RECORDS_LIUYAO, data, RECORDS_TTL_MS);
         })
         .catch((e) => {
+          if (e.message === '请先登录') {
+            redirectToLogin();
+            return;
+          }
           setError(e.message);
           if (!cached) setList([]);
         })

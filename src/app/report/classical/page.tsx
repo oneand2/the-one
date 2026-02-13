@@ -344,7 +344,6 @@ const ClassicalReportContent: React.FC = () => {
             shishenRatio,
             ganRatio,
             relationships: {},
-            predictedMBTI: result.mbti,
             name: displayInfo.name,
             gender: displayInfo.gender,
             birthDate: displayInfo.solarDate !== '未知日期' ? displayInfo.solarDate : undefined,

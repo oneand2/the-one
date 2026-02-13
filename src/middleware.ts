@@ -35,10 +35,24 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // 刷新 session（但不强制跳转）
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // 刷新 session；网络不稳定（如部分 Wi-Fi）时加超时，避免整页卡死或“已丢失网络连接”
+  const AUTH_TIMEOUT_MS = 8000;
+  let user: { id: string } | null = null;
+  let authKnown = false; // 是否已拿到明确的鉴权结果（未超时、未报错）
+  try {
+    const authResult = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('auth_timeout')), AUTH_TIMEOUT_MS)
+      ),
+    ]);
+    user = authResult?.data?.user ?? null;
+    authKnown = true;
+  } catch {
+    // 超时或网络错误：放行请求，不当作“未登录”；受保护页会在客户端再次校验
+    user = null;
+    authKnown = false;
+  }
 
   // 定义需要登录才能访问的路径
   const protectedPaths = ['/profile', '/history', '/my'];
@@ -46,8 +60,8 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // 只有访问受保护路径时才检查登录
-  if (isProtectedPath && !user) {
+  // 仅当「确定未登录」时才跳转登录；鉴权超时/失败时放行，由受保护页在客户端用 cookie 再校验
+  if (isProtectedPath && authKnown && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('next', request.nextUrl.pathname);

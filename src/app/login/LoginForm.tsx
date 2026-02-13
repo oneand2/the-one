@@ -2,11 +2,24 @@
 
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { fetchWithRetry } from '@/utils/fetchWithRetry';
 import { login, signup } from './actions';
 
 type Props = { next: string };
 
 const NO_EMAIL_SUFFIX = '@no-email.app';
+
+/** 登录/注册请求超时（毫秒），弱网下给出明确提示 */
+const AUTH_ACTION_TIMEOUT_MS = 25000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(message)), ms)
+    ),
+  ]);
+}
 
 export function LoginForm({ next }: Props) {
   const [error, setError] = useState<string | null>(null);
@@ -21,6 +34,7 @@ export function LoginForm({ next }: Props) {
     setPending(true);
     const form = e.currentTarget;
     const formData = new FormData(form);
+    const timeoutMsg = '登录请求超时，请检查网络后重试或切换网络（如改用流量）';
     try {
       if (mode === 'signup' && signupChoice === 'email') {
         const password = formData.get('password') as string;
@@ -30,7 +44,11 @@ export function LoginForm({ next }: Props) {
           setPending(false);
           return;
         }
-        const result = await signup(formData);
+        const result = await withTimeout(
+          signup(formData),
+          AUTH_ACTION_TIMEOUT_MS,
+          '注册请求超时，请检查网络后重试或切换网络（如改用流量）'
+        );
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl;
           return;
@@ -40,13 +58,19 @@ export function LoginForm({ next }: Props) {
         return;
       }
       if (mode === 'login') {
-        const result = await login(formData);
+        const result = await withTimeout(
+          login(formData),
+          AUTH_ACTION_TIMEOUT_MS,
+          timeoutMsg
+        );
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl;
           return;
         }
         if (result.error) setError(result.error);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : timeoutMsg);
     } finally {
       setPending(false);
     }
@@ -74,40 +98,48 @@ export function LoginForm({ next }: Props) {
     }
 
     try {
-      const fpPromise = import('@fingerprintjs/fingerprintjs').then((m) => m.load());
-      const { get } = await fpPromise;
-      const result = await get();
-      const visitorId = result.visitorId;
+      await withTimeout(
+        (async () => {
+          const fpPromise = import('@fingerprintjs/fingerprintjs').then((m) => m.load());
+          const { get } = await fpPromise;
+          const result = await get();
+          const visitorId = result.visitorId;
 
-      const res = await fetch('/api/auth/ip-signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, nickname, password, visitorId }),
-      });
-      const data = await res.json().catch(() => ({}));
+          const res = await fetchWithRetry('/api/auth/ip-signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, nickname, password, visitorId }),
+            timeoutMs: 15000,
+            retries: 1,
+          });
+          const data = await res.json().catch(() => ({}));
 
-      if (!res.ok) {
-        setError(data.error || '注册失败，请重试');
-        setPending(false);
-        return;
-      }
+          if (!res.ok) {
+            setError(data.error || '注册失败，请重试');
+            setPending(false);
+            return;
+          }
 
-      const supabase = createClient();
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: `${username}${NO_EMAIL_SUFFIX}`,
-        password,
-      });
+          const supabase = createClient();
+          const { error: signInError } = await supabase.auth.signInWithPassword({
+            email: `${username}${NO_EMAIL_SUFFIX}`,
+            password,
+          });
 
-      if (signInError) {
-        setError('注册成功，但自动登录失败，请使用用户名和密码登录');
-        setPending(false);
-        return;
-      }
+          if (signInError) {
+            setError('注册成功，但自动登录失败，请使用用户名和密码登录');
+            setPending(false);
+            return;
+          }
 
-      window.location.href = next || '/';
+          window.location.href = next || '/';
+        })(),
+        AUTH_ACTION_TIMEOUT_MS,
+        '注册请求超时，请检查网络后重试或切换网络（如改用流量）'
+      );
     } catch (err) {
       console.error('IP signup error', err);
-      setError('获取设备标识失败或网络异常，请重试');
+      setError(err instanceof Error ? err.message : '获取设备标识失败或网络异常，请重试');
     } finally {
       setPending(false);
     }

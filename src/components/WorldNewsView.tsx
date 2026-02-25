@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
+import { LunarCalendarCard } from '@/components/LunarCalendarCard';
 
 interface WorldNews {
   id: string;
@@ -96,7 +97,7 @@ export const WorldNewsView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const dailyFortuneQuestion = '我今日时运如何？';
   const handleDailyFortune = () => {
-    router.push(`/?tab=liuyao&question=${encodeURIComponent(dailyFortuneQuestion)}`);
+    router.push(`/?tab=juexingcang&liuyao_question=${encodeURIComponent(dailyFortuneQuestion)}`);
   };
 
   useEffect(() => {
@@ -350,34 +351,25 @@ export const WorldNewsView: React.FC = () => {
     return elements;
   };
 
-  // 从新闻列表中提取所有独特的年月日（必须在所有提前返回之前调用）
-  const availableDates = React.useMemo(() => {
-    const years = new Set<number>();
-    const months = new Map<number, Set<number>>(); // year -> months
-    const days = new Map<string, Set<number>>(); // "year-month" -> days
-    
-    newsList.forEach(news => {
-      const [year, month, day] = news.news_date.split('-').map(Number);
-      years.add(year);
-      
-      if (!months.has(year)) {
-        months.set(year, new Set());
-      }
-      months.get(year)!.add(month);
-      
-      const yearMonth = `${year}-${month}`;
-      if (!days.has(yearMonth)) {
-        days.set(yearMonth, new Set());
-      }
-      days.get(yearMonth)!.add(day);
-    });
-    
-    return {
-      years: Array.from(years).sort((a, b) => b - a),
-      months,
-      days
-    };
-  }, [newsList]);
+  // 获取某年某月的天数
+  const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0).getDate();
+
+  // 今天的日期（用于限制不选未来日期）
+  const todayRef = React.useMemo(() => {
+    const t = new Date();
+    return { year: t.getFullYear(), month: t.getMonth() + 1, day: t.getDate() };
+  }, []);
+
+  // 新闻中最早的年份（作为日历下限）
+  const minNewsYear = React.useMemo(() => {
+    if (newsList.length === 0) return todayRef.year;
+    return Math.min(...newsList.map(n => parseInt(n.news_date.split('-')[0])));
+  }, [newsList, todayRef]);
+
+  // 所有可选年份：从最早新闻年到今年
+  const allYears = React.useMemo(() => {
+    return Array.from({ length: todayRef.year - minNewsYear + 1 }, (_, i) => minNewsYear + i).reverse();
+  }, [minNewsYear, todayRef]);
 
   // 解析选中的日期（必须在所有提前返回之前调用）
   const selectedDateParts = React.useMemo(() => {
@@ -386,14 +378,21 @@ export const WorldNewsView: React.FC = () => {
     return { year, month, day };
   }, [selectedDate]);
 
-  // 当前选择的年月可用的月份和日期（必须在所有提前返回之前调用）
-  const availableMonths = selectedDateParts 
-    ? Array.from(availableDates.months.get(selectedDateParts.year) || []).sort((a, b) => b - a)
-    : [];
-  
-  const availableDays = selectedDateParts
-    ? Array.from(availableDates.days.get(`${selectedDateParts.year}-${selectedDateParts.month}`) || []).sort((a, b) => b - a)
-    : [];
+  // 当前选择年份的可用月份（1-12，若为今年则限制到当前月）
+  const availableMonths = React.useMemo(() => {
+    if (!selectedDateParts) return [];
+    const maxMonth = selectedDateParts.year === todayRef.year ? todayRef.month : 12;
+    return Array.from({ length: maxMonth }, (_, i) => i + 1).reverse();
+  }, [selectedDateParts, todayRef]);
+
+  // 当前选择年月的可用日期（1-max，若为今年今月则限制到今天）
+  const availableDays = React.useMemo(() => {
+    if (!selectedDateParts) return [];
+    const maxDay = (selectedDateParts.year === todayRef.year && selectedDateParts.month === todayRef.month)
+      ? todayRef.day
+      : getDaysInMonth(selectedDateParts.year, selectedDateParts.month);
+    return Array.from({ length: maxDay }, (_, i) => i + 1).reverse();
+  }, [selectedDateParts, todayRef]);
 
   // 过滤出选中日期的新闻（必须在所有提前返回之前调用）
   const selectedNews = selectedDate 
@@ -474,18 +473,15 @@ export const WorldNewsView: React.FC = () => {
               <DateSegmentSelect
                 label="年"
                 value={selectedDateParts.year}
-                options={availableDates.years}
+                options={allYears}
                 onChange={(year) => {
-                  // 选择年份后，自动选择该年最新的月份
-                  const months = Array.from(availableDates.months.get(year) || []).sort((a, b) => b - a);
-                  if (months.length > 0) {
-                    const month = months[0];
-                    const days = Array.from(availableDates.days.get(`${year}-${month}`) || []).sort((a, b) => b - a);
-                    if (days.length > 0) {
-                      const day = days[0];
-                      setSelectedDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
-                    }
-                  }
+                  const maxMonth = year === todayRef.year ? todayRef.month : 12;
+                  const month = Math.min(selectedDateParts.month, maxMonth);
+                  const maxDay = (year === todayRef.year && month === todayRef.month)
+                    ? todayRef.day
+                    : getDaysInMonth(year, month);
+                  const day = Math.min(selectedDateParts.day, maxDay);
+                  setSelectedDate(`${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
                 }}
                 field="year"
               />
@@ -494,12 +490,11 @@ export const WorldNewsView: React.FC = () => {
                 value={selectedDateParts.month}
                 options={availableMonths}
                 onChange={(month) => {
-                  // 选择月份后，自动选择该月最新的日期
-                  const days = Array.from(availableDates.days.get(`${selectedDateParts.year}-${month}`) || []).sort((a, b) => b - a);
-                  if (days.length > 0) {
-                    const day = days[0];
-                    setSelectedDate(`${selectedDateParts.year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
-                  }
+                  const maxDay = (selectedDateParts.year === todayRef.year && month === todayRef.month)
+                    ? todayRef.day
+                    : getDaysInMonth(selectedDateParts.year, month);
+                  const day = Math.min(selectedDateParts.day, maxDay);
+                  setSelectedDate(`${selectedDateParts.year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
                 }}
                 field="month"
               />
@@ -517,46 +512,33 @@ export const WorldNewsView: React.FC = () => {
         </div>
       )}
 
-      {/* 免责声明 */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="mb-8 max-w-3xl mx-auto"
-      >
-        <div className="flex items-start gap-2 text-[11px] leading-relaxed">
-          <span className="text-stone-400/50 flex-shrink-0">|</span>
-          <p className="text-stone-500/70 font-sans tracking-wide">
-            <span className="text-stone-600/60">声明</span>
-            <span className="text-stone-400/50 mx-1.5">·</span>
-            本站仅提供信息收集与整理服务，不保证信息的准确性与完整性，所有新闻版权归原媒体所有。所有内容仅供参考，不构成任何投资建议。
-          </p>
-        </div>
-      </motion.div>
+      {/* 万年历黄历卡片 */}
+      {selectedDateParts && (
+        <LunarCalendarCard
+          year={selectedDateParts.year}
+          month={selectedDateParts.month}
+          day={selectedDateParts.day}
+        />
+      )}
 
       <div className="space-y-0 pb-8">
-        {selectedNews && (() => {
+        {/* 顶部分隔横线 */}
+        {selectedDateParts && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6 }}
+            className="mb-8 mt-1"
+          >
+            <div className="w-full h-px bg-stone-200/80" />
+          </motion.div>
+        )}
+
+        {selectedNews ? (() => {
           const { categories, links } = parseContentByCategory(selectedNews.content);
           
           return (
             <div key={selectedNews.id}>
-              {/* 日期标签 - 简约设计（恢复原版） */}
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5 }}
-                className="mb-6 flex items-center gap-3"
-              >
-                <div className="flex items-baseline gap-2">
-                  <time className="font-serif text-2xl text-stone-800 tracking-tight tabular-nums">
-                    {formatDate(selectedNews.news_date).split('.')[1]}.{formatDate(selectedNews.news_date).split('.')[2]}
-                  </time>
-                  <span className="text-xs text-stone-500 font-sans">
-                    {formatDate(selectedNews.news_date).split('.')[0]}
-                  </span>
-                </div>
-                <div className="flex-1 h-px bg-stone-200" />
-              </motion.div>
 
               {/* 按分类渲染卡片 */}
               <div className="space-y-0">
@@ -665,7 +647,37 @@ export const WorldNewsView: React.FC = () => {
               </div>
             </div>
           );
-        })()}
+        })() : selectedDateParts ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4 }}
+            className="py-14 text-center"
+          >
+            <p className="text-stone-400 font-serif text-sm tracking-wide" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}>
+              该日新闻暂未更新
+            </p>
+          </motion.div>
+        ) : null}
+
+        {/* 免责声明 */}
+        {selectedDateParts && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-8 mb-2 max-w-3xl mx-auto"
+          >
+            <div className="flex items-start gap-2 text-[11px] leading-relaxed">
+              <span className="text-stone-400/50 flex-shrink-0">|</span>
+              <p className="text-stone-500/70 font-sans tracking-wide">
+                <span className="text-stone-600/60">声明</span>
+                <span className="text-stone-400/50 mx-1.5">·</span>
+                本站仅提供信息收集与整理服务，不保证信息的准确性与完整性，所有新闻版权归原媒体所有。所有内容仅供参考，不构成任何投资建议。
+              </p>
+            </div>
+          </motion.div>
+        )}
       </div>
 
       {/* 占问按钮区域 */}

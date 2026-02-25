@@ -55,14 +55,13 @@ export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
                 <p className="text-sm flex-1">
-                  先在<strong className="text-stone-800">见自己-六爻</strong>界面输入问题并起卦，再导入决行藏，可获得更精准的解卦分析。
+                  开启<strong className="text-stone-800">六爻</strong>（已默认开启）之后再提问，可获得更精准的解卦分析。
                 </p>
               </div>
-              
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
                 <p className="text-sm flex-1">
-                  点击<strong className="text-stone-800">入定模式</strong>可获得更深入、更准确的回答（消耗 20 铜币）。
+                  点击<strong className="text-stone-800">宗师模式</strong>可获得更深入、更准确的回答（消耗 20 铜币）。
                 </p>
               </div>
             </div>

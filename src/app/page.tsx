@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
 import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
 import type { TabType } from '@/types/tabs';
 
-const VALID_TABS: TabType[] = ['guanshi', 'bazi', 'mbti', 'liuyao', 'wendao', 'juexingcang'];
+const VALID_TABS: TabType[] = ['guanshi', 'bazi', 'mbti', 'wendao', 'juexingcang'];
 
 function getTabFromUrl(): TabType {
   if (typeof window === 'undefined') return 'guanshi';
@@ -37,11 +38,6 @@ const JueXingCangView = dynamic(
   () => import('@/components/JueXingCangView').then((mod) => mod.JueXingCangView),
   { ssr: false, loading: () => <TabLoading /> }
 );
-const LiuYaoView = dynamic(
-  () => import('@/components/LiuYaoView').then((mod) => mod.LiuYaoView),
-  { ssr: false, loading: () => <TabLoading /> }
-);
-
 function TabLoading() {
   return (
     <div className="min-h-[280px] flex items-center justify-center text-stone-400 text-sm font-sans">
@@ -51,6 +47,7 @@ function TabLoading() {
 }
 
 const HomeContent: React.FC = () => {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
   // 已访问过的 tab 保持挂载，切换回来时不再重新加载、不卡顿
@@ -68,6 +65,13 @@ const HomeContent: React.FC = () => {
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
+
+  // 当 URL 被 router.push 更新时（如见天地「占问今日休咎」跳转决行藏），立即同步 tab，保证马上切到对应界面
+  useEffect(() => {
+    const tab = getTabFromUrl();
+    setActiveTab(tab);
+    setVisitedTabs((prev) => new Set([...prev, tab]));
+  }, [searchParams]);
 
   const handleTabChange = useCallback(
     (tabOrUpdater: TabType | React.SetStateAction<TabType>) => {
@@ -142,7 +146,7 @@ const HomeContent: React.FC = () => {
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : activeTab === 'juexingcang' ? '决行藏' : '六爻占卜'}
+                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : '决行藏'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
                 {activeTab === 'guanshi' 
@@ -153,9 +157,7 @@ const HomeContent: React.FC = () => {
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'mbti'
                   ? '知己即知天，请成为自己的答案'
-                  : activeTab === 'juexingcang'
-                  ? '用之则行，舍之则藏'
-                  : '所信即所见，请相信相信的力量'}
+                  : '用之则行，舍之则藏'}
               </p>
             </div>
           </motion.header>
@@ -201,11 +203,6 @@ const HomeContent: React.FC = () => {
               {visitedTabs.has('juexingcang') && (
                 <div className={activeTab === 'juexingcang' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'juexingcang'}>
                   <JueXingCangView hideHeader />
-                </div>
-              )}
-              {visitedTabs.has('liuyao') && (
-                <div className={activeTab === 'liuyao' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'liuyao'}>
-                  <LiuYaoView onNavigateToJuexingcang={() => handleTabChange('juexingcang')} />
                 </div>
               )}
               </div>

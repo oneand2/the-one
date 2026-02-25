@@ -50,7 +50,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
       subTabs: [
         { id: 'bazi' as TabType, label: '八字' },
         { id: 'mbti' as TabType, label: '八维' },
-        { id: 'liuyao' as TabType, label: '六爻' },
       ]
     },
     { id: 'juexingcang' as const, label: '决行藏' },

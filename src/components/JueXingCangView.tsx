@@ -2,12 +2,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { InsufficientCoinsModal } from './InsufficientCoinsModal';
 import { JueXingCangTipModal } from './JueXingCangTipModal';
 import { CopperCoinIcon } from './CopperCoinIcon';
 import { ImportData } from '@/types/import-data';
+import { LiuYaoView } from './LiuYaoView';
 import type { BaziInput } from '@/utils/baziLogic';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
@@ -79,10 +80,11 @@ interface JueXingCangViewProps {
 
 export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = false }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [mindMode, setMindMode] = useState<'none' | 'deep' | 'meditation'>('none');
+  const [mindMode, setMindMode] = useState<'none' | 'deep' | 'meditation'>('meditation');
   const [useSearch, setUseSearch] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -114,8 +116,10 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
   const [showDesktopSidebar, setShowDesktopSidebar] = useState(false); // 桌面端侧边栏显示状态
   const [searchQuery, setSearchQuery] = useState(''); // 搜索关键词
-  const [editingSessionId, setEditingSessionId] = useState<string | null>(null); // 正在编辑的会话ID
-  const [editingTitle, setEditingTitle] = useState(''); // 编辑中的标题
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
+  const [liuyaoMode, setLiuyaoMode] = useState(true);
+  const [liuyaoQuestion, setLiuyaoQuestion] = useState<string | null>(null);
 
   const renderMessageContent = (content: string) => {
     const parts: React.ReactNode[] = [];
@@ -464,7 +468,18 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     }
   }, []);
 
-  // 处理不再显示提示
+  // 从见天地「占问今日休咎」跳转过来时，URL 含 liuyao_question，自动进入六爻流程
+  useEffect(() => {
+    const liuyaoQ = searchParams?.get('liuyao_question');
+    if (liuyaoQ) {
+      setLiuyaoMode(true);
+      setLiuyaoQuestion(liuyaoQ);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('liuyao_question');
+      window.history.replaceState(null, '', url.toString());
+    }
+  }, [searchParams]);
+
   const handleDontShowTipAgain = () => {
     try {
       localStorage.setItem(tipModalDontShowKey, 'true');
@@ -506,15 +521,23 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   }, [input]);
 
   // 发送消息
-  const handleSend = async () => {
-    const content = input.trim();
+  const handleSend = async (overrideContent?: string, overrideImportData?: ImportData) => {
+    const content = (overrideContent ?? input).trim();
     if (!content || isLoading || sendingRef.current) return;
+
+    // 六爻模式：拦截用户输入，进入起卦流程
+    if (liuyaoMode && !liuyaoQuestion && !overrideContent) {
+      setLiuyaoQuestion(content);
+      setInput('');
+      return;
+    }
     const now = Date.now();
     if (lastSendRef.current.content === content && now - lastSendRef.current.at < 800) {
       return;
     }
     sendingRef.current = true;
     lastSendRef.current = { content, at: now };
+    const effectiveImportData = overrideImportData ?? importData;
 
     try {
       const supabase = createClient();
@@ -535,10 +558,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       // 如果没有当前会话，创建新会话
       let sessionId = currentSessionId;
       if (!sessionId) {
-        // 如果有六爻导入数据，使用六爻问题作为会话标题
         let sessionTitle: string | undefined;
-        if (importData.liuyao && importData.liuyao.length > 0 && importData.liuyao[0].question) {
-          const question = importData.liuyao[0].question;
+        if (effectiveImportData.liuyao && effectiveImportData.liuyao.length > 0 && effectiveImportData.liuyao[0].question) {
+          const question = effectiveImportData.liuyao[0].question;
           sessionTitle = question.length > 20 ? question.slice(0, 20) + '...' : question;
         }
         const newSession = await createNewSession(sessionTitle);
@@ -552,7 +574,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       }
 
       setMessages(prev => [...prev, userMessage]);
-      setInput('');
+      if (!overrideContent) setInput('');
       setIsLoading(true);
       userFollowsBottomRef.current = true;
 
@@ -567,7 +589,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           useReasoning: mindMode === 'deep',
           useMeditation: mindMode === 'meditation',
           useSearch,
-          importData: getImportCount(importData) > 0 ? importData : undefined,
+          importData: getImportCount(effectiveImportData) > 0 ? effectiveImportData : undefined,
         }),
         timeoutMs: 35000,
         retries: 1,
@@ -630,8 +652,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           if (currentSession && (currentSession.title === '新对话' || currentSession.title === '请帮我解卦') && userMessage.content) {
             // 如果用户消息是"请帮我解卦"且有六爻导入数据，使用六爻问题作为标题
             let titleText: string;
-            if (userMessage.content === '请帮我解卦' && importData.liuyao && importData.liuyao.length > 0 && importData.liuyao[0].question) {
-              const question = importData.liuyao[0].question;
+            if (userMessage.content === '请帮我解卦' && effectiveImportData.liuyao && effectiveImportData.liuyao.length > 0 && effectiveImportData.liuyao[0].question) {
+              const question = effectiveImportData.liuyao[0].question;
               titleText = question.length > 20 ? question.slice(0, 20) + '...' : question;
             } else {
               titleText = userMessage.content.slice(0, 20) + (userMessage.content.length > 20 ? '...' : '');
@@ -662,6 +684,14 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       setIsLoading(false);
       sendingRef.current = false;
     }
+  };
+
+  // 六爻解卦完成后的回调：导入卦象数据并自动发送解卦请求
+  const handleLiuyaoInterpret = (liuyaoImportData: ImportData, _question: string) => {
+    setLiuyaoQuestion(null);
+    const newImportData = mergeImportData(importData, liuyaoImportData);
+    setImportData(newImportData);
+    handleSend('请帮我解卦', newImportData);
   };
 
   const isDeep = mindMode === 'deep';
@@ -1117,7 +1147,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
           {/* 按钮组 */}
           <div className="flex items-center justify-center gap-4 sm:gap-5 mb-4 sm:mb-5">
-            {/* 入定模式提示 */}
+            {/* 宗师模式提示 */}
             <AnimatePresence>
               {showMeditationWarning && (
                 <motion.div
@@ -1150,7 +1180,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                       />
                       
                       <span className="text-[13px] text-stone-700 tracking-[0.15em] font-light">
-                        入定模式不可以使用深思功能哦
+                        宗师模式不可以使用深思功能哦
                       </span>
                     </div>
                   </div>
@@ -1237,27 +1267,53 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
               每问基础消耗 <span className="text-amber-700/80 font-normal">2</span> 铜币
             </span>
             
-            {/* 入定提示 */}
-            {!isMeditation && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="flex items-center gap-1.5"
-              >
-                <span className="text-[9px] text-stone-400 tracking-[0.15em] font-light">
-                  点击中心圆球可开启
-                </span>
-                <span className="flex items-center gap-1 text-[9px] text-amber-700/70 tracking-[0.15em] font-light">
-                  入定模式
-                  <CopperCoinIcon className="w-2.5 h-2.5 text-amber-700/70" />
-                  <span>20</span>
-                </span>
-              </motion.div>
-            )}
+            {/* 宗师模式提示 */}
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="flex items-center gap-1.5"
+            >
+              <span className="text-[9px] text-stone-400 tracking-[0.15em] font-light">
+                {isMeditation ? (
+                  <>
+                    点击中心圆球可
+                    <span className="mx-1 text-amber-700/80">
+                      关闭
+                    </span>
+                    宗师模式
+                  </>
+                ) : (
+                  <>
+                    点击中心圆球可
+                    <span className="mx-1 text-amber-700/80">
+                      开启
+                    </span>
+                    宗师模式
+                  </>
+                )}
+              </span>
+              <span className="flex items-center gap-1 text-[9px] text-amber-700/70 tracking-[0.15em] font-light">
+                宗师模式
+                <CopperCoinIcon className="w-2.5 h-2.5 text-amber-700/70" />
+                <span>20</span>
+              </span>
+            </motion.div>
           </div>
         </motion.div>
 
+        {/* 六爻起卦流程 */}
+        {liuyaoQuestion ? (
+          <div className="py-6 flex-1">
+            <LiuYaoView
+              embedded
+              externalQuestion={liuyaoQuestion}
+              onInterpret={handleLiuyaoInterpret}
+              onCancel={() => setLiuyaoQuestion(null)}
+            />
+          </div>
+        ) : (
+        <>
         {/* 消息区域 */}
         <div
           ref={scrollContainerRef}
@@ -1274,7 +1330,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                 transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                 className="flex flex-col items-center justify-center h-full min-h-[400px]"
               >
-                {/* 禅意图形 - 三个同心圆（可点击进入入定模式）*/}
+              {/* 禅意图形 - 三个同心圆（可点击进入宗师模式）*/}
                 <button
                   onClick={() => setMindMode(isMeditation ? 'none' : 'meditation')}
                   className="relative w-32 h-32 mb-12 group cursor-pointer"
@@ -1373,7 +1429,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                     className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap"
                   >
                     <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
-                      {isMeditation ? '退出入定' : '点击入定'}
+                      {isMeditation ? '退出宗师模式' : '开启宗师模式'}
                     </span>
                   </motion.div>
                 </button>
@@ -1386,16 +1442,16 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                   className="text-center space-y-5"
                 >
                   <h2 className="text-[16px] text-[#333333] tracking-[0.4em] font-light">
-                    {isMeditation ? '入定问心' : '怀虚待问'}
+                    {isMeditation ? '天人合演' : '怀虚待问'}
                   </h2>
                   
                   <p className="text-[12px] text-stone-500 tracking-[0.15em] 
                     font-light leading-loose max-w-sm">
                     {isMeditation ? (
                       <>
-                        深入禅定，觉察本心<br/>
+                        知天之所为，知人之所为<br/>
                         <span className="flex items-center justify-center gap-1 text-[10px] text-amber-700/80">
-                          入定模式
+                          宗师模式
                           <CopperCoinIcon className="w-3 h-3 text-amber-700/80" />
                           <span>20</span>
                         </span>
@@ -1700,7 +1756,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           
           <div className="relative">
             {/* 输入框容器 */}
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl 
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl 
               border border-stone-200 overflow-hidden
               transition-all duration-500 ease-out
               hover:border-stone-300 hover:shadow-lg hover:shadow-stone-200/20
@@ -1717,57 +1773,77 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                   }
                 }}
                 placeholder="请输入问题..."
-                className="w-full px-7 py-5 pr-16 bg-transparent border-none outline-none 
+                className="w-full px-7 pt-5 pb-3 bg-transparent border-none outline-none 
                   resize-none text-[14px] text-[#333333] placeholder-stone-400 
                   font-light tracking-wide leading-loose max-h-40"
                 rows={1}
                 disabled={isLoading}
               />
-              
-              {/* 发送按钮 */}
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                className={`
-                  absolute right-4 bottom-4 w-9 h-9 rounded-full
-                  flex items-center justify-center
-                  transition-all duration-500 ease-out
-                  ${input.trim() && !isLoading
-                    ? 'bg-[#2c2c2c] text-white hover:bg-[#1a1a1a] hover:scale-110 active:scale-95'
-                    : 'bg-stone-200 text-stone-400 cursor-not-allowed'
-                  }
-                `}
-              >
-                {/* 简化的发送图标 */}
-                <svg 
-                  width="14" 
-                  height="14" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2.5" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                  className="translate-x-[1px]"
-                >
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                  <polyline points="12 5 19 12 12 19" />
-                </svg>
-              </button>
-            </div>
 
-            {/* 提示文字 */}
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 mt-4">
-              <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
-              从见自己-六爻界面输入问题再导入此处
-              </span>
-              <div className="w-px h-2 bg-stone-300 hidden sm:block" />
-              <span className="text-[10px] text-stone-400 tracking-[0.2em] font-light">
-              可获得更优质的回答哦
-              </span>
+              {/* 底部操作栏 */}
+              <div className="flex items-center justify-between px-4 pb-3 pt-1">
+                {/* 六爻模式切换 */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newMode = !liuyaoMode;
+                    setLiuyaoMode(newMode);
+                    if (!newMode) setLiuyaoQuestion(null);
+                  }}
+                  className="flex items-center gap-2 group"
+                >
+                  <div className={`
+                    relative w-7 h-[15px] rounded-full transition-all duration-500 ease-out flex-shrink-0
+                    ${liuyaoMode ? 'bg-stone-700' : 'bg-stone-300'}
+                  `}>
+                    <div className={`
+                      absolute top-[2px] w-[11px] h-[11px] rounded-full bg-white shadow-sm
+                      transition-all duration-500 ease-out
+                      ${liuyaoMode ? 'left-[14px]' : 'left-[2px]'}
+                    `} />
+                  </div>
+                  <span className={`
+                    text-[10px] tracking-[0.2em] font-light transition-colors duration-300
+                    ${liuyaoMode ? 'text-stone-600' : 'text-stone-400 group-hover:text-stone-500'}
+                  `}>
+                    六爻
+                  </span>
+                </button>
+
+                {/* 发送按钮 */}
+                <button
+                  onClick={() => handleSend()}
+                  disabled={!input.trim() || isLoading}
+                  className={`
+                    w-8 h-8 rounded-full flex items-center justify-center
+                    transition-all duration-500 ease-out flex-shrink-0
+                    ${input.trim() && !isLoading
+                      ? 'bg-[#2c2c2c] text-white hover:bg-[#1a1a1a] hover:scale-110 active:scale-95'
+                      : 'bg-stone-200 text-stone-400 cursor-not-allowed'
+                    }
+                  `}
+                >
+                  <svg 
+                    width="13" 
+                    height="13" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    strokeWidth="2.5" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round"
+                    className="translate-x-[1px]"
+                  >
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </motion.div>
+        </>
+        )}
       </div>
       <InsufficientCoinsModal
         open={insuffOpen}

@@ -3034,7 +3034,7 @@ export interface LuckCycle {
  * @param dayMaster 日主天干
  */
 export function calculateLuckCycles(
-  dateObj: Solar | null,
+  dateObj: any | null,
   gender: number = 1,
   baziData: any = null
 ) {

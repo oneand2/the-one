@@ -11,15 +11,24 @@ import type { ImportData } from '@/types/import-data';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
 
 export interface LiuYaoViewProps {
-  /** 点击「凡事有因，于此寻果」后调用，用于切换到决行藏 tab 并同步 URL */
   onNavigateToJuexingcang?: () => void;
+  embedded?: boolean;
+  externalQuestion?: string;
+  onInterpret?: (importData: ImportData, question: string) => void;
+  onCancel?: () => void;
 }
 
-export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang }) => {
+export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
+  onNavigateToJuexingcang,
+  embedded = false,
+  externalQuestion,
+  onInterpret,
+  onCancel,
+}) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [question, setQuestion] = useState<string>('');
-  const [isQuestionSet, setIsQuestionSet] = useState<boolean>(false);
+  const [question, setQuestion] = useState<string>(embedded && externalQuestion ? externalQuestion : '');
+  const [isQuestionSet, setIsQuestionSet] = useState<boolean>(embedded && !!externalQuestion);
   const [yaos, setYaos] = useState<YaoInfo[]>([]);
   const [isTossing, setIsTossing] = useState(false);
   const [currentTossResult, setCurrentTossResult] = useState<YaoValue | null>(null);
@@ -31,13 +40,13 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
   const inputPresetKey = 'juexingcang-input-preset';
   const presetQuestion = searchParams.get('question');
 
+  // URL 有 question 时始终同步到输入框（如从见天地「占问今日休咎」跳转过来），保证自动填入
   useEffect(() => {
-    if (prefillAppliedRef.current) return;
-    if (presetQuestion && !isQuestionSet) {
+    if (!embedded && presetQuestion) {
       setQuestion(presetQuestion);
       prefillAppliedRef.current = true;
     }
-  }, [presetQuestion, isQuestionSet]);
+  }, [embedded, presetQuestion]);
 
   // 从数值反推硬币组合
   const getCoinsFromValue = (value: YaoValue): number[] => {
@@ -90,8 +99,10 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
 
   // 重新起卦
   const handleReset = () => {
-    setQuestion('');
-    setIsQuestionSet(false);
+    if (!embedded) {
+      setQuestion('');
+      setIsQuestionSet(false);
+    }
     setYaos([]);
     setCurrentTossResult(null);
     setShowCoinAnimation(false);
@@ -131,13 +142,6 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
           : undefined,
       }],
     };
-
-    try {
-      localStorage.setItem(pendingImportKey, JSON.stringify(liuyaoData));
-      localStorage.setItem(inputPresetKey, '请帮我解卦');
-    } catch (error) {
-      console.warn('写入导入缓存失败:', error);
-    }
 
     const hexagramInfo = {
       mainHexagram: hexagramAnalysis?.mainHexagram?.title || '',
@@ -187,7 +191,19 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
     };
 
     void saveRecord();
-    // 用页面提供的切换回调，与侧栏/MobileNav 一致（replaceState + setActiveTab），否则 router.push 不会更新 activeTab
+
+    if (embedded && onInterpret) {
+      onInterpret(liuyaoData, question);
+      return;
+    }
+
+    try {
+      localStorage.setItem(pendingImportKey, JSON.stringify(liuyaoData));
+      localStorage.setItem(inputPresetKey, '请帮我解卦');
+    } catch (error) {
+      console.warn('写入导入缓存失败:', error);
+    }
+
     if (onNavigateToJuexingcang) {
       onNavigateToJuexingcang();
     } else {
@@ -256,13 +272,28 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center pt-28 mobile-content-bottom">
+    <div className={embedded ? "flex flex-col items-center w-full" : "min-h-screen flex items-center justify-center pt-28 mobile-content-bottom"}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="space-y-12 w-full"
       >
+        {/* 嵌入模式取消按钮 */}
+        {embedded && onCancel && (
+          <motion.button
+            onClick={onCancel}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="self-start mb-6 text-xs text-stone-500 hover:text-stone-700 transition-colors flex items-center gap-1"
+          >
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            取消起卦
+          </motion.button>
+        )}
+
         {/* Phase 1: 输入问题阶段 */}
         {!isQuestionSet ? (
           <motion.div
@@ -586,9 +617,9 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
                       }}
                       className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg bg-[#78716c] hover:bg-[#292524] hover:-translate-y-0.5 active:translate-y-0 transition-[background-color,transform] duration-300 cursor-pointer"
                     >
-                      凡事有因，于此寻果
+                      {embedded ? '解卦' : '凡事有因，于此寻果'}
                     </button>
-                    <p className="text-xs text-stone-500 font-sans pointer-events-none">进入决行藏继续解卦</p>
+                    {!embedded && <p className="text-xs text-stone-500 font-sans pointer-events-none">进入决行藏继续解卦</p>}
                   </motion.div>
                 </motion.div>
               )}
@@ -611,9 +642,11 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({ onNavigateToJuexingcang 
           </motion.div>
         )}
 
-        <p className="text-center text-xs text-stone-400 font-sans py-6">
-          注：一切卦象归根究底都是心象，勿将本网站用于封建迷信活动。
-        </p>
+        {!embedded && (
+          <p className="text-center text-xs text-stone-400 font-sans py-6">
+            注：一切卦象归根究底都是心象，勿将本网站用于封建迷信活动。
+          </p>
+        )}
       </motion.div>
 
     </div>

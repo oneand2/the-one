@@ -52,7 +52,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
           <rect x="10" y="58" width="80" height="12" fill="currentColor" />
         </svg>
       ),
-      subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }, { id: 'liuyao', label: '六爻' }],
+      subTabs: [{ id: 'bazi', label: '八字' }, { id: 'mbti', label: '八维' }],
     },
     {
       id: 'juexingcang',
@@ -69,13 +69,13 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
   ];
 
   const getActiveId = (itemId: NavItemId) => {
-    if (itemId === 'mbti' && (activeTab === 'bazi' || activeTab === 'mbti' || activeTab === 'liuyao')) return true;
+    if (itemId === 'mbti' && (activeTab === 'bazi' || activeTab === 'mbti')) return true;
     return activeTab === itemId;
   };
 
   const showSubNav = subNavGroup !== null;
   const subTabs = subNavGroup === 'mbti'
-    ? [{ id: 'bazi' as TabType, label: '八字' }, { id: 'mbti' as TabType, label: '八维' }, { id: 'liuyao' as TabType, label: '六爻' }]
+    ? [{ id: 'bazi' as TabType, label: '八字' }, { id: 'mbti' as TabType, label: '八维' }]
     : [];
 
   return (

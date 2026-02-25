@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     if (!skipCoins) {
       if (balance < cost) {
         return NextResponse.json(
-          { error: `铜币不足，本次消耗 ${cost} 铜币（基础消耗 ${COINS_BASE}${useReasoning ? `，深度思考消耗 ${COINS_REASONING}` : ''}${useMeditation ? `，入定消耗 ${COINS_MEDITATION}` : ''}${useSearch ? `，联网消耗 ${COINS_SEARCH}` : ''}）`, need_coins: cost },
+          { error: `铜币不足，本次消耗 ${cost} 铜币（基础消耗 ${COINS_BASE}${useReasoning ? `，深度思考消耗 ${COINS_REASONING}` : ''}${useMeditation ? `，宗师消耗 ${COINS_MEDITATION}` : ''}${useSearch ? `，联网消耗 ${COINS_SEARCH}` : ''}）`, need_coins: cost },
           { status: 402 }
         );
       }
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
         Boolean(process.env.AI_MEDITATION_FALLBACK_API_KEY) && Boolean(process.env.AI_MEDITATION_FALLBACK_BASE_URL);
 
       if (hasPrimaryMeditation) {
-        // 入定模式：使用 Claude 模型（主API）
+        // 宗师模式：使用 Claude 模型（主API）
         client = new OpenAI({
           apiKey: process.env.AI_MEDITATION_API_KEY,
           baseURL: process.env.AI_MEDITATION_BASE_URL,
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
         });
         modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
       } else {
-        throw new Error('入定模式未配置可用的API，请检查环境变量');
+        throw new Error('宗师模式未配置可用的API，请检查环境变量');
       }
       
       // 配置备用API（用于故障转移）
@@ -355,7 +355,7 @@ export async function POST(req: Request) {
     } catch (primaryError: any) {
       // 如果主API失败且有备用API，自动切换
       if (useMeditation && fallbackClient && fallbackModelName) {
-        console.warn('主入定API连接失败，自动切换到备用API:', primaryError.message);
+        console.warn('主宗师API连接失败，自动切换到备用API:', primaryError.message);
         try {
           stream = await fallbackClient.chat.completions.create({
             model: fallbackModelName,
@@ -370,7 +370,7 @@ export async function POST(req: Request) {
           throw primaryError; // 如果备用API也失败，抛出原始错误
         }
       } else {
-        throw primaryError; // 非入定模式或无备用API，直接抛出错误
+        throw primaryError; // 非宗师模式或无备用API，直接抛出错误
       }
     }
 

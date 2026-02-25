@@ -179,7 +179,7 @@ export default function ProfilePage() {
                 <label className="block text-sm font-sans text-stone-700 mb-2">铜币余额</label>
                 <p className="text-lg font-sans text-stone-800 tabular-nums">{coins} 铜币</p>
                 <p className="text-xs text-stone-500 mt-1 mb-3">
-                  决行藏每问 2 枚（深度思考 +2，入定 +20，联网 +2）
+                  决行藏每问 2 枚（深度思考 +2，宗师 +20，联网 +2）
                 </p>
                 <button
                   type="button"

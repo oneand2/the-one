@@ -61,7 +61,7 @@ export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
               <div className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-stone-400 mt-2 shrink-0" />
                 <p className="text-sm flex-1">
-                  点击<strong className="text-stone-800">宗师模式</strong>可获得更深入、更准确的回答（消耗 20 铜币）。
+                  点击<strong className="text-stone-800">宗师模式</strong>可获得更深入、更准确的回答（消耗 20 铜币）。宗师模式已默认开启，关闭宗师模式可以帮你节省大量铜币。
                 </p>
               </div>
             </div>

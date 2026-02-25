@@ -202,7 +202,7 @@ const HomeContent: React.FC = () => {
               )}
               {visitedTabs.has('juexingcang') && (
                 <div className={activeTab === 'juexingcang' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'juexingcang'}>
-                  <JueXingCangView hideHeader />
+                  <JueXingCangView hideHeader isActive={activeTab === 'juexingcang'} />
                 </div>
               )}
               </div>

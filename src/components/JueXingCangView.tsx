@@ -76,9 +76,11 @@ type ImportedData = ImportedBaziData | ImportedMbtiData | ImportedLiuyaoData;
 interface JueXingCangViewProps {
   /** 嵌入主页 tab 时传 true，不渲染 logo/标题，由 page 统一渲染以实现瞬间切换 */
   hideHeader?: boolean;
+  /** 在主页 tab 常驻挂载场景下，标记当前是否为激活态 */
+  isActive?: boolean;
 }
 
-export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = false }) => {
+export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = false, isActive = true }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -120,6 +122,21 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [editingTitle, setEditingTitle] = useState('');
   const [liuyaoMode, setLiuyaoMode] = useState(true);
   const [liuyaoQuestion, setLiuyaoQuestion] = useState<string | null>(null);
+  const wasActiveRef = useRef(isActive);
+
+  // 主页 tab 切走时重置到决行藏首页，避免回到上次对话
+  useEffect(() => {
+    if (wasActiveRef.current && !isActive) {
+      setCurrentSessionId(null);
+      setMessages([]);
+      setInput('');
+      setLiuyaoQuestion(null);
+      setShowSessionList(false);
+      setShowDesktopSidebar(false);
+      setSearchQuery('');
+    }
+    wasActiveRef.current = isActive;
+  }, [isActive]);
 
   const renderMessageContent = (content: string) => {
     const parts: React.ReactNode[] = [];

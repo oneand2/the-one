@@ -349,7 +349,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   const handleReset   = useCallback(()=>{ if(storedData){setBirthYear(storedData.birthYear);setBirthMonth(storedData.birthMonth);setBirthDay(storedData.birthDay);setBirthHour(storedData.birthHour);} setCalcError(''); setShowSetup(true); },[storedData]);
   const handleDivine  = useCallback(()=>{
     if(!storedData){setShowSetup(true);return;}
-    const q=`今日${year}年${month}月${day}日，${dayPillar?`日柱${dayPillar}，`:''}我命中用神为${storedData.yongshen}（${STEM_WUXING[storedData.yongshen]??''}），请结合今日日柱能量，为我详细占问今日时运休咎，分析今日在事业、健康、人际方面的吉凶与注意事项。`;
+    const q=`今日${year}年${month}月${day}日，${dayPillar?`日柱${dayPillar}，`:''}我命中用神为${storedData.yongshen}（${STEM_WUXING[storedData.yongshen]??''}），请结合今日日柱能量，为我详细占问今日时运休咎，分析今日在事业、情感、人际方面的吉凶与注意事项。`;
     router.push(`/?tab=juexingcang&liuyao_question=${encodeURIComponent(q)}`);
   },[year,month,day,dayPillar,storedData,router]);
 

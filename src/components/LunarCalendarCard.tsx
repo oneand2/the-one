@@ -454,51 +454,102 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
           boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)',
         }}
       >
-        <div className="px-5 pt-5 pb-4">
-          {/* 顶行 */}
-          <div className="flex items-end justify-between mb-2">
-            <h2
-              className="text-[26px] leading-none tracking-wide"
-              style={{
-                color: '#1e1c18',
-                fontWeight: 400,
-                fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
-              }}
+        <div className="pt-5 pb-4">
+          {/* ── 标题区 ── */}
+          <div className="px-5 mb-3">
+            <div className="flex items-baseline justify-between mb-1.5">
+              <h2
+                className="leading-none tracking-wide"
+                style={{
+                  fontSize: '28px',
+                  color: '#1e1c18',
+                  fontWeight: 400,
+                  fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
+                }}
+              >
+                {isLoaded ? `${lunarMonthChinese}${lunarDayChinese}` : '万年历'}
+              </h2>
+              <p className="text-[11px] font-sans tabular-nums" style={{ color: '#b5ad9e' }}>
+                {year}.{String(month).padStart(2,'0')}.{String(day).padStart(2,'0')}&ensp;{weekDay}
+              </p>
+            </div>
+            {/* 干支副标题 — 统一灰色，四柱颜色在下方展示 */}
+            <p
+              className="text-[11px] leading-relaxed tracking-[0.06em]"
+              style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif', color: '#a39888' }}
             >
-              {isLoaded ? `${lunarMonthChinese}${lunarDayChinese}` : '万年历'}
-            </h2>
-            <p className="text-[11.5px] font-sans tabular-nums pb-0.5" style={{ color: '#a39888' }}>
-              {year}.{String(month).padStart(2,'0')}.{String(day).padStart(2,'0')}&nbsp;{weekDay}
+              {isLoaded ? (
+                <>
+                  {yearGanZhi}&thinsp;{monthGanZhi}&thinsp;{dayGanZhi}&thinsp;属{shengXiao}
+                  {timePillar && (
+                    <span className="ml-1.5">
+                      · 此时{currentZhiName}时&thinsp;{timePillar}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span style={{ color: '#c4bdb0' }}>{loadError ? '今日黄历加载失败' : '加载中…'}</span>
+              )}
             </p>
           </div>
 
-          {/* 干支行 */}
-          <p
-            className="text-[11.5px] tracking-wide mb-3.5"
-            style={{
-              color: '#6b6254',
-              fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
-            }}
-          >
-            {isLoaded ? (
-              <>
-                <ColoredGanZhi str={yearGanZhi} />&nbsp;<ColoredGanZhi str={monthGanZhi} />&nbsp;<ColoredGanZhi str={dayGanZhi} />
-                <span style={{ color: '#a39888' }} className="ml-1.5">属{shengXiao}</span>
-                {timePillar && (
-                  <span style={{ color: '#a39888' }} className="ml-2">
-                    · 此时{currentZhiName}时&thinsp;<ColoredGanZhi str={timePillar} defaultColor="#a39888" />
-                  </span>
-                )}
-              </>
-            ) : (
-              <span style={{ color: '#a39888' }}>{loadError ? '今日黄历加载失败' : '今日黄历加载中…'}</span>
-            )}
-          </p>
+          {/* ── 四柱通栏 ── */}
+          {isLoaded && (
+            <div
+              className="flex"
+              style={{ borderTop: '1px solid rgba(0,0,0,0.06)', borderBottom: '1px solid rgba(0,0,0,0.06)' }}
+            >
+              {([
+                { label: '年', pillar: yearPillar },
+                { label: '月', pillar: monthPillar },
+                { label: '日', pillar: dayPillar },
+                { label: '时', pillar: timePillar },
+              ] as { label: string; pillar: string }[]).map(({ label, pillar }, i) => {
+                const gan = pillar?.[0] ?? '';
+                const zhi = pillar?.[1] ?? '';
+                const isEmpty = !gan && !zhi;
+                return (
+                  <div
+                    key={label}
+                    className="flex-1 flex flex-col items-center py-4"
+                    style={{ borderRight: i < 3 ? '1px solid rgba(0,0,0,0.06)' : 'none' }}
+                  >
+                    <span
+                      className="text-[8px] font-sans tracking-[0.18em] mb-3"
+                      style={{ color: '#c4bdb0' }}
+                    >
+                      {label}
+                    </span>
+                    <span
+                      className="leading-none"
+                      style={{
+                        fontSize: '22px',
+                        fontFamily: '"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',
+                        color: isEmpty ? '#ddd8d0' : (WUXING_COLOR[gan] ?? '#3d3935'),
+                        marginBottom: '10px',
+                      }}
+                    >
+                      {gan || '·'}
+                    </span>
+                    <div style={{ width: '14px', height: '1px', background: 'rgba(0,0,0,0.08)', marginBottom: '10px' }} />
+                    <span
+                      className="leading-none"
+                      style={{
+                        fontSize: '22px',
+                        fontFamily: '"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',
+                        color: isEmpty ? '#ddd8d0' : (WUXING_COLOR[zhi] ?? '#3d3935'),
+                      }}
+                    >
+                      {zhi || '·'}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          <div className="h-px mb-3" style={{ background: 'rgba(0,0,0,0.06)' }} />
-
-          {/* 宜忌行 */}
-          <div className="space-y-1.5">
+          {/* ── 宜忌行 ── */}
+          <div className="px-5 pt-3.5 space-y-1.5">
             {[
               { type:'yi' as const, items: isLoaded ? yi : [] },
               { type:'ji' as const, items: isLoaded ? ji : [] },
@@ -531,8 +582,8 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
             ))}
           </div>
 
-          {/* 底栏 */}
-          <div className="mt-3 pt-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
+          {/* ── 底栏 ── */}
+          <div className="px-5 mt-3 pt-2.5 flex items-center justify-between" style={{ borderTop: '1px solid rgba(0,0,0,0.05)' }}>
             {isLoaded ? (
               <span className="text-[10px] font-sans tracking-wider" style={{ color: '#a39888' }}>
                 {tianShenType}&nbsp;·&nbsp;{tianShen}&nbsp;·&nbsp;{zhiXing}日
@@ -662,23 +713,74 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                     { label: tianShenType || '神煞', value: tianShen, accent: isHuangDao ? 'gold' as const : undefined },
                     { label: '廿八宿', value: `${xiuGong}方 · ${xiu}${xiuZheng} · ${xiuAnimal}` },
                     { label: '今日冲煞', value: `冲${chongShengXiao}　煞${sha}` },
-                    {
-                      label: isToday ? `此时四柱（${currentZhiName}时）` : `四柱 · ${currentZhiName}时`,
-                      value: timePillar
-                        ? `${yearPillar} ${monthPillar} ${dayPillar} ${timePillar}`
-                        : `${yearPillar} ${monthPillar} ${dayPillar}`,
-                      valueNode: (
-                        <>
-                          <ColoredGanZhi str={yearPillar} defaultColor="#3d3935" />{' '}
-                          <ColoredGanZhi str={monthPillar} defaultColor="#3d3935" />{' '}
-                          <ColoredGanZhi str={dayPillar} defaultColor="#3d3935" />
-                          {timePillar && <>{' '}<ColoredGanZhi str={timePillar} defaultColor="#3d3935" /></>}
-                        </>
-                      ),
-                    },
                   ].map((item, idx) => (
-                    <InfoRow key={idx} label={item.label} value={item.value} valueNode={'valueNode' in item ? item.valueNode : undefined} accent={item.accent} />
+                    <InfoRow key={idx} label={item.label} value={item.value} valueNode={'valueNode' in item ? (item as {valueNode?: React.ReactNode}).valueNode : undefined} accent={item.accent} />
                   ))}
+                </div>
+
+                {/* 分割线 */}
+                <div className="mb-6" style={{ height: '1px', background: 'rgba(0,0,0,0.07)' }} />
+
+                {/* 四柱 */}
+                <div className="mb-7">
+                  <div className="flex items-baseline justify-between mb-5">
+                    <span className="text-[10px] font-sans tracking-[0.28em]" style={{ color: '#a39888' }}>
+                      四 柱
+                    </span>
+                    <span className="text-[9px] font-sans" style={{ color: '#c4bdb0' }}>
+                      {isToday ? `此时${currentZhiName}时` : `${currentZhiName}时`}
+                    </span>
+                  </div>
+                  <div
+                    className="flex -mx-6"
+                    style={{ borderTop: '1px solid rgba(0,0,0,0.07)', borderBottom: '1px solid rgba(0,0,0,0.07)' }}
+                  >
+                    {([
+                      { label: '年柱', pillar: yearPillar },
+                      { label: '月柱', pillar: monthPillar },
+                      { label: '日柱', pillar: dayPillar },
+                      { label: '时柱', pillar: timePillar },
+                    ] as { label: string; pillar: string }[]).map(({ label, pillar }, i) => {
+                      const gan = pillar?.[0] ?? '';
+                      const zhi = pillar?.[1] ?? '';
+                      const isEmpty = !gan && !zhi;
+                      return (
+                        <div
+                          key={label}
+                          className="flex-1 flex flex-col items-center py-6"
+                          style={{ borderRight: i < 3 ? '1px solid rgba(0,0,0,0.07)' : 'none' }}
+                        >
+                          <span
+                            className="text-[9px] font-sans mb-4 tracking-[0.18em]"
+                            style={{ color: '#c4bdb0' }}
+                          >
+                            {label}
+                          </span>
+                          <span
+                            className="leading-none mb-5"
+                            style={{
+                              fontSize: '34px',
+                              fontFamily: '"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',
+                              color: isEmpty ? '#ddd8d0' : (WUXING_COLOR[gan] ?? '#3d3935'),
+                            }}
+                          >
+                            {gan || '·'}
+                          </span>
+                          <div style={{ width: '20px', height: '1px', background: 'rgba(0,0,0,0.09)', marginBottom: '20px' }} />
+                          <span
+                            className="leading-none"
+                            style={{
+                              fontSize: '34px',
+                              fontFamily: '"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',
+                              color: isEmpty ? '#ddd8d0' : (WUXING_COLOR[zhi] ?? '#3d3935'),
+                            }}
+                          >
+                            {zhi || '·'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* 分割线 */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 type Props = {
   open: boolean;
@@ -11,8 +11,37 @@ type Props = {
 
 export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+
+  // 打开弹窗时，需要等待 10 秒后才能点击“我已知晓”，期间显示倒计时
+  useEffect(() => {
+    if (!open) {
+      setRemainingSeconds(0);
+      return;
+    }
+
+    const WAIT_SECONDS = 10;
+    setRemainingSeconds(WAIT_SECONDS);
+
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((prev) => {
+        if (prev <= 1) {
+          window.clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [open]);
 
   const handleConfirm = () => {
+    // 还在等待期间，不允许关闭
+    if (remainingSeconds > 0) return;
+
     if (dontShowAgain) {
       onDontShowAgain();
     }
@@ -84,9 +113,14 @@ export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
           <button
             type="button"
             onClick={handleConfirm}
-            className="w-full py-3 rounded-lg bg-stone-800 text-white text-sm font-medium hover:bg-stone-700 active:bg-stone-900 transition-colors tracking-wide"
+            disabled={remainingSeconds > 0}
+            className={`w-full py-3 rounded-lg text-sm font-medium transition-colors tracking-wide
+              ${remainingSeconds > 0
+                ? 'bg-stone-400 text-white cursor-not-allowed'
+                : 'bg-stone-800 text-white hover:bg-stone-700 active:bg-stone-900'
+              }`}
           >
-            我已知晓
+            {remainingSeconds > 0 ? `我已知晓（${remainingSeconds} 秒后可点击）` : '我已知晓'}
           </button>
           </motion.div>
         </motion.div>

@@ -216,7 +216,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   };
 
   // 创建新会话
-  const createNewSession = async (title?: string) => {
+  const createNewSession = async (title?: string, resetMessages: boolean = true) => {
     try {
       const sessionTitle = title || '新对话';
       const response = await fetchWithRetry('/api/chat-sessions', {
@@ -230,7 +230,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         const newSession = await response.json();
         setSessions(prev => [newSession, ...prev]);
         setCurrentSessionId(newSession.id);
-        setMessages([]);
+        if (resetMessages) {
+          setMessages([]);
+        }
         return newSession;
       } else {
         const errorData = await response.json().catch(() => ({}));
@@ -556,21 +558,30 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     lastSendRef.current = { content, at: now };
     const effectiveImportData = overrideImportData ?? importData;
 
+    // 优先更新前端 UI：立即展示用户消息与思忖中状态，再去做登录校验、建会话和请求接口
+    const userMessage: Message = {
+      id: nextId(),
+      role: 'user',
+      content,
+      timestamp: new Date(),
+    };
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    if (!overrideContent) setInput('');
+    setIsLoading(true);
+    userFollowsBottomRef.current = true;
+
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
+        // 未登录时还原 loading 状态并跳转登录
+        setIsLoading(false);
+        sendingRef.current = false;
         router.push('/login?next=/');
         return;
       }
-
-      const userMessage: Message = {
-        id: nextId(),
-        role: 'user',
-        content,
-        timestamp: new Date(),
-      };
 
       // 如果没有当前会话，创建新会话
       let sessionId = currentSessionId;
@@ -580,7 +591,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           const question = effectiveImportData.liuyao[0].question;
           sessionTitle = question.length > 20 ? question.slice(0, 20) + '...' : question;
         }
-        const newSession = await createNewSession(sessionTitle);
+        const newSession = await createNewSession(sessionTitle, false);
         if (newSession) {
           sessionId = newSession.id;
         } else {
@@ -590,16 +601,11 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         }
       }
 
-      setMessages(prev => [...prev, userMessage]);
-      if (!overrideContent) setInput('');
-      setIsLoading(true);
-      userFollowsBottomRef.current = true;
-
       const response = await fetchWithRetry('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: [...messages, userMessage].map(m => ({
+          messages: updatedMessages.map(m => ({
             role: m.role,
             content: m.content,
           })),
@@ -1583,7 +1589,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           {(() => {
             const last = messages[messages.length - 1];
             const assistantAlreadyStreaming = last?.role === 'assistant' && (last?.content?.length ?? 0) > 0;
-            return isLoading && mindMode !== 'none' && !assistantAlreadyStreaming;
+            return isLoading && !assistantAlreadyStreaming;
           })() && (
             <motion.div
               initial={{ opacity: 0 }}

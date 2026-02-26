@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
 import { LunarCalendarCard } from '@/components/LunarCalendarCard';
+import { DailyFortuneCard } from '@/components/DailyFortuneCard';
 
 interface WorldNews {
   id: string;
@@ -90,15 +90,10 @@ const DateSegmentSelect: React.FC<{
 };
 
 export const WorldNewsView: React.FC = () => {
-  const router = useRouter();
   const [newsList, setNewsList] = useState<WorldNews[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const dailyFortuneQuestion = '我今日时运如何？';
-  const handleDailyFortune = () => {
-    router.push(`/?tab=juexingcang&liuyao_question=${encodeURIComponent(dailyFortuneQuestion)}`);
-  };
 
   useEffect(() => {
     // 先读缓存，第二次进入或刷新时立即展示，不卡顿
@@ -521,6 +516,15 @@ export const WorldNewsView: React.FC = () => {
         />
       )}
 
+      {/* 今日运势分数卡片 */}
+      {selectedDateParts && (
+        <DailyFortuneCard
+          year={selectedDateParts.year}
+          month={selectedDateParts.month}
+          day={selectedDateParts.day}
+        />
+      )}
+
       <div className="space-y-0 pb-8">
         {/* 顶部分隔横线 */}
         {selectedDateParts && (
@@ -680,21 +684,8 @@ export const WorldNewsView: React.FC = () => {
         )}
       </div>
 
-      {/* 占问按钮区域 */}
-      <div className="mt-3 pt-3 border-t border-stone-200/50 pb-20 md:pb-10">
-        <div className="flex justify-center">
-          <button
-            onClick={handleDailyFortune}
-            className="min-w-[280px] px-6 py-3 rounded-md border border-stone-800 bg-stone-800
-              text-[14px] tracking-wide text-stone-100 font-normal
-              hover:bg-stone-700 hover:border-stone-700
-              active:bg-stone-900
-              transition-all duration-200 shadow-sm hover:shadow"
-          >
-            占问今日休咎
-          </button>
-        </div>
-      </div>
+      {/* 底部间距 */}
+      <div className="pb-20 md:pb-10" />
     </motion.div>
   );
 };

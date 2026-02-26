@@ -18,6 +18,28 @@ const ZHI_RANGES = [
   '15:00–16:59','17:00–18:59','19:00–20:59','21:00–22:59',
 ];
 
+// 干支五行颜色（与八字板块一致）
+const WUXING_COLOR: Record<string, string> = {
+  '庚': '#B09F73', '辛': '#B09F73', '申': '#B09F73', '酉': '#B09F73',
+  '甲': '#7a9b85', '乙': '#7a9b85', '寅': '#7a9b85', '卯': '#7a9b85',
+  '壬': '#6b7c97', '癸': '#6b7c97', '子': '#6b7c97', '亥': '#6b7c97',
+  '丙': '#ba6e65', '丁': '#ba6e65', '巳': '#ba6e65', '午': '#ba6e65',
+  '戊': '#8B5F45', '己': '#8B5F45', '辰': '#8B5F45', '戌': '#8B5F45', '丑': '#8B5F45', '未': '#8B5F45',
+};
+
+/** 将干支字符串按字着色（年/月/日等非干支字用 defaultColor） */
+function ColoredGanZhi({ str, defaultColor = '#6b6254' }: { str: string; defaultColor?: string }) {
+  return (
+    <>
+      {str.split('').map((ch, i) => (
+        <span key={i} style={{ color: WUXING_COLOR[ch] ?? defaultColor }}>
+          {ch}
+        </span>
+      ))}
+    </>
+  );
+}
+
 function hourToZhiIdx(h: number): number {
   return Math.floor((h + 1) / 2) % 12;
 }
@@ -460,11 +482,11 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
           >
             {isLoaded ? (
               <>
-                {yearGanZhi}&nbsp;{monthGanZhi}&nbsp;{dayGanZhi}
+                <ColoredGanZhi str={yearGanZhi} />&nbsp;<ColoredGanZhi str={monthGanZhi} />&nbsp;<ColoredGanZhi str={dayGanZhi} />
                 <span style={{ color: '#a39888' }} className="ml-1.5">属{shengXiao}</span>
                 {timePillar && (
                   <span style={{ color: '#a39888' }} className="ml-2">
-                    · 此时{currentZhiName}时&thinsp;{timePillar}
+                    · 此时{currentZhiName}时&thinsp;<ColoredGanZhi str={timePillar} defaultColor="#a39888" />
                   </span>
                 )}
               </>
@@ -614,7 +636,9 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                     style={{ color: '#a39888' }}
                   >
                     {year}年{month}月{day}日&ensp;·&ensp;
-                    {yearGanZhi}&thinsp;{monthGanZhi}&thinsp;{dayGanZhi}&thinsp;属{shengXiao}
+                    <ColoredGanZhi str={yearGanZhi} defaultColor="#a39888" />&thinsp;
+                    <ColoredGanZhi str={monthGanZhi} defaultColor="#a39888" />&thinsp;
+                    <ColoredGanZhi str={dayGanZhi} defaultColor="#a39888" />&thinsp;属{shengXiao}
                   </p>
                 </div>
 
@@ -643,9 +667,17 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                       value: timePillar
                         ? `${yearPillar} ${monthPillar} ${dayPillar} ${timePillar}`
                         : `${yearPillar} ${monthPillar} ${dayPillar}`,
+                      valueNode: (
+                        <>
+                          <ColoredGanZhi str={yearPillar} defaultColor="#3d3935" />{' '}
+                          <ColoredGanZhi str={monthPillar} defaultColor="#3d3935" />{' '}
+                          <ColoredGanZhi str={dayPillar} defaultColor="#3d3935" />
+                          {timePillar && <>{' '}<ColoredGanZhi str={timePillar} defaultColor="#3d3935" /></>}
+                        </>
+                      ),
                     },
                   ].map((item, idx) => (
-                    <InfoRow key={idx} label={item.label} value={item.value} accent={item.accent} />
+                    <InfoRow key={idx} label={item.label} value={item.value} valueNode={'valueNode' in item ? item.valueNode : undefined} accent={item.accent} />
                   ))}
                 </div>
 
@@ -749,8 +781,8 @@ const YiJiBlock: React.FC<{ type:'yi'|'ji'; items: string[] }> = ({ type, items 
 };
 
 const InfoRow: React.FC<{
-  label: string; value: string; accent?: 'gold';
-}> = ({ label, value, accent }) => (
+  label: string; value: string; valueNode?: React.ReactNode; accent?: 'gold';
+}> = ({ label, value, valueNode, accent }) => (
   <div
     className="flex items-baseline justify-between py-3.5"
     style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}
@@ -768,7 +800,7 @@ const InfoRow: React.FC<{
         fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
       }}
     >
-      {value}
+      {valueNode ?? value}
     </span>
   </div>
 );

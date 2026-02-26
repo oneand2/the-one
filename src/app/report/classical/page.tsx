@@ -396,7 +396,7 @@ const ClassicalReportContent: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl mx-auto mb-12 md:mb-16"
+        className="max-w-5xl mx-auto mb-8 md:mb-12"
       >
         {/* 主容器 - 信笺质感 */}
         <div className="bg-[#FAF8F5] border-t-2 border-b-2 border-stone-300 relative">
@@ -406,7 +406,7 @@ const ClassicalReportContent: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-200 mb-[3px]"></div>
 
           {/* 内容区 */}
-          <div className="py-8 md:py-10 px-4 md:px-8">
+          <div className="py-10 md:py-12 px-10 md:px-20">
             {/* 第一行：身份区 (The Identity) */}
             <div className="flex items-center justify-center mb-5 md:mb-6">
               {/* 姓名 (The Name) - 视觉焦点 */}
@@ -439,27 +439,24 @@ const ClassicalReportContent: React.FC = () => {
                 )}
                 
                 {/* 日期信息 */}
-                <div className="flex flex-col items-center space-y-1.5 md:space-y-2">
+                <div className="flex flex-col items-center space-y-2">
                   {/* 阳历 */}
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider">阳历</span>
+                  <div className="flex items-baseline">
+                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider w-8 text-right mr-4">阳历</span>
                     <span className="text-sm md:text-base font-sans text-stone-600 tracking-wide">
                       {displayInfo.solarDate}
                     </span>
                   </div>
                   
                   {/* 农历 */}
-                  <div className="flex items-baseline space-x-2">
-                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider">农历</span>
+                  <div className="flex items-baseline">
+                    <span className="text-[10px] md:text-xs font-sans text-stone-400 tracking-wider w-8 text-right mr-4">农历</span>
                     <span className="text-sm md:text-base font-serif text-stone-600 tracking-wide">
                       {(() => {
-                        // 将农历日期转换为完全汉字格式
                         const lunarText = displayInfo.lunarDate;
-                        // 提取年份、月份、日期、时辰
                         const match = lunarText.match(/(\d+)年(.+?)月(.+?)\s+(.+)/);
                         if (match) {
                           const [, year, month, day, time] = match;
-                          // 数字转汉字
                           const numToHan = (num: string) => {
                             const hanMap: Record<string, string> = {
                               '0': '零', '1': '一', '2': '二', '3': '三', '4': '四',
@@ -494,6 +491,35 @@ const ClassicalReportContent: React.FC = () => {
                 </p>
               </div>
             )}
+
+            {/* 操作按钮 - 两栏居中布局 */}
+            <div className="mt-8 md:mt-10 -mx-10 md:-mx-20 border-t border-stone-200/70">
+              <div className="grid grid-cols-2 divide-x divide-stone-200/70">
+                <div className="flex justify-center items-center py-4 md:py-5">
+                  <button
+                    type="button"
+                    onClick={handleSaveBazi}
+                    disabled={saveStatus === 'saving'}
+                    className="px-5 py-2 text-[11px] font-sans tracking-[0.16em] text-stone-500 border border-stone-300 rounded-full hover:border-stone-400 hover:text-stone-700 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : '保存该八字'}
+                  </button>
+                </div>
+                <div className="flex justify-center items-center py-4 md:py-5">
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeBazi}
+                    disabled={isAnalyzing || saveStatus === 'saving'}
+                    className="px-5 py-2 text-[11px] font-sans tracking-[0.16em] text-[#F5F3EE] bg-[#6B6059] rounded-full hover:bg-[#4A403A] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isAnalyzing ? '正在解析…' : '解析该八字'}
+                  </button>
+                </div>
+              </div>
+              {saveStatus === 'error' && (
+                <p className="text-center text-[10px] font-sans text-amber-500/70 tracking-wide pb-3">保存失败，请先登录或稍后重试</p>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -715,38 +741,17 @@ const ClassicalReportContent: React.FC = () => {
         <LuckTimeline data={luckCycles} baziData={baziData} />
       </motion.div>
 
-      {/* 保存该八字 + 解析该八字 + 返回 - 底部操作 */}
+      {/* 底部返回 */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8 }}
-        className="max-w-5xl mx-auto mt-10 md:mt-12 flex flex-col sm:flex-row items-center justify-between gap-4"
+        className="max-w-5xl mx-auto mt-10 md:mt-12 flex justify-center"
       >
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={handleSaveBazi}
-            disabled={saveStatus === 'saving'}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#78716c] hover:bg-[#292524] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : '保存该八字'}
-          </button>
-          <button
-            type="button"
-            onClick={handleAnalyzeBazi}
-            disabled={isAnalyzing || saveStatus === 'saving'}
-            className="w-full sm:w-auto px-6 py-3 text-sm font-sans text-white bg-[#44403C] hover:bg-[#57534E] rounded-full transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {isAnalyzing ? '正在解析...' : '解析该八字'}
-          </button>
-          {saveStatus === 'error' && (
-            <span className="text-sm text-amber-600 font-sans">保存失败，请先登录或稍后重试</span>
-          )}
-        </div>
         <button
           type="button"
           onClick={() => router.push('/?tab=bazi')}
-          className="w-full sm:w-auto px-8 py-3 text-sm font-sans text-[#57534E] bg-transparent hover:bg-stone-100/50 rounded-full transition-all duration-300"
+          className="px-8 py-2.5 text-[11px] font-sans tracking-[0.18em] text-stone-400 hover:text-stone-600 transition-colors duration-300"
         >
           ← 返回
         </button>

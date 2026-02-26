@@ -124,6 +124,27 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [liuyaoQuestion, setLiuyaoQuestion] = useState<string | null>(null);
   const wasActiveRef = useRef(isActive);
 
+  const normalizeSession = (session: any): ChatSession => {
+    const fallbackTime = new Date().toISOString();
+    return {
+      id: String(session?.id ?? ''),
+      title: typeof session?.title === 'string' && session.title.trim() ? session.title : '新对话',
+      created_at: typeof session?.created_at === 'string' ? session.created_at : fallbackTime,
+      updated_at: typeof session?.updated_at === 'string' ? session.updated_at : fallbackTime,
+      is_favorite: session?.is_favorite ?? false,
+    };
+  };
+
+  const formatSessionDate = (value?: string) => {
+    if (!value) return '未知日期';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '未知日期';
+    return date.toLocaleDateString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+    });
+  };
+
   // 主页 tab 切走时重置到决行藏首页，避免回到上次对话
   useEffect(() => {
     if (wasActiveRef.current && !isActive) {
@@ -194,11 +215,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       }
       if (response.ok) {
         const data = await response.json();
-        // 确保每个会话都有 is_favorite 字段（兼容旧数据）
-        const sessionsWithFavorite = (data || []).map((session: ChatSession) => ({
-          ...session,
-          is_favorite: session.is_favorite ?? false
-        }));
+        // 确保会话字段可用（兼容线上旧数据/脏数据）
+        const sessionsWithFavorite = (data || []).map((session: any) => normalizeSession(session));
         setSessions(sessionsWithFavorite);
       } else {
         // 非 401 错误时记录日志以便调试
@@ -227,7 +245,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       });
       
       if (response.ok) {
-        const newSession = await response.json();
+        const newSessionRaw = await response.json();
+        const newSession = normalizeSession(newSessionRaw);
         setSessions(prev => [newSession, ...prev]);
         setCurrentSessionId(newSession.id);
         if (resetMessages) {
@@ -394,7 +413,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
   // 过滤会话列表
   const filteredSessions = sessions.filter(session =>
-    session.title.toLowerCase().includes(searchQuery.toLowerCase())
+    (session.title ?? '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // 仅当用户处于"跟读底部"时，把滚动容器滚到底（不碰外层页面）
@@ -833,10 +852,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                             <span className="truncate">{session.title}</span>
                           </div>
                           <div className="text-[11px] text-stone-400 mt-1">
-                            {new Date(session.updated_at).toLocaleDateString('zh-CN', {
-                              month: 'numeric',
-                              day: 'numeric',
-                            })}
+                            {formatSessionDate(session.updated_at)}
                           </div>
                         </>
                       )}
@@ -1014,10 +1030,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                           <span className="truncate">{session.title}</span>
                         </div>
                         <div className="text-[10px] text-stone-400 mt-1">
-                          {new Date(session.updated_at).toLocaleDateString('zh-CN', {
-                            month: 'numeric',
-                            day: 'numeric',
-                          })}
+                          {formatSessionDate(session.updated_at)}
                         </div>
                         
                         <div className="absolute right-2 top-2 flex gap-1 items-center">

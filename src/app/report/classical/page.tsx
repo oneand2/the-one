@@ -406,7 +406,7 @@ const ClassicalReportContent: React.FC = () => {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-stone-200 mb-[3px]"></div>
 
           {/* 内容区 */}
-          <div className="py-10 md:py-12 px-10 md:px-20">
+          <div className="pt-10 pb-0 px-10 md:px-20">
             {/* 第一行：身份区 (The Identity) */}
             <div className="flex items-center justify-center mb-5 md:mb-6">
               {/* 姓名 (The Name) - 视觉焦点 */}
@@ -492,32 +492,28 @@ const ClassicalReportContent: React.FC = () => {
               </div>
             )}
 
-            {/* 操作按钮 - 两栏居中布局 */}
-            <div className="mt-8 md:mt-10 -mx-10 md:-mx-20 border-t border-stone-200/70">
-              <div className="grid grid-cols-2 divide-x divide-stone-200/70">
-                <div className="flex justify-center items-center py-4 md:py-5">
-                  <button
-                    type="button"
-                    onClick={handleSaveBazi}
-                    disabled={saveStatus === 'saving'}
-                    className="px-5 py-2 text-[11px] font-sans tracking-[0.16em] text-stone-500 border border-stone-300 rounded-full hover:border-stone-400 hover:text-stone-700 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '已保存' : '保存该八字'}
-                  </button>
-                </div>
-                <div className="flex justify-center items-center py-4 md:py-5">
-                  <button
-                    type="button"
-                    onClick={handleAnalyzeBazi}
-                    disabled={isAnalyzing || saveStatus === 'saving'}
-                    className="px-5 py-2 text-[11px] font-sans tracking-[0.16em] text-[#F5F3EE] bg-[#6B6059] rounded-full hover:bg-[#4A403A] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    {isAnalyzing ? '正在解析…' : '解析该八字'}
-                  </button>
-                </div>
+            {/* 操作按钮 */}
+            <div className="mt-8 md:mt-10 -mx-10 md:-mx-20 border-t border-stone-200/70 flex flex-col items-center gap-2 py-5 md:py-6">
+              <div className="grid grid-cols-2 w-72 md:w-96 gap-3">
+                <button
+                  type="button"
+                  onClick={handleSaveBazi}
+                  disabled={saveStatus === 'saving'}
+                  className="py-2.5 text-[11px] font-sans tracking-[0.18em] text-stone-500 border border-stone-300/80 rounded-lg hover:border-stone-400 hover:text-stone-700 hover:bg-stone-50 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {saveStatus === 'saving' ? '保存中…' : saveStatus === 'saved' ? '✓ 已保存' : '保存该八字'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAnalyzeBazi}
+                  disabled={isAnalyzing || saveStatus === 'saving'}
+                  className="py-2.5 text-[11px] font-sans tracking-[0.18em] text-[#F5F3EE] bg-[#6B6059] rounded-lg hover:bg-[#4A403A] transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? '正在解析…' : '解析该八字'}
+                </button>
               </div>
               {saveStatus === 'error' && (
-                <p className="text-center text-[10px] font-sans text-amber-500/70 tracking-wide pb-3">保存失败，请先登录或稍后重试</p>
+                <p className="text-[10px] font-sans text-amber-500/70 tracking-wide">保存失败，请先登录或稍后重试</p>
               )}
             </div>
           </div>

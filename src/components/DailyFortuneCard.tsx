@@ -96,13 +96,14 @@ function calcScore(dg: string, dz: string, yg: string): ScoreData {
 }
 
 function scoreLevel(s: number): { label:string;color:string } {
-  if (s>=95) return {label:'大吉',color:'#4e7c4a'};
-  if (s>=87) return {label:'上吉',color:'#5a7a5a'};
-  if (s>=80) return {label:'中吉',color:'#6a7a4a'};
+  // 评分等级文案：用「高 / 低」替代表达中的「吉 / 凶」
+  if (s>=95) return {label:'极高',color:'#4e7c4a'};
+  if (s>=87) return {label:'偏高',color:'#5a7a5a'};
+  if (s>=80) return {label:'中等',color:'#6a7a4a'};
   if (s>=75) return {label:'平稳',color:'#8a7a4a'};
-  if (s>=68) return {label:'小凶',color:'#8a6a4a'};
-  if (s>=60) return {label:'凶',  color:'#9a5a4a'};
-  return {label:'大凶',color:'#9a4a4a'};
+  if (s>=68) return {label:'略低',color:'#8a6a4a'};
+  if (s>=60) return {label:'偏低',color:'#9a5a4a'};
+  return {label:'较低',color:'#9a4a4a'};
 }
 
 // ─── SVG 圆弧 ─────────────────────────────────────────────────────────────────
@@ -369,7 +370,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   if (!hydrated) return (
     <div className="w-full mb-8 rounded-2xl" style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
       <div className="px-5 pt-5 pb-5">
-        <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 运 势</span>
+        <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
         <div className="h-px my-3" style={{background:'rgba(0,0,0,0.06)'}}/>
         <div className="flex gap-5 items-center">
           <div className="w-[104px] h-[104px] rounded-full bg-stone-100/80 animate-pulse flex-shrink-0"/>
@@ -398,7 +399,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
           <div className="px-5 pt-5 pb-5">
             {/* 标题栏 */}
             <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 运 势</span>
+              <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
               {storedData&&<button onClick={()=>setShowSetup(false)} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>取消</button>}
             </div>
             <div className="h-px mb-4" style={{background:'rgba(0,0,0,0.06)'}}/>
@@ -457,7 +458,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
                 fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
               {isCalculating
                 ? <><span className="inline-block w-3.5 h-3.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"/>推算中…</>
-                : '推算今日运势'}
+                : '推算今日能量'}
             </button>
           </div>
         </motion.div>
@@ -604,7 +605,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
         style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
         <div className="px-5 pt-5 pb-5">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 运 势</span>
+            <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
             <div className="flex items-center gap-2.5">
               {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
               <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>
@@ -699,7 +700,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
               <circle cx="12" cy="12" r="9" strokeWidth={1.5}/>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 7v5l3 3"/>
             </svg>
-            占问今日详细运势
+            占问今日详细能量
           </button>
         </div>
       </motion.div>
@@ -712,7 +713,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
       style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
       <div className="px-5 pt-5 pb-5">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 运 势</span>
+          <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
           {storedData&&<div className="flex items-center gap-2">
             {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
             <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>用神 {yongshen} · {yongshenWx}</span>

@@ -152,6 +152,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       setMessages([]);
       setInput('');
       setLiuyaoQuestion(null);
+      setLiuyaoMode(true);
       setShowSessionList(false);
       setShowDesktopSidebar(false);
       setSearchQuery('');
@@ -589,6 +590,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     if (!overrideContent) setInput('');
     setIsLoading(true);
     userFollowsBottomRef.current = true;
+    // 一旦进入聊天流程，自动关闭六爻模式，避免追问时再次起卦
+    setLiuyaoMode(false);
+    setLiuyaoQuestion(null);
 
     try {
       const supabase = createClient();

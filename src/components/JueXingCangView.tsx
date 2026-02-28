@@ -435,6 +435,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       try {
         const cached = localStorage.getItem(pendingImportKey);
         if (!cached) return;
+        const preset = localStorage.getItem(inputPresetKey);
         
         // 检测到新的导入数据时，清空当前会话和消息，以便创建新会话
         setCurrentSessionId(null);
@@ -444,6 +445,10 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         localStorage.removeItem(pendingImportKey);
         const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
         if (getImportCount(normalized) > 0) {
+          // 从八字界面「解析该八字」进入时，默认关闭六爻
+          if (preset === '请帮我解析该八字') {
+            setLiuyaoMode(false);
+          }
           // 使用新的导入数据，替换之前的导入数据
           setImportData(normalized);
           // 先立刻显示「已将数据导入」提示，再在后台创建会话，避免提示被 createNewSession 延迟

@@ -429,7 +429,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     scrollToBottomIfFollowing();
   }, [messages]);
 
+  // 当决行藏 tab 激活时也检查 pending：从八字页跳转时组件可能早已挂载，仅 mount 时跑一次会漏掉
   useEffect(() => {
+    if (!isActive) return;
     const cleanupTimers: number[] = [];
     const initializeWithImportData = async () => {
       try {
@@ -489,7 +491,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     return () => {
       cleanupTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [pendingImportKey]);
+  }, [pendingImportKey, isActive]);
 
   // 初始化时加载会话列表
   useEffect(() => {
@@ -581,7 +583,25 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     }
     sendingRef.current = true;
     lastSendRef.current = { content, at: now };
-    const effectiveImportData = overrideImportData ?? importData;
+    let effectiveImportData = overrideImportData ?? importData;
+
+    // 从八字页「解析该八字」跳转时，pending 可能尚未写入 state，发送前从 localStorage 兜底读取，避免请求不带导入数据
+    if (getImportCount(effectiveImportData) === 0) {
+      try {
+        const pending = typeof window !== 'undefined' ? window.localStorage.getItem(pendingImportKey) : null;
+        if (pending) {
+          const parsed = JSON.parse(pending) as ImportData;
+          const normalized = normalizeImportData(parsed);
+          if (getImportCount(normalized) > 0) {
+            effectiveImportData = normalized;
+            setImportData(normalized);
+            window.localStorage.removeItem(pendingImportKey);
+          }
+        }
+      } catch (_) {
+        // 忽略解析错误，继续用当前 effectiveImportData
+      }
+    }
 
     // 优先更新前端 UI：立即展示用户消息与思忖中状态，再去做登录校验、建会话和请求接口
     const userMessage: Message = {
@@ -642,8 +662,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           useSearch,
           importData: getImportCount(effectiveImportData) > 0 ? effectiveImportData : undefined,
         }),
-        timeoutMs: 35000,
-        retries: 1,
+        timeoutMs: mindMode === 'meditation' ? 90000 : 60000,
+        retries: 2,
       });
 
       if (!response.ok) {
@@ -724,10 +744,18 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       window.dispatchEvent(new CustomEvent('coins-should-refresh'));
     } catch (error) {
       console.error('发送消息失败:', error);
+      const raw = error instanceof Error ? error.message : '未知错误';
+      const isNetwork =
+        /^(network error|failed to fetch|load failed|网络请求超时|网络连接异常)/i.test(raw) ||
+        raw.includes('网络') ||
+        raw.includes('重试或切换网络');
+      const display = isNetwork
+        ? '网络连接异常，请重试或切换网络（如改用流量）后再试。'
+        : raw;
       const errorMessage: Message = {
         id: nextId(),
         role: 'assistant',
-        content: `抱歉，对话出现了问题：${error instanceof Error ? error.message : '未知错误'}`,
+        content: `抱歉，对话出现了问题：${display}`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);

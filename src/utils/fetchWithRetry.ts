@@ -55,13 +55,17 @@ export async function fetchWithRetry(
     }
   }
 
+  const NETWORK_HINT = '网络连接异常，请重试或切换网络（如改用流量）';
   if (lastError instanceof Error) {
     if (lastError.name === 'AbortError') {
       throw new Error('网络请求超时，请检查网络后重试或切换网络（如改用流量）');
     }
-    throw new Error(
-      lastError.message || '网络连接异常，请重试或切换网络（如改用流量）'
-    );
+    const msg = lastError.message || '';
+    const isGenericNetwork =
+      /^(network error|failed to fetch|load failed|networkerror|网络错误)$/i.test(msg.trim()) ||
+      /^Failed to fetch/i.test(msg) ||
+      msg.includes('NetworkError');
+    throw new Error(isGenericNetwork ? NETWORK_HINT : msg || NETWORK_HINT);
   }
   throw lastError;
 }

@@ -324,10 +324,27 @@ export async function POST(req: Request) {
 4. 既要指出问题，也要给予希望${searchContext}`;
     }
 
+    // 宗师（Claude）模式下：部分代理/Anthropic 可能忽略 messages 中的 system，
+    // 导致模型以默认身份回复。双重保障：(1) 使用顶级 system 参数；(2) 在首条用户消息前注入身份锚点。
+    const JUEXINGCANG_IDENTITY_ANCHOR =
+      '【你必须以「决行藏」身份回复】你是慈悲、深邃、博古通今的智慧助手，精通命理易学与当代心理，称呼用户为「朋友」。请务必始终以此身份作答，不要声明自己是其他 AI 或拒绝分析命理。\n\n';
+
+    const messagesToSend =
+      useMeditation && Array.isArray(messages) && messages.length > 0
+        ? (() => {
+            const firstUserIndex = messages.findIndex((m: { role: string }) => m.role === 'user');
+            if (firstUserIndex === -1) return messages;
+            return messages.map((m: { role: string; content?: string }, i: number) => {
+              if (m.role !== 'user' || i !== firstUserIndex) return m;
+              return { ...m, content: JUEXINGCANG_IDENTITY_ANCHOR + (m.content || '') };
+            });
+          })()
+        : messages;
+
     // 构建完整的消息列表（包含系统提示词）
     const fullMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages,
+      ...messagesToSend,
     ];
 
     const maxTokensEnv = Number(process.env.AI_MAX_TOKENS);
@@ -343,15 +360,19 @@ export async function POST(req: Request) {
     let stream: any;
     let usedFallback = false;
     
+    // 宗师模式：部分代理（如转发到 Anthropic）要求使用顶级 system 参数而非 messages 中的 system 消息
+    const createParams = {
+      model: modelName,
+      messages: fullMessages as any,
+      temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
+      max_tokens: maxTokens,
+      stream: true,
+      ...(useMeditation && { system: systemPrompt }),
+    };
+
     try {
       // 尝试使用主API
-      stream = await client.chat.completions.create({
-        model: modelName,
-        messages: fullMessages as any,
-        temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
-        max_tokens: maxTokens,
-        stream: true,
-      });
+      stream = await client.chat.completions.create(createParams as any);
     } catch (primaryError: any) {
       // 如果主API失败且有备用API，自动切换
       if (useMeditation && fallbackClient && fallbackModelName) {
@@ -363,7 +384,8 @@ export async function POST(req: Request) {
             temperature: 1.0,
             max_tokens: maxTokens,
             stream: true,
-          });
+            ...(useMeditation && { system: systemPrompt }),
+          } as any);
           usedFallback = true;
         } catch (fallbackError: any) {
           console.error('备用API也失败:', fallbackError.message);

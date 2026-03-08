@@ -700,7 +700,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
               <circle cx="12" cy="12" r="9" strokeWidth={1.5}/>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 7v5l3 3"/>
             </svg>
-            占问今日详细能量
+            占问今日详细运势
           </button>
         </div>
       </motion.div>

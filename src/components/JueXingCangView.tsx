@@ -765,6 +765,15 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     }
   };
 
+  // 新建对话：仅重置本地状态，会话在用户发送第一条消息时懒创建，避免产生空白记录
+  const handleNewConversation = () => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setImportData({});
+    setLiuyaoQuestion(null);
+    setInput('');
+  };
+
   // 六爻解卦完成后的回调：导入卦象数据并自动发送解卦请求
   const handleLiuyaoInterpret = (liuyaoImportData: ImportData, _question: string) => {
     setLiuyaoQuestion(null);
@@ -1184,7 +1193,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           <div className="md:hidden flex items-center justify-between mb-4 px-4">
             <button
               onClick={() => setShowSessionList(true)}
-              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors"
+              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors duration-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
@@ -1192,18 +1201,26 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
               <span className="text-xs">历史对话</span>
             </button>
 
-            {currentSessionId && (
-              <div className="text-xs text-stone-500 truncate max-w-[200px]">
-                {sessions.find(s => s.id === currentSessionId)?.title || '新对话'}
-              </div>
-            )}
+            <button
+              onClick={handleNewConversation}
+              className="flex items-center gap-2 px-2 py-1.5 group transition-colors duration-200
+                text-stone-500 hover:text-stone-700"
+            >
+              <svg
+                className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-xs">新建对话</span>
+            </button>
           </div>
 
           {/* 桌面端顶部工具栏 */}
           <div className="hidden md:flex items-center justify-between mb-4 px-4">
             <button
               onClick={() => setShowDesktopSidebar(!showDesktopSidebar)}
-              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors"
+              className="flex items-center gap-2 px-2 py-1.5 text-stone-500 hover:text-stone-700 transition-colors duration-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16" />
@@ -1211,11 +1228,19 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
               <span className="text-xs">历史对话</span>
             </button>
 
-            {currentSessionId && (
-              <div className="text-xs text-stone-500 truncate max-w-[200px]">
-                {sessions.find(s => s.id === currentSessionId)?.title || '新对话'}
-              </div>
-            )}
+            <button
+              onClick={handleNewConversation}
+              className="flex items-center gap-2 px-2 py-1.5 group transition-colors duration-200
+                text-stone-500 hover:text-stone-700"
+            >
+              <svg
+                className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-xs">新建对话</span>
+            </button>
           </div>
 
           {/* 按钮组 */}

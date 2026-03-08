@@ -345,7 +345,7 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
 
             {/* 起卦按钮 */}
             <div className="text-center space-y-6">
-              {yaos.length < 6 ? (
+              {yaos.length < 6 && (
                 <motion.button
                   onClick={handleTossOnce}
                   disabled={isTossing}
@@ -355,16 +355,6 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
                 >
                   <Hand className="w-5 h-5" />
                   {isTossing ? '摇卦中...' : yaos.length === 0 ? '摇卦起卦' : `摇第 ${yaos.length + 1} 爻`}
-                </motion.button>
-              ) : (
-                <motion.button
-                  onClick={handleReset}
-                  className="mx-auto px-8 py-4 bg-stone-600 text-white font-sans text-sm rounded-lg hover:bg-stone-500 transition-colors duration-300 shadow-sm flex items-center gap-3"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Sparkles className="w-5 h-5" />
-                  重新起卦
                 </motion.button>
               )}
               

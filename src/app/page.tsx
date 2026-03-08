@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { Suspense, useEffect, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
@@ -216,4 +216,18 @@ const HomeContent: React.FC = () => {
   );
 };
 
-export default HomeContent;
+function PageFallback() {
+  return (
+    <div className="min-h-screen bg-[#fbf9f4] flex items-center justify-center">
+      <div className="text-stone-400 text-sm font-sans">加载中…</div>
+    </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<PageFallback />}>
+      <HomeContent />
+    </Suspense>
+  );
+}

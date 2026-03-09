@@ -324,22 +324,7 @@ export async function POST(req: Request) {
 4. 既要指出问题，也要给予希望${searchContext}`;
     }
 
-    // 宗师（Claude）模式下：部分代理/Anthropic 可能忽略 messages 中的 system，
-    // 导致模型以默认身份回复。双重保障：(1) 使用顶级 system 参数；(2) 在首条用户消息前注入身份锚点。
-    const JUEXINGCANG_IDENTITY_ANCHOR =
-      '【你必须以「决行藏」身份回复】你是慈悲、深邃、博古通今的智慧助手，精通命理易学与当代心理，称呼用户为「朋友」。请务必始终以此身份作答，不要声明自己是其他 AI 或拒绝分析命理。\n\n';
-
-    const messagesToSend =
-      useMeditation && Array.isArray(messages) && messages.length > 0
-        ? (() => {
-            const firstUserIndex = messages.findIndex((m: { role: string }) => m.role === 'user');
-            if (firstUserIndex === -1) return messages;
-            return messages.map((m: { role: string; content?: string }, i: number) => {
-              if (m.role !== 'user' || i !== firstUserIndex) return m;
-              return { ...m, content: JUEXINGCANG_IDENTITY_ANCHOR + (m.content || '') };
-            });
-          })()
-        : messages;
+    const messagesToSend = messages;
 
     // 构建完整的消息列表（包含系统提示词）
     const fullMessages = [

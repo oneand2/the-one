@@ -686,6 +686,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder('utf-8', { fatal: false });
+      const receivedChunks: Uint8Array[] = [];
+      let totalBytes = 0;
 
       if (!reader) throw new Error('无法读取响应');
 
@@ -703,9 +705,42 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         const { done, value } = await reader.read();
         if (done) break;
 
+        if (value) {
+          receivedChunks.push(value);
+          totalBytes += value.length;
+        }
         const chunk = decoder.decode(value, { stream: true });
         assistantMessage.content += chunk;
 
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { ...assistantMessage };
+          return newMessages;
+        });
+      }
+
+      const tail = decoder.decode();
+      if (tail) {
+        assistantMessage.content += tail;
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1] = { ...assistantMessage };
+          return newMessages;
+        });
+      }
+
+      // 以完整原始字节重新解码，确保分片边界下的中文不丢字、不乱码
+      if (totalBytes > 0) {
+        const merged = new Uint8Array(totalBytes);
+        let offset = 0;
+        for (const part of receivedChunks) {
+          merged.set(part, offset);
+          offset += part.length;
+        }
+        const finalContent = new TextDecoder('utf-8', { fatal: false }).decode(merged);
+        if (finalContent && finalContent !== assistantMessage.content) {
+          assistantMessage.content = finalContent;
+        }
         setMessages(prev => {
           const newMessages = [...prev];
           newMessages[newMessages.length - 1] = { ...assistantMessage };

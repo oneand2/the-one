@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
 import { LunarCalendarCard } from '@/components/LunarCalendarCard';
+import { ZiwuLiuzhuClock } from '@/components/ZiwuLiuzhuClock';
 import { DailyFortuneCard } from '@/components/DailyFortuneCard';
 
 interface WorldNews {
@@ -515,6 +516,9 @@ export const WorldNewsView: React.FC = () => {
           day={selectedDateParts.day}
         />
       )}
+
+      {/* 子午流注钟 */}
+      <ZiwuLiuzhuClock />
 
       {/* 今日运势分数卡片 */}
       {selectedDateParts && (

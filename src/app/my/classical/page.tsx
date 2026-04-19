@@ -3,27 +3,167 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getCached, setCached, clearCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 
 export const dynamic = 'force-dynamic';
 
-type RecordItem = { id: string; params: Record<string, string>; created_at: string };
+const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
 
+type RecordItem = { id: string; params: Record<string, string>; created_at: string };
 type ClassicalRow = { id: string; params?: Record<string, string>; input_data?: { params?: Record<string, string> }; created_at: string };
 
-/** API 可能返回已展开的 params，或原始行的 input_data，统一归一为 RecordItem */
 function normalizeClassicalItem(row: ClassicalRow): RecordItem {
   const params = row.params ?? (row.input_data && typeof row.input_data === 'object' ? (row.input_data.params as Record<string, string>) ?? {} : {});
   return { id: row.id, params: params || {}, created_at: row.created_at };
 }
 
+// ─── 五行色 ────────────────────────────────────────────────────────────────
+const WUXING_COLOR: Record<string, string> = {
+  庚: '#B09F73', 辛: '#B09F73', 申: '#B09F73', 酉: '#B09F73',
+  甲: '#7a9b85', 乙: '#7a9b85', 寅: '#7a9b85', 卯: '#7a9b85',
+  壬: '#6b7c97', 癸: '#6b7c97', 子: '#6b7c97', 亥: '#6b7c97',
+  丙: '#ba6e65', 丁: '#ba6e65', 巳: '#ba6e65', 午: '#ba6e65',
+  戊: '#8B5F45', 己: '#8B5F45', 辰: '#8B5F45', 戌: '#8B5F45', 丑: '#8B5F45', 未: '#8B5F45',
+};
+const wc = (c: string) => WUXING_COLOR[c] || '#3a3530';
+
+// ─── 四柱组件 ──────────────────────────────────────────────────────────────
+function FourPillars({ gans, zhis }: { gans: string[]; zhis: string[] }) {
+  const PILLAR_NAMES = ['年', '月', '日', '时'];
+  return (
+    <div className="flex items-end gap-3">
+      {PILLAR_NAMES.map((name, idx) => (
+        <div key={idx} className="flex flex-col items-center gap-1">
+          <span
+            style={{
+              fontFamily: KAITI,
+              fontSize: 20,
+              color: wc(gans[idx] ?? ''),
+              lineHeight: 1,
+              fontWeight: 400,
+            }}
+          >
+            {gans[idx] ?? '—'}
+          </span>
+          <span
+            style={{
+              fontFamily: KAITI,
+              fontSize: 20,
+              color: wc(zhis[idx] ?? ''),
+              lineHeight: 1,
+              fontWeight: 400,
+            }}
+          >
+            {zhis[idx] ?? '—'}
+          </span>
+          <span
+            style={{
+              fontFamily: 'system-ui, sans-serif',
+              fontSize: 9,
+              color: '#c4bdb0',
+              letterSpacing: '0.06em',
+              lineHeight: 1,
+              marginTop: 2,
+            }}
+          >
+            {name}柱
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── 确认删除按钮 ──────────────────────────────────────────────────────────
+function DeleteButton({ onConfirm, deleting }: { onConfirm: () => void; deleting: boolean }) {
+  const [confirming, setConfirming] = useState(false);
+
+  if (deleting) {
+    return (
+      <div style={{ width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c4bdb0" strokeWidth="2">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (confirming) {
+    return (
+      <div className="flex items-center gap-1.5" onClick={(e) => e.preventDefault()}>
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onConfirm(); setConfirming(false); }}
+          style={{
+            padding: '2px 8px',
+            background: '#3a3530',
+            color: '#fdfcf9',
+            borderRadius: 4,
+            fontSize: 11,
+            fontFamily: 'system-ui',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          确认
+        </button>
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirming(false); }}
+          style={{
+            padding: '2px 8px',
+            background: 'transparent',
+            color: '#a39888',
+            borderRadius: 4,
+            fontSize: 11,
+            fontFamily: 'system-ui',
+            border: '1px solid rgba(0,0,0,0.10)',
+            cursor: 'pointer',
+          }}
+        >
+          取消
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirming(true); }}
+      title="删除记录"
+      style={{
+        width: 28,
+        height: 28,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 6,
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        color: '#d4c9bc',
+        transition: 'color 0.15s',
+      }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#8a6f5e'; }}
+      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = '#d4c9bc'; }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+        <path d="M10 11v6M14 11v6" />
+        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+      </svg>
+    </button>
+  );
+}
+
+// ─── 主页面 ────────────────────────────────────────────────────────────────
 export default function MyClassicalPage() {
   const router = useRouter();
   const pathname = usePathname();
   const [list, setList] = useState<RecordItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const cached = getCached<ClassicalRow[]>(CACHE_KEYS.RECORDS_CLASSICAL);
@@ -35,18 +175,17 @@ export default function MyClassicalPage() {
       .then(async (r) => {
         if (r.ok) return r.json();
         const body = await r.json().catch(() => ({}));
-        const msg = body?.error || '';
+        const msg = (body as { error?: string })?.error || '';
         if (r.status === 401) throw new Error('请先登录');
         if (r.status >= 500) throw new Error('拉取失败，请确认数据库 daoyoushuju 表中包含 input_data (jsonb) 字段');
         throw new Error(msg || '拉取失败');
       })
       .then((data) => {
-        const normalized = Array.isArray(data) ? data.map(normalizeClassicalItem) : data;
+        const normalized = Array.isArray(data) ? data.map(normalizeClassicalItem) : data as RecordItem[];
         setList(normalized);
         if (Array.isArray(data)) setCached(CACHE_KEYS.RECORDS_CLASSICAL, data, RECORDS_TTL_MS);
-        return normalized;
       })
-      .catch((e) => {
+      .catch((e: Error) => {
         if (e.message === '请先登录') {
           router.replace(`/login?next=${encodeURIComponent(pathname || '/my/classical')}`);
           return;
@@ -55,249 +194,209 @@ export default function MyClassicalPage() {
         if (!cached) setList([]);
       })
       .finally(() => setLoading(false));
-  }, [router, pathname]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const toQuery = (params: Record<string, string>) => {
-    return new URLSearchParams(params).toString();
-  };
-
-  // 获取五行颜色
-  const getWuxingColor = (char: string): string => {
-    const wuxingMap: Record<string, string> = {
-      '庚': '#B09F73', '辛': '#B09F73', '申': '#B09F73', '酉': '#B09F73',
-      '甲': '#7a9b85', '乙': '#7a9b85', '寅': '#7a9b85', '卯': '#7a9b85',
-      '壬': '#6b7c97', '癸': '#6b7c97', '子': '#6b7c97', '亥': '#6b7c97',
-      '丙': '#ba6e65', '丁': '#ba6e65', '巳': '#ba6e65', '午': '#ba6e65',
-      '戊': '#8B5F45', '己': '#8B5F45', '辰': '#8B5F45', '戌': '#8B5F45', '丑': '#8B5F45', '未': '#8B5F45'
-    };
-    return wuxingMap[char] || '#333333';
-  };
-
-  const label = (item: RecordItem) => {
-    const p = item.params;
-    const namePart = (p.name && String(p.name).trim()) ? `${String(p.name).trim()} · ` : '';
-    let main = '';
-    if (p.mode === 'bazi' && p.gans && p.zhis) {
-      main = `${(p.gans as string).replace(/,/g, '')} ${(p.zhis as string).replace(/,/g, '')}`;
-    } else if (p.year && p.month && p.day) {
-      main = `${p.year}-${p.month}-${p.day} ${p.hour ?? '?'}:${p.minute ?? '00'}`;
-    } else {
-      main = new Date(item.created_at).toLocaleString('zh-CN');
+  const handleDelete = async (id: string) => {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/records/classical?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error((body as { error?: string })?.error || '删除失败');
+      }
+      setList((prev) => prev.filter((item) => item.id !== id));
+      clearCached(CACHE_KEYS.RECORDS_CLASSICAL);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : '删除失败，请重试');
+    } finally {
+      setDeletingId(null);
     }
-    return namePart ? namePart + main : main;
   };
 
-  // 获取八字四柱数据
-  const getBaziPillars = (item: RecordItem) => {
-    const p = item.params;
-    if (p.mode === 'bazi' && p.gans && p.zhis) {
-      const gans = (p.gans as string).split(',');
-      const zhis = (p.zhis as string).split(',');
-      return { gans, zhis };
-    }
-    return null;
-  };
+  const toQuery = (params: Record<string, string>) => new URLSearchParams(params).toString();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FBF9F4] via-[#F8F6F0] to-[#FBF9F4] px-4 py-12">
+    <div className="min-h-screen px-4 py-10 md:py-16" style={{ background: '#faf8f4' }}>
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-10">
-          <Link
-            href="/"
-            className="text-sm text-stone-500 hover:text-stone-800 font-sans transition-colors duration-200 flex items-center gap-2"
+
+        {/* 返回 */}
+        <Link
+          href="/"
+          className="inline-flex items-center gap-1.5 mb-10 transition-colors"
+          style={{ fontSize: 12, color: '#c4bdb0', letterSpacing: '0.06em', fontFamily: 'system-ui, sans-serif' }}
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" />
+          </svg>
+          返回首页
+        </Link>
+
+        {/* 页头 */}
+        <div className="mb-8">
+          <h1
+            style={{ fontFamily: KAITI, fontSize: 26, color: '#1e1c18', fontWeight: 400, letterSpacing: '0.02em' }}
+            className="mb-1"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            返回首页
-          </Link>
-        </div>
-        
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl font-serif text-stone-800 mb-3 tracking-wide">我的古典排盘</h1>
-          <div className="w-16 h-1 bg-gradient-to-r from-transparent via-stone-300 to-transparent mx-auto mb-4"></div>
-          <p className="text-sm text-stone-500 font-sans">
-            点击某条记录可再次查看该次排盘报告
+            我的古典排盘
+          </h1>
+          <p
+            className="font-sans"
+            style={{ fontSize: 12, color: '#c4bdb0', letterSpacing: '0.10em' }}
+          >
+            历次排盘记录 · 点击再次查看报告
           </p>
+          <div className="mt-4 h-px" style={{ background: 'rgba(0,0,0,0.06)' }} />
         </div>
 
+        {/* 加载 */}
         {loading && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="py-20 text-center"
-          >
-            <div className="inline-block">
-              <div className="w-8 h-8 border-3 border-stone-300 border-t-stone-600 rounded-full animate-spin mb-4"></div>
-              <p className="text-stone-500 font-sans text-sm">加载中…</p>
-            </div>
-          </motion.div>
+          <div className="py-16 text-center" style={{ color: '#c4bdb0', fontFamily: 'system-ui', fontSize: 13 }}>
+            排盘中…
+          </div>
         )}
+
+        {/* 错误 */}
         {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-6 px-6 bg-red-50/80 backdrop-blur-sm border border-red-200 rounded-2xl text-red-700 text-sm font-sans space-y-3 shadow-sm"
+          <div
+            className="py-5 px-5 rounded-xl text-sm"
+            style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontFamily: 'system-ui' }}
           >
-            <p className="font-medium">{error}</p>
+            <p>{error}</p>
             {error.includes('请先登录') && (
-              <Link href="/login?next=/my/classical" className="inline-flex items-center gap-2 text-stone-800 font-medium hover:gap-3 transition-all duration-200">
-                去登录
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+              <Link href="/login?next=/my/classical" className="inline-block mt-2 font-medium underline">去登录 →</Link>
             )}
-            {error.includes('daoyoushuju') && (
-              <p className="text-xs text-stone-600 pt-2 leading-relaxed">
-                后端使用 <code className="bg-stone-200 px-1.5 py-0.5 rounded">daoyoushuju</code> 表，通过 <code className="bg-stone-200 px-1.5 py-0.5 rounded">type</code> 区分古典排盘（classical_bazi）与八维结果（mbti），详情存入 <code className="bg-stone-200 px-1.5 py-0.5 rounded">input_data</code>（JSONB）。
-              </p>
-            )}
-          </motion.div>
+          </div>
         )}
+
+        {/* 空态 */}
         {!loading && !error && list.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-20 text-center"
+          <div
+            className="py-16 text-center font-sans"
+            style={{ fontSize: 13, color: '#c4bdb0', letterSpacing: '0.04em' }}
           >
-            <div className="inline-flex flex-col items-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-stone-100 flex items-center justify-center">
-                <svg className="w-8 h-8 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <div className="space-y-2">
-                <p className="text-stone-600 font-sans">暂无古典排盘记录</p>
-                <p className="text-stone-400 font-sans text-xs max-w-sm">
-                  在首页「八字」中完成排盘并打开报告后，点击「保存该八字」即可保存
-                </p>
-              </div>
-              <Link 
-                href="/"
-                className="mt-4 px-6 py-2.5 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 transition-colors duration-200"
-              >
-                去排盘
-              </Link>
-            </div>
-          </motion.div>
+            尚无记录
+            <br />
+            <span style={{ fontSize: 11 }}>完成排盘并点击「保存该八字」后将自动保存</span>
+          </div>
         )}
+
+        {/* 列表 */}
         {!loading && !error && list.length > 0 && (
-          <ul className="space-y-4">
-            {list.map((item, i) => {
-              const pillars = getBaziPillars(item);
-              const p = item.params;
-              const namePart = (p.name && String(p.name).trim()) ? String(p.name).trim() : '';
-              const genderPart = p.gender || '';
-              
-              return (
-                <motion.li
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                >
-                  <Link
-                    href={`/report/classical?${toQuery(item.params as Record<string, string>)}`}
-                    className="block px-5 py-4 bg-gradient-to-br from-white/90 to-stone-50/50 border border-stone-200 rounded-xl hover:border-stone-300 hover:shadow-md transition-all duration-300 group"
+          <ul className="space-y-2.5">
+            <AnimatePresence initial={false}>
+              {list.map((item, i) => {
+                const p = item.params;
+                const name = (p.name && String(p.name).trim()) ? String(p.name).trim() : '';
+                const gender = p.gender || '';
+                const isBaziMode = p.mode === 'bazi' && p.gans && p.zhis;
+                const gans = isBaziMode ? (p.gans as string).split(',') : [];
+                const zhis = isBaziMode ? (p.zhis as string).split(',') : [];
+                const dateStr = (p.year && p.month && p.day)
+                  ? `${p.year}年${p.month}月${p.day}日 ${p.hour ?? '?'}:${String(p.minute ?? '00').padStart(2, '0')}`
+                  : '';
+
+                return (
+                  <motion.li
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                    transition={{ delay: i * 0.04, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
                   >
-                    {/* 八字四柱 */}
-                    {pillars && pillars.gans.length === 4 && pillars.zhis.length === 4 ? (
-                      <div className="flex items-center justify-between gap-6">
-                        {/* 左侧：姓名信息 */}
-                        <div className="flex flex-col gap-2 min-w-[100px]">
-                          {namePart && (
-                            <span className="text-stone-800 font-serif text-lg font-medium">
-                              {namePart}
+                    <div
+                      className="group flex items-center gap-3 rounded-xl overflow-hidden"
+                      style={{
+                        background: '#fdfcf9',
+                        border: '1px solid rgba(0,0,0,0.07)',
+                      }}
+                    >
+                      {/* 可点击主体 */}
+                      <Link
+                        href={`/report/classical?${toQuery(p)}`}
+                        className="flex-1 min-w-0 flex items-center justify-between gap-4 px-5 py-4"
+                      >
+                        {/* 左侧：姓名 + 标签 + 时间 */}
+                        <div className="flex flex-col gap-1.5 min-w-0">
+                          {name ? (
+                            <span style={{ fontFamily: KAITI, fontSize: 17, color: '#1e1c18', lineHeight: 1.2 }}>
+                              {name}
                             </span>
-                          )}
-                          <div className="flex items-center gap-2">
-                            {genderPart && (
-                              <span className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs font-sans rounded-full">
-                                {genderPart}
-                              </span>
-                            )}
-                            <span className="text-stone-400 text-xs font-sans">
-                              {new Date(item.created_at).toLocaleDateString('zh-CN')}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 右侧：八字四柱 */}
-                        <div className="flex items-center gap-3">
-                          {['年柱', '月柱', '日柱', '时柱'].map((pillarName, idx) => (
-                            <div key={idx} className="flex flex-col items-center">
-                              <div className="text-[9px] text-stone-400 font-sans mb-1.5 tracking-wider opacity-60">
-                                {pillarName}
-                              </div>
-                              <div className="flex flex-col items-center gap-1">
-                                {/* 天干 */}
-                                <span 
-                                  className="text-xl font-serif font-medium tracking-wide transition-all duration-200 group-hover:scale-105"
-                                  style={{ color: getWuxingColor(pillars.gans[idx]) }}
-                                >
-                                  {pillars.gans[idx]}
-                                </span>
-                                
-                                {/* 地支 */}
-                                <span 
-                                  className="text-xl font-serif font-medium tracking-wide transition-all duration-200 group-hover:scale-105"
-                                  style={{ color: getWuxingColor(pillars.zhis[idx]) }}
-                                >
-                                  {pillars.zhis[idx]}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      /* 日期模式显示 */
-                      <div className="flex items-center justify-between gap-6">
-                        {/* 左侧：姓名信息 */}
-                        <div className="flex flex-col gap-2 min-w-[100px]">
-                          {namePart && (
-                            <span className="text-stone-800 font-serif text-lg font-medium">
-                              {namePart}
-                            </span>
-                          )}
-                          <div className="flex items-center gap-2">
-                            {genderPart && (
-                              <span className="px-2 py-0.5 bg-stone-100 text-stone-600 text-xs font-sans rounded-full">
-                                {genderPart}
-                              </span>
-                            )}
-                            <span className="text-stone-400 text-xs font-sans">
-                              {new Date(item.created_at).toLocaleDateString('zh-CN')}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* 右侧：日期信息 */}
-                        <div className="text-stone-600 font-sans text-sm">
-                          {p.year && p.month && p.day ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-base">
-                                {p.year}年{p.month}月{p.day}日 {p.hour ?? '?'}:{String(p.minute ?? '00').padStart(2, '0')}
-                              </span>
-                              {p.city && (
-                                <span className="text-stone-400 text-xs">
-                                  · {p.city}
-                                </span>
-                              )}
-                            </div>
                           ) : (
-                            <span className="text-stone-400">
-                              {new Date(item.created_at).toLocaleString('zh-CN')}
+                            <span style={{ fontFamily: KAITI, fontSize: 15, color: '#8a8078', lineHeight: 1.2 }}>
+                              {dateStr || '未命名'}
                             </span>
                           )}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {gender && (
+                              <span
+                                style={{
+                                  fontFamily: 'system-ui',
+                                  fontSize: 10,
+                                  color: '#a39888',
+                                  padding: '1px 7px',
+                                  borderRadius: 3,
+                                  background: 'rgba(0,0,0,0.04)',
+                                  border: '1px solid rgba(0,0,0,0.06)',
+                                  letterSpacing: '0.06em',
+                                }}
+                              >
+                                {gender}
+                              </span>
+                            )}
+                            {name && dateStr && (
+                              <span style={{ fontFamily: 'system-ui', fontSize: 11, color: '#c4bdb0' }}>
+                                {dateStr}
+                                {p.city ? ` · ${p.city}` : ''}
+                              </span>
+                            )}
+                            <span
+                              className="font-sans tabular-nums"
+                              style={{ fontSize: 10, color: '#d4c9bc' }}
+                            >
+                              {new Date(item.created_at).toLocaleDateString('zh-CN')}
+                            </span>
+                          </div>
                         </div>
+
+                        {/* 右侧：四柱 或 生日 */}
+                        {isBaziMode && gans.length === 4 && zhis.length === 4 ? (
+                          <div className="shrink-0">
+                            <FourPillars gans={gans} zhis={zhis} />
+                          </div>
+                        ) : dateStr && !name ? null : dateStr ? (
+                          <div className="shrink-0 text-right">
+                            <p style={{ fontFamily: 'system-ui', fontSize: 12, color: '#8a8078' }}>
+                              {dateStr}
+                            </p>
+                            {p.city && (
+                              <p style={{ fontFamily: 'system-ui', fontSize: 11, color: '#c4bdb0', marginTop: 2 }}>
+                                {p.city}
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
+                      </Link>
+
+                      {/* 删除按钮区（竖向分隔线 + 按钮） */}
+                      <div
+                        className="flex items-center pr-3"
+                        style={{ borderLeft: '1px solid rgba(0,0,0,0.05)' }}
+                      >
+                        <DeleteButton
+                          onConfirm={() => handleDelete(item.id)}
+                          deleting={deletingId === item.id}
+                        />
                       </div>
-                    )}
-                  </Link>
-                </motion.li>
-              );
-            })}
+                    </div>
+                  </motion.li>
+                );
+              })}
+            </AnimatePresence>
           </ul>
         )}
       </div>

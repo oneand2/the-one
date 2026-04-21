@@ -94,14 +94,19 @@ export const WorldNewsView: React.FC = () => {
   const [newsList, setNewsList] = useState<WorldNews[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const t = new Date();
+    const y = t.getFullYear();
+    const m = String(t.getMonth() + 1).padStart(2, '0');
+    const d = String(t.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
 
   useEffect(() => {
     // 先读缓存，第二次进入或刷新时立即展示，不卡顿
     const cached = getCached<WorldNews[]>(CACHE_KEYS.WORLD_NEWS);
     if (cached && cached.length > 0) {
       setNewsList(cached);
-      setSelectedDate(cached[0].news_date);
       setLoading(false);
     }
 
@@ -124,9 +129,6 @@ export const WorldNewsView: React.FC = () => {
 
         const list = data || [];
         setNewsList(list);
-        if (list.length > 0) {
-          setSelectedDate(list[0].news_date);
-        }
         // 写入缓存，下次进入直接读
         setCached(CACHE_KEYS.WORLD_NEWS, list);
       } catch (e) {

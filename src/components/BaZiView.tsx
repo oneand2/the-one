@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { analyzeBazi, BaziInput, BaziResult, generateClassicalBaziData, calculateEnergyProfile } from '@/utils/baziLogic';
+import { analyzeBazi, BaziInput, generateClassicalBaziData } from '@/utils/baziLogic';
 
 type LocationInfo = {
   province: string;
@@ -35,7 +35,6 @@ export const BaZiView: React.FC = () => {
   const router = useRouter();
   const hasLoadedCacheRef = useRef(false);
   const cacheKey = 'bazi-input-cache-v1';
-  const resultCacheKey = 'bazi-result-cache-v1';
   const [inputMode, setInputMode] = useState<'date' | 'bazi'>('date');
   const [calendarType, setCalendarType] = useState<'solar' | 'lunar'>('solar');
 
@@ -64,9 +63,7 @@ export const BaZiView: React.FC = () => {
     zhis: ['子', '丑', '寅', '卯']
   });
 
-  const [result, setResult] = useState<BaziResult | null>(null);
-  const [lastCalculatedInput, setLastCalculatedInput] = useState<BaziInput | null>(null);
-  const [isCalculating, setIsCalculating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [activeSelectId, setActiveSelectId] = useState<string | null>(null);
   const [showLocationPicker, setShowLocationPicker] = useState(false);
@@ -74,13 +71,6 @@ export const BaZiView: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState('');
   const [quickInputText, setQuickInputText] = useState('');
   const [quickDateInputText, setQuickDateInputText] = useState('');
-  const classicalProfile = lastCalculatedInput
-    ? (() => {
-        const classicalData = generateClassicalBaziData(lastCalculatedInput);
-        return calculateEnergyProfile(classicalData);
-      })()
-    : null;
-
   useEffect(() => {
     try {
       const cached = localStorage.getItem(cacheKey);
@@ -104,18 +94,6 @@ export const BaZiView: React.FC = () => {
       console.warn('读取本地缓存失败:', error);
     } finally {
       hasLoadedCacheRef.current = true;
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const cached = localStorage.getItem(resultCacheKey);
-      if (!cached) return;
-      const parsed = JSON.parse(cached);
-      if (parsed?.result) setResult(parsed.result);
-      if (parsed?.lastCalculatedInput) setLastCalculatedInput(parsed.lastCalculatedInput);
-    } catch (error) {
-      console.warn('读取八字结果缓存失败:', error);
     }
   }, []);
 
@@ -444,55 +422,87 @@ export const BaZiView: React.FC = () => {
     setShowLocationPicker(false);
   };
 
-  const handleCalculate = async () => {
-    setIsCalculating(true);
-    setTimeout(async () => {
-      try {
-        let input: BaziInput;
-        
-        if (inputMode === 'date') {
-          if (calendarType === 'lunar') {
-            // @ts-ignore
-            const { Lunar } = await import('lunar-javascript');
-            const lunar = Lunar.fromYmd(
-              lunarDateInput.year,
-              lunarDateInput.month,
-              lunarDateInput.day,
-              lunarDateInput.isLeapMonth
-            );
-            const solar = lunar.getSolar();
-            
-            input = {
-              year: solar.getYear(),
-              month: solar.getMonth(),
-              day: solar.getDay(),
-              hour: lunarDateInput.hour,
-              minute: lunarDateInput.minute,
-              location: lunarDateInput.location
-            };
-          } else {
-            input = { ...dateInput };
-          }
-        } else {
-          input = { ...dateInput, directBazi: baziInput };
-        }
+  const handleAIAnalysis = async () => {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
+    try {
+      let input: BaziInput;
 
-        const baziResult = analyzeBazi(input);
-        setResult(baziResult);
-        setLastCalculatedInput(input);
-        try {
-          localStorage.setItem(resultCacheKey, JSON.stringify({
-            result: baziResult,
-            lastCalculatedInput: input,
-          }));
-        } catch (error) {
-          console.warn('写入八字结果缓存失败:', error);
+      if (inputMode === 'date') {
+        if (calendarType === 'lunar') {
+          // @ts-ignore
+          const { Lunar } = await import('lunar-javascript');
+          const lunar = Lunar.fromYmd(
+            lunarDateInput.year,
+            lunarDateInput.month,
+            lunarDateInput.day,
+            lunarDateInput.isLeapMonth
+          );
+          const solar = lunar.getSolar();
+          input = {
+            year: solar.getYear(),
+            month: solar.getMonth(),
+            day: solar.getDay(),
+            hour: lunarDateInput.hour,
+            minute: lunarDateInput.minute,
+            location: lunarDateInput.location
+          };
+        } else {
+          input = { ...dateInput };
         }
-      } catch (error) {
-        console.error('计算失败:', error);
+      } else {
+        input = { ...dateInput, directBazi: baziInput };
       }
-      setIsCalculating(false);
-    }, 1500);
+
+      const result = analyzeBazi(input);
+      const classicalData = generateClassicalBaziData(input);
+
+      const shishenRatio: Record<string, number> = {};
+      if (result.ssDistribution) {
+        const total = Object.values(result.ssDistribution).reduce((sum, val) => sum + (val as number), 0);
+        if (total > 0) {
+          Object.entries(result.ssDistribution).forEach(([key, val]) => {
+            shishenRatio[key] = (val as number) / total;
+          });
+        }
+      }
+
+      const ganRatio: Record<string, number> = {};
+      const pillarGans = [classicalData.pillars.year.gan, classicalData.pillars.month.gan, classicalData.pillars.day.gan, classicalData.pillars.hour.gan];
+      pillarGans.forEach(gan => {
+        ganRatio[gan] = (ganRatio[gan] || 0) + 0.25;
+      });
+
+      const birthDate = inputMode === 'date'
+        ? `${input.year}年${input.month}月${input.day}日 ${String(input.hour).padStart(2, '0')}:${String(input.minute).padStart(2, '0')}`
+        : undefined;
+
+      const importData = {
+        bazi: [{
+          type: 'bazi' as const,
+          pillars: classicalData.pillars,
+          strength: result.strength,
+          strengthPercent: result.peerEnergyPercent,
+          favorable: [result.climateGod, result.trueGod].filter(Boolean),
+          unfavorable: [],
+          shishenRatio,
+          ganRatio,
+          relationships: {},
+          name: name || undefined,
+          gender,
+          birthDate,
+        }]
+      };
+
+      localStorage.removeItem('juexingcang-import-pending');
+      localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
+      localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
+
+      router.push('/?tab=juexingcang');
+    } catch (error) {
+      console.error('AI分析失败:', error);
+      setIsAnalyzing(false);
+    }
   };
 
   const handleClassicalReport = async () => {
@@ -631,23 +641,6 @@ export const BaZiView: React.FC = () => {
       </div>
     );
   };
-
-  const ProgressBar = ({ label, value }: { label: string; value: number }) => (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs text-[#333333] font-sans">
-        <span>{label}</span>
-        <span>{value.toFixed(1)}%</span>
-      </div>
-      <div className="h-px bg-[#e8e3d8]">
-        <motion.div
-          className="h-full bg-stone-600"
-          initial={{ width: 0 }}
-          animate={{ width: `${value}%` }}
-          transition={{ duration: 1, delay: 0.5 }}
-        />
-      </div>
-    </div>
-  );
 
   const LocationPicker = () => {
     const [tempProvince, setTempProvince] = useState(selectedProvince);
@@ -1185,166 +1178,18 @@ export const BaZiView: React.FC = () => {
               </motion.button>
 
               <motion.button
-                onClick={handleCalculate}
-                disabled={isCalculating}
+                onClick={handleAIAnalysis}
+                disabled={isAnalyzing}
                 className="w-full py-4 px-6 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {isCalculating ? '推算中...' : '测算 MBTI'}
+                {isAnalyzing ? '分析中...' : 'AI 分析'}
               </motion.button>
-              
-              <p className="text-xs text-stone-500 text-center mt-2">
-                测算MBTI功能仍在开发中，目前准确率相当有限，不代表最终效果
-              </p>
             </div>
           </div>
         </div>
       </motion.div>
-
-      <AnimatePresence>
-        {result && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="space-y-12"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="text-center space-y-4"
-            >
-              <div className="text-xs text-[#666] font-sans uppercase tracking-wider">
-                性格类型
-              </div>
-              <motion.div
-                className="text-6xl font-serif text-[#2c2c2c]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.8, delay: 1.2 }}
-              >
-                {result.mbti}
-              </motion.div>
-              <div className="text-xs text-[#666] font-sans">
-                {result.dominantFunction} · {result.auxiliaryFunction} · {result.inferiorFunction}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 }}
-              className="space-y-4"
-            >
-              <div className="text-center space-y-2">
-                <div className="text-xs text-[#666666] font-sans uppercase tracking-wider">
-                  命局格局
-                </div>
-                <div className="text-lg font-serif text-[#333333]">
-                  {result.pattern}
-                </div>
-                <div className="text-xs text-[#666666] font-sans">
-                  {result.strength} · 能量占比 {result.peerEnergyPercent.toFixed(1)}%
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.6 }}
-              className="space-y-6"
-            >
-              <div className="text-xs text-[#666666] font-sans uppercase tracking-wider text-center">
-                五行能量分布
-              </div>
-              <div className="space-y-3">
-                {Object.entries(result.energyDistribution)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([key, value]) => (
-                    <ProgressBar key={key} label={key} value={value} />
-                  ))}
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.8 }}
-              className="space-y-4"
-            >
-              <div className="text-xs text-[#666666] font-sans uppercase tracking-wider text-center">
-                关键洞见
-              </div>
-              <div className="space-y-3 text-sm text-[#333333] font-sans leading-relaxed">
-                <div className="flex justify-between">
-                  <span className="text-[#666666]">调候用神</span>
-                  <span>{result.climateGod}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[#666666]">最终真神</span>
-                  <span>{result.trueGod}</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 2.0 }}
-              className="space-y-4"
-            >
-              <div className="text-xs text-[#666666] font-sans uppercase tracking-wider text-center">
-                十神能量分布
-              </div>
-              <div className="space-y-2 text-sm text-[#333333] font-sans">
-                {(() => {
-                  const shishenPct =
-                    classicalProfile != null
-                      ? classicalProfile.percentages.shishenDetailed
-                      : result.ssDistribution;
-                  return Object.entries(shishenPct ?? {})
-                    .filter(([, v]) => (v as number) > 0)
-                    .sort(([, a], [, b]) => (b as number) - (a as number))
-                    .map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span>{key}</span>
-                        <span>{(value as number).toFixed(1)}%</span>
-                      </div>
-                    ));
-                })()}
-              </div>
-            </motion.div>
-
-            {classicalProfile && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 2.2 }}
-                className="space-y-4"
-              >
-                <div className="text-xs text-[#666666] font-sans uppercase tracking-wider text-center">
-                  十天干能量分布
-                </div>
-                <div className="space-y-2 text-sm text-[#333333] font-sans">
-                  {Object.entries(classicalProfile.percentages.ganDetailed)
-                    .filter(([, v]) => v > 0)
-                    .sort(([, a], [, b]) => b - a)
-                    .map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span>{key}</span>
-                        <span>{value.toFixed(1)}%</span>
-                      </div>
-                    ))}
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <LocationPicker />
 

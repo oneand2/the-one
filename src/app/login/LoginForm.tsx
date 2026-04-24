@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
-import { login, signup } from './actions';
+import { login, signup, verifySignupOtp } from './actions';
 
 type Props = { next: string };
 
@@ -27,6 +27,13 @@ export function LoginForm({ next }: Props) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   /** 注册子模式：未选 / 邮箱注册 / IP 注册 */
   const [signupChoice, setSignupChoice] = useState<'email' | 'ip' | null>(null);
+  /** 等待 OTP 验证的注册信息 */
+  const [otpPending, setOtpPending] = useState<{
+    email: string;
+    nickname: string;
+    inviteCode: string;
+    nextUrl: string;
+  } | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -49,6 +56,16 @@ export function LoginForm({ next }: Props) {
           AUTH_ACTION_TIMEOUT_MS,
           '注册请求超时，请检查网络后重试或切换网络（如改用流量）'
         );
+        if (result.otpEmail) {
+          setOtpPending({
+            email: result.otpEmail,
+            nickname: (formData.get('nickname') as string) || '',
+            inviteCode: (formData.get('invite_code') as string) || '',
+            nextUrl: next,
+          });
+          setPending(false);
+          return;
+        }
         if (result.redirectUrl) {
           window.location.href = result.redirectUrl;
           return;
@@ -145,17 +162,104 @@ export function LoginForm({ next }: Props) {
     }
   }
 
-  const showSignupChoice = mode === 'signup' && signupChoice === null;
-  const showEmailSignupForm = mode === 'signup' && signupChoice === 'email';
-  const showIpSignupForm = mode === 'signup' && signupChoice === 'ip';
+  async function handleOtpSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setPending(true);
+    const form = e.currentTarget;
+    const otp = (form.otp as HTMLInputElement).value.trim();
+
+    const fd = new FormData();
+    fd.append('email', otpPending!.email);
+    fd.append('token', otp);
+    fd.append('nickname', otpPending!.nickname);
+    fd.append('invite_code', otpPending!.inviteCode);
+    fd.append('next', otpPending!.nextUrl);
+
+    try {
+      const result = await withTimeout(
+        verifySignupOtp(fd),
+        AUTH_ACTION_TIMEOUT_MS,
+        '验证超时，请重试'
+      );
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return;
+      }
+      if (result.error) setError(result.error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '验证失败，请重试');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const showSignupChoice = mode === 'signup' && signupChoice === null && !otpPending;
+  const showEmailSignupForm = mode === 'signup' && signupChoice === 'email' && !otpPending;
+  const showIpSignupForm = mode === 'signup' && signupChoice === 'ip' && !otpPending;
 
   return (
     <>
       <div className="text-center mb-8">
         <h2 className="text-2xl font-serif text-stone-800 tracking-wider mb-2">
-          {mode === 'login' ? '登录' : '注册'}
+          {otpPending ? '验证邮箱' : mode === 'login' ? '登录' : '注册'}
         </h2>
       </div>
+
+      {/* OTP 验证步骤 */}
+      {otpPending && (
+        <form className="space-y-6" onSubmit={handleOtpSubmit}>
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700 font-sans text-center">{error}</p>
+            </div>
+          )}
+          <div className="text-center space-y-1">
+            <p className="text-sm font-sans text-stone-600">
+              验证码已发送至
+            </p>
+            <p className="text-sm font-medium font-sans text-stone-800">{otpPending.email}</p>
+            <p className="text-xs text-stone-400 font-sans">收不到请检查垃圾邮件文件夹</p>
+          </div>
+          <div>
+            <label htmlFor="otp" className="block text-sm font-sans text-stone-700 mb-2">
+              邮箱验证码
+            </label>
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              required
+              autoFocus
+              autoComplete="one-time-code"
+              className="w-full px-4 py-3 bg-white border border-stone-300 rounded-lg text-stone-800 font-sans text-lg text-center tracking-[0.5em] focus:outline-none focus:border-stone-700 transition-colors"
+              placeholder="6 位验证码"
+            />
+          </div>
+          <div className="space-y-3 pt-2">
+            <button
+              type="submit"
+              disabled={pending}
+              className="w-full px-6 py-3 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors disabled:opacity-60"
+            >
+              {pending ? '验证中…' : '完成注册'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setOtpPending(null);
+                setSignupChoice(null);
+                setError(null);
+              }}
+              className="w-full py-2 text-sm text-stone-500 hover:text-stone-800 font-sans transition-colors"
+            >
+              返回重新注册
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* 注册方式二选一 */}
       {showSignupChoice && (
@@ -196,7 +300,7 @@ export function LoginForm({ next }: Props) {
       )}
 
       {/* 邮箱注册表单 */}
-      {(mode === 'login' || showEmailSignupForm) && !showSignupChoice && (
+      {(mode === 'login' || showEmailSignupForm) && !showSignupChoice && !otpPending && (
         <form className="space-y-6" onSubmit={handleSubmit}>
           <input type="hidden" name="next" value={next} />
           {error && (
@@ -310,7 +414,7 @@ export function LoginForm({ next }: Props) {
           </div>
           {showEmailSignupForm && (
             <p className="text-xs text-stone-400 font-sans text-center mt-4">
-              注册后需验证邮箱方可登录
+              点击注册后，验证码将发送到您的邮箱
             </p>
           )}
         </form>

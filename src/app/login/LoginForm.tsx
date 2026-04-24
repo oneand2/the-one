@@ -230,12 +230,12 @@ export function LoginForm({ next }: Props) {
               name="otp"
               type="text"
               inputMode="numeric"
-              maxLength={6}
+              maxLength={8}
               required
               autoFocus
               autoComplete="one-time-code"
-              className="w-full px-4 py-3 bg-white border border-stone-300 rounded-lg text-stone-800 font-sans text-lg text-center tracking-[0.5em] focus:outline-none focus:border-stone-700 transition-colors"
-              placeholder="6 位验证码"
+              className="w-full px-4 py-3 bg-white border border-stone-300 rounded-lg text-stone-800 font-sans text-lg text-center tracking-[0.3em] focus:outline-none focus:border-stone-700 transition-colors"
+              placeholder="请输入验证码"
             />
           </div>
           <div className="space-y-3 pt-2">

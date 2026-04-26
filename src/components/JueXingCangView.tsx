@@ -99,6 +99,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const userFollowsBottomRef = useRef(true);
   const [insuffOpen, setInsuffOpen] = useState(false);
   const [insuffNeed, setInsuffNeed] = useState(5);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   
   // 导入数据相关状态
   const [showImportModal, setShowImportModal] = useState(false);
@@ -807,6 +808,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     setImportData({});
     setLiuyaoQuestion(null);
     setInput('');
+  };
+
+  const handleCopyMessage = (messageId: string, content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedMessageId(messageId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    });
   };
 
   // 六爻解卦完成后的回调：导入卦象数据并自动发送解卦请求
@@ -1679,6 +1687,28 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                         whitespace-pre-wrap font-light tracking-wide">
                         {renderMessageContent(message.content)}
                       </p>
+
+                      {/* 复制按钮 - 仅助手消息显示 */}
+                      {message.role === 'assistant' && (
+                        <button
+                          onClick={() => handleCopyMessage(message.id, message.content)}
+                          className="absolute bottom-3 right-3 p-1.5 rounded-md
+                            text-stone-400 hover:text-stone-600 hover:bg-stone-100
+                            transition-all duration-200 group"
+                          title="复制"
+                        >
+                          {copiedMessageId === message.id ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-stone-500">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
 
                       {/* 装饰角 - 无印良品风格 */}
                       <div className={`

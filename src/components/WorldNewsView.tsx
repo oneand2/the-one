@@ -165,6 +165,7 @@ export const WorldNewsView: React.FC = () => {
     let currentCategory: { title: string; content: string[] } | null = null;
     let inLinksSection = false;
     let lastWasEmpty = false;
+    let lastNonEmptyType: 'h1' | 'content' | 'source' | null = null;
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -200,12 +201,16 @@ export const WorldNewsView: React.FC = () => {
         lastWasEmpty = false;
         continue;
       }
+
+      // 标记消息来源，以便下一行判断
+      const isSourceLine = trimmed.startsWith('消息来源：') || trimmed.startsWith('消息来源:');
       
-      // 一级标题判断（短文本，前面有空行或是开头，无括号引号，且不是消息来源、利好、利空）
-      const isNotSource = !trimmed.startsWith('消息来源：') && !trimmed.startsWith('消息来源:');
+      // 一级标题判断：短文本，前面有空行或开头或消息来源，无括号引号，且不是消息来源/利好/利空，且不紧跟H1
+      const isNotSource = !isSourceLine;
       const isNotBullish = !trimmed.startsWith('利好：') && !trimmed.startsWith('利好:');
       const isNotBearish = !trimmed.startsWith('利空：') && !trimmed.startsWith('利空:');
-      const isH1 = (lastWasEmpty || categories.length === 0) && 
+      const isH1 = (lastWasEmpty || categories.length === 0 || lastNonEmptyType === 'source') &&
+                   lastNonEmptyType !== 'h1' &&
                    trimmed.length <= 12 && 
                    !/[（()）""'']/.test(trimmed) &&
                    isNotSource &&
@@ -223,10 +228,12 @@ export const WorldNewsView: React.FC = () => {
           content: []
         };
         lastWasEmpty = false;
+        lastNonEmptyType = 'h1';
       } else if (currentCategory) {
         // 添加内容到当前分类
         currentCategory.content.push(line);
         lastWasEmpty = false;
+        lastNonEmptyType = isSourceLine ? 'source' : 'content';
       }
     }
 

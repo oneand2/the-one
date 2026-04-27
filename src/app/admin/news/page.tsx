@@ -351,18 +351,20 @@ export default function AdminNewsPage() {
       }
 
       // 一级标题判断：
-      // 1. 前面有空行（或开头）
+      // 1. 前面有空行、或开头、或紧跟在消息来源后面
       // 2. 字符数很少（≤12）
       // 3. 没有括号、引号等符号
-      // 4. 不是紧跟在H2后面（H2后面应该是正文）
+      // 4. 不是紧跟在H1或H2后面
       const isVeryShort = trimmed.length <= 12;
       const hasNoPunctuation = !/[（()）""'']/.test(trimmed);
       const notAfterH2 = lastNonEmptyType !== 'h2';
+      const notAfterH1 = lastNonEmptyType !== 'h1'; // H1后面紧跟的是H2，不是H1
 
-      if ((lastWasEmpty || parsed.length === 0) &&
+      if ((lastWasEmpty || parsed.length === 0 || lastNonEmptyType === 'source') &&
           isVeryShort &&
           hasNoPunctuation &&
-          notAfterH2) {
+          notAfterH2 &&
+          notAfterH1) {
         parsed.push({ type: 'h1', content: trimmed });
         lastWasEmpty = false;
         lastNonEmptyType = 'h1';
@@ -373,22 +375,20 @@ export default function AdminNewsPage() {
       }
 
       // 二级标题判断：
-      // 1. 前面有空行
-      // 2. 已经有过H1（确保在某个section内）
-      // 3. 长度适中（12-80字符）
-      // 4. 关键规则：以下情况应该识别为H2
-      //    - 紧跟在H1后面
-      //    - 已经连续出现2段正文
-      //    - 紧跟在消息来源(source)后面（消息来源后面不可能是正文）
-      const isPotentialH2 = lastWasEmpty &&
-                           hasH1 &&
+      // 1. 已经有过H1（确保在某个section内）
+      // 2. 长度适中（12-80字符）
+      // 3. 以下情况识别为H2（不强制要求前面有空行）：
+      //    - 紧跟在H1后面（一级标题下面一行必定是二级标题）
+      //    - 紧跟在消息来源后面（消息来源后面根据长度判断，长的是H2）
+      //    - 前面有空行且连续出现2段正文之后
+      const isPotentialH2 = hasH1 &&
                            trimmed.length > 12 &&
                            trimmed.length < 80;
 
       const shouldBeH2 = isPotentialH2 &&
                         (lastNonEmptyType === 'h1' ||
                          lastNonEmptyType === 'source' ||
-                         consecutiveTextCount >= 2);
+                         (lastWasEmpty && consecutiveTextCount >= 2));
 
       if (shouldBeH2) {
         parsed.push({ type: 'h2', content: trimmed });

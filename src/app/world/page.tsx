@@ -134,6 +134,7 @@ export default function WorldPage() {
     let currentCategory: { title: string; content: string[] } | null = null;
     let inLinksSection = false;
     let lastWasEmpty = false;
+    let lastNonEmptyType: 'h1' | 'content' | 'source' | 'bullish' | 'bearish' | null = null;
 
     for (const line of lines) {
       const trimmed = line.trim();
@@ -171,10 +172,18 @@ export default function WorldPage() {
       }
       
       // 一级标题判断（短文本，前面有空行或是开头，无括号引号，且不是消息来源、利好、利空）
-      const isNotSource = !trimmed.startsWith('消息来源：') && !trimmed.startsWith('消息来源:');
-      const isNotBullish = !trimmed.startsWith('利好：') && !trimmed.startsWith('利好:');
-      const isNotBearish = !trimmed.startsWith('利空：') && !trimmed.startsWith('利空:');
-      const isH1 = (lastWasEmpty || categories.length === 0) && 
+      const isSourceLine = trimmed.startsWith('消息来源：') || trimmed.startsWith('消息来源:');
+      const isBullishLine = trimmed.startsWith('利好：') || trimmed.startsWith('利好:');
+      const isBearishLine = trimmed.startsWith('利空：') || trimmed.startsWith('利空:');
+      const isNotSource = !isSourceLine;
+      const isNotBullish = !isBullishLine;
+      const isNotBearish = !isBearishLine;
+      const followsCompletedItem =
+        lastNonEmptyType === 'source' ||
+        lastNonEmptyType === 'bullish' ||
+        lastNonEmptyType === 'bearish';
+      const isH1 = (lastWasEmpty || categories.length === 0 || followsCompletedItem) && 
+                   lastNonEmptyType !== 'h1' &&
                    trimmed.length <= 12 && 
                    !/[（()）""'']/.test(trimmed) &&
                    isNotSource &&
@@ -190,9 +199,17 @@ export default function WorldPage() {
           content: []
         };
         lastWasEmpty = false;
+        lastNonEmptyType = 'h1';
       } else if (currentCategory) {
         currentCategory.content.push(line);
         lastWasEmpty = false;
+        lastNonEmptyType = isSourceLine
+          ? 'source'
+          : isBullishLine
+            ? 'bullish'
+            : isBearishLine
+              ? 'bearish'
+              : 'content';
       }
     }
 
@@ -207,7 +224,7 @@ export default function WorldPage() {
     const elements: React.ReactNode[] = [];
     let lastWasEmpty = false;
     let consecutiveParagraphs = 0;
-    let lastNonEmptyType: 'h2' | 'text' | 'source' | null = null;
+    let lastNonEmptyType: 'h2' | 'text' | 'source' | 'bullish' | 'bearish' | null = null;
 
     for (let idx = 0; idx < contentLines.length; idx++) {
       const line = contentLines[idx];
@@ -233,7 +250,7 @@ export default function WorldPage() {
           </div>
         );
         lastWasEmpty = false;
-        lastNonEmptyType = 'text';
+        lastNonEmptyType = 'bullish';
         consecutiveParagraphs = 0;
         continue;
       }
@@ -252,7 +269,7 @@ export default function WorldPage() {
           </div>
         );
         lastWasEmpty = false;
-        lastNonEmptyType = 'text';
+        lastNonEmptyType = 'bearish';
         consecutiveParagraphs = 0;
         continue;
       }
@@ -279,11 +296,17 @@ export default function WorldPage() {
       //    - 第一个内容（idx === 0）
       //    - 紧跟在消息来源后面（lastNonEmptyType === 'source'，无需空行）
       //    - 前面有空行 + 已经连续出现2段正文
+      //    - 上一条新闻以消息来源/利好/利空收尾（兼容无空行粘贴）
       const lengthOk = trimmed.length > 12 && trimmed.length < 80;
+      const followsCompletedItem =
+        lastNonEmptyType === 'source' ||
+        lastNonEmptyType === 'bullish' ||
+        lastNonEmptyType === 'bearish';
       
       const shouldBeH2 = lengthOk && 
                         (idx === 0 || 
                          lastNonEmptyType === 'source' || 
+                         followsCompletedItem ||
                          (lastWasEmpty && consecutiveParagraphs >= 2));
 
       if (shouldBeH2) {

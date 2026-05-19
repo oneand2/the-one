@@ -278,6 +278,7 @@ export default function AdminNewsPage() {
   const parseContent = (text: string) => {
     const lines = text.split('\n');
     const parsed: Array<{ type: 'h1' | 'h2' | 'text' | 'source' | 'bullish' | 'bearish' | 'empty' | 'links_title' | 'link'; content: string }> = [];
+    const stripMarkdownHeading = (value: string) => value.replace(/^#{1,3}\s+/, '').trim();
 
     let lastWasEmpty = false;
     let lastNonEmptyType: 'h1' | 'h2' | 'text' | 'source' | 'bullish' | 'bearish' | 'links_title' | 'link' | null = null;
@@ -351,21 +352,30 @@ export default function AdminNewsPage() {
       }
 
       // 一级标题判断：
+      const isMarkdownH1 = /^#{1,2}\s+/.test(trimmed);
+      const isMarkdownH2 = /^#{3}\s+/.test(trimmed);
+      const headingText = stripMarkdownHeading(trimmed);
       // 1. 前面有空行、或开头、或紧跟在消息来源后面
       // 2. 字符数很少（≤12）
       // 3. 没有括号、引号等符号
       // 4. 不是紧跟在H1或H2后面
-      const isVeryShort = trimmed.length <= 12;
-      const hasNoPunctuation = !/[（()）""'']/.test(trimmed);
+      const isVeryShort = headingText.length <= 12;
+      const hasNoPunctuation = !/[（()）""'']/.test(headingText);
       const notAfterH2 = lastNonEmptyType !== 'h2';
       const notAfterH1 = lastNonEmptyType !== 'h1'; // H1后面紧跟的是H2，不是H1
+      const followsCompletedItem =
+        lastNonEmptyType === 'source' ||
+        lastNonEmptyType === 'bullish' ||
+        lastNonEmptyType === 'bearish';
 
-      if ((lastWasEmpty || parsed.length === 0 || lastNonEmptyType === 'source') &&
+      if ((isMarkdownH1 ||
+          ((lastWasEmpty || parsed.length === 0 || followsCompletedItem) &&
           isVeryShort &&
           hasNoPunctuation &&
           notAfterH2 &&
-          notAfterH1) {
-        parsed.push({ type: 'h1', content: trimmed });
+          notAfterH1)) &&
+          !isMarkdownH2) {
+        parsed.push({ type: 'h1', content: headingText });
         lastWasEmpty = false;
         lastNonEmptyType = 'h1';
         consecutiveTextCount = 0;
@@ -381,17 +391,20 @@ export default function AdminNewsPage() {
       //    - 紧跟在H1后面（一级标题下面一行必定是二级标题）
       //    - 紧跟在消息来源后面（消息来源后面根据长度判断，长的是H2）
       //    - 前面有空行且连续出现2段正文之后
+      //    - 上一条新闻已经进入消息来源/利好/利空收尾（兼容无空行粘贴）
       const isPotentialH2 = hasH1 &&
-                           trimmed.length > 12 &&
-                           trimmed.length < 80;
+                           headingText.length > 12 &&
+                           headingText.length < 80;
 
-      const shouldBeH2 = isPotentialH2 &&
+      const shouldBeH2 = (isMarkdownH2 ||
+                        (isPotentialH2 &&
                         (lastNonEmptyType === 'h1' ||
                          lastNonEmptyType === 'source' ||
-                         (lastWasEmpty && consecutiveTextCount >= 2));
+                         followsCompletedItem ||
+                         (lastWasEmpty && consecutiveTextCount >= 2))));
 
       if (shouldBeH2) {
-        parsed.push({ type: 'h2', content: trimmed });
+        parsed.push({ type: 'h2', content: headingText });
         lastWasEmpty = false;
         lastNonEmptyType = 'h2';
         consecutiveTextCount = 0;

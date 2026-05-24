@@ -438,7 +438,6 @@ export const BaZiView: React.FC = () => {
 
       if (inputMode === 'date') {
         if (calendarType === 'lunar') {
-          // @ts-expect-error lunar-javascript lacks complete ESM type metadata here.
           const { Lunar } = await import('lunar-javascript');
           const lunar = Lunar.fromYmd(
             lunarDateInput.year,
@@ -522,7 +521,6 @@ export const BaZiView: React.FC = () => {
       params.set('mode', 'date');
       
       if (calendarType === 'lunar') {
-        // @ts-expect-error lunar-javascript lacks complete ESM type metadata here.
         const { Lunar } = await import('lunar-javascript');
         const lunar = Lunar.fromYmd(
           lunarDateInput.year,

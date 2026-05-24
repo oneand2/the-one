@@ -69,6 +69,8 @@ export const BaZiView: React.FC = () => {
   const [showLocationPicker, setShowLocationPicker] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
+  const [locationPickerProvince, setLocationPickerProvince] = useState('');
+  const [locationPickerCity, setLocationPickerCity] = useState('');
   const [quickInputText, setQuickInputText] = useState('');
   const [quickDateInputText, setQuickDateInputText] = useState('');
   useEffect(() => {
@@ -385,6 +387,12 @@ export const BaZiView: React.FC = () => {
     }
   }, [dateInput.year, dateInput.month]);
 
+  const openLocationPicker = () => {
+    setLocationPickerProvince(selectedProvince);
+    setLocationPickerCity(selectedCity);
+    setShowLocationPicker(true);
+  };
+
   const handleLocationSelect = (province: string, city: string) => {
     setSelectedProvince(province);
     setSelectedCity(city);
@@ -430,7 +438,7 @@ export const BaZiView: React.FC = () => {
 
       if (inputMode === 'date') {
         if (calendarType === 'lunar') {
-          // @ts-ignore
+          // @ts-expect-error lunar-javascript lacks complete ESM type metadata here.
           const { Lunar } = await import('lunar-javascript');
           const lunar = Lunar.fromYmd(
             lunarDateInput.year,
@@ -514,7 +522,7 @@ export const BaZiView: React.FC = () => {
       params.set('mode', 'date');
       
       if (calendarType === 'lunar') {
-        // @ts-ignore
+        // @ts-expect-error lunar-javascript lacks complete ESM type metadata here.
         const { Lunar } = await import('lunar-javascript');
         const lunar = Lunar.fromYmd(
           lunarDateInput.year,
@@ -643,8 +651,8 @@ export const BaZiView: React.FC = () => {
   };
 
   const LocationPicker = () => {
-    const [tempProvince, setTempProvince] = useState(selectedProvince);
-    const [tempCity, setTempCity] = useState(selectedCity);
+    const selectClassName =
+      'w-full appearance-none bg-[#f8f6f0] border border-[#e8e3d8] rounded-xl px-4 py-3 pr-10 text-[#333333] text-sm font-sans focus:outline-none focus:ring-2 focus:ring-stone-300/60 focus:border-stone-300 transition-all duration-200 disabled:bg-stone-100/80 disabled:text-stone-400 disabled:cursor-not-allowed';
 
     const domesticProvinceData: Record<string, string[]> = {
       '北京市': ['北京市'],
@@ -690,96 +698,137 @@ export const BaZiView: React.FC = () => {
     };
 
     const domesticProvinces = Object.keys(domesticProvinceData);
-    const cities = tempProvince ? provinceData[tempProvince] || [] : [];
+    const cities = locationPickerProvince ? provinceData[locationPickerProvince] || [] : [];
 
     return (
       <AnimatePresence>
         {showLocationPicker && (
           <>
             <motion.div
-              className="fixed inset-0 bg-black/20 z-40"
+              className="fixed inset-0 bg-black/30 z-40"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowLocationPicker(false)}
             />
-            <motion.div
-              className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-[#fbf9f4] border border-[#e8e3d8] rounded-lg shadow-lg z-50 max-w-md w-full mx-4"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="p-6">
-                <h3 className="text-lg font-serif text-[#333333] mb-4">选择出生地点</h3>
-                <div className="space-y-4">
+            <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4 pointer-events-none">
+              <motion.div
+                className="pointer-events-auto flex w-full max-w-md max-h-[88dvh] flex-col rounded-t-2xl border border-[#e8e3d8] bg-[#fbf9f4] shadow-2xl sm:max-h-[min(85vh,640px)] sm:rounded-2xl"
+                initial={{ opacity: 0, y: '100%' }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+              {/* 移动端拖拽指示条 */}
+              <div className="flex shrink-0 justify-center pt-3 pb-1 sm:hidden">
+                <div className="h-1 w-10 rounded-full bg-stone-300/70" />
+              </div>
+
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-5 pt-2 sm:px-6 sm:pt-6">
+                <div className="shrink-0 text-center sm:text-left">
+                  <h3
+                    className="text-base font-serif text-stone-800 tracking-wide"
+                    style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                  >
+                    选择出生地点
+                  </h3>
+                  <p className="mt-1.5 text-[11px] text-stone-400 font-sans tracking-wide">
+                    用于真太阳时校正 · 可不填
+                  </p>
+                </div>
+
+                <div className="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain">
                   <div>
-                    <label className="text-sm text-[#666666] font-sans mb-2 block">省份</label>
-                    <select
-                      value={tempProvince}
-                      onChange={(e) => {
-                        setTempProvince(e.target.value);
-                        setTempCity('');
-                      }}
-                      className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans focus:outline-none focus:ring-0"
-                    >
-                      <option value="">不填写</option>
-                      <optgroup label="国内">
-                        {domesticProvinces.map(province => (
-                          <option key={province} value={province}>
-                            {province}
+                    <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">
+                      省份
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={locationPickerProvince}
+                        onChange={(e) => {
+                          setLocationPickerProvince(e.target.value);
+                          setLocationPickerCity('');
+                        }}
+                        className={selectClassName}
+                      >
+                        <option value="">不填写</option>
+                        <optgroup label="国内">
+                          {domesticProvinces.map(province => (
+                            <option key={province} value={province}>
+                              {province}
+                            </option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="国外">
+                          <option value="国外">国外时区</option>
+                        </optgroup>
+                      </select>
+                      <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="#8a8278" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-medium uppercase tracking-wider text-stone-500 font-sans">
+                      {locationPickerProvince === '国外' ? '时区' : '城市'}
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={locationPickerCity}
+                        onChange={(e) => setLocationPickerCity(e.target.value)}
+                        disabled={!locationPickerProvince}
+                        className={selectClassName}
+                      >
+                        <option value="">
+                          {locationPickerProvince === '国外' ? '请选择时区' : '请选择城市'}
+                        </option>
+                        {cities.map(city => (
+                          <option key={city} value={city}>
+                            {city}
                           </option>
                         ))}
-                      </optgroup>
-                      <optgroup label="国外">
-                        <option value="国外">国外时区</option>
-                      </optgroup>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm text-[#666666] font-sans mb-2 block">
-                      {tempProvince === '国外' ? '时区' : '城市'}
-                    </label>
-                    <select
-                      value={tempCity}
-                      onChange={(e) => setTempCity(e.target.value)}
-                      disabled={!tempProvince}
-                      className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans focus:outline-none focus:ring-0 disabled:bg-[#f0f0f0] disabled:cursor-not-allowed"
-                    >
-                      <option value="">
-                        {tempProvince === '国外' ? '请选择时区' : '请选择城市'}
-                      </option>
-                      {cities.map(city => (
-                        <option key={city} value={city}>
-                          {city}
-                        </option>
-                      ))}
-                    </select>
+                      </select>
+                      <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="#8a8278" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-3 mt-6">
+
+                <div className="shrink-0 space-y-2.5 border-t border-[#e8e3d8]/80 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-6">
                   <button
-                    onClick={handleLocationClear}
-                    className="flex-1 py-2 px-4 text-[#666666] font-sans border border-[#e8e3d8] rounded-md hover:bg-[#f0ede6] transition-colors duration-200"
-                  >
-                    不填写地点
-                  </button>
-                  <button
-                    onClick={() => setShowLocationPicker(false)}
-                    className="flex-1 py-2 px-4 text-[#666666] font-sans border border-[#e8e3d8] rounded-md hover:bg-[#f0ede6] transition-colors duration-200"
-                  >
-                    取消
-                  </button>
-                  <button
-                    onClick={() => handleLocationSelect(tempProvince, tempCity)}
-                    disabled={!tempCity}
-                    className="flex-1 py-2 px-4 text-stone-600 font-sans bg-stone-50 border border-stone-300 rounded-md hover:bg-stone-100 transition-colors duration-200 disabled:bg-[#e8e3d8] disabled:text-[#999] disabled:cursor-not-allowed"
+                    type="button"
+                    onClick={() => handleLocationSelect(locationPickerProvince, locationPickerCity)}
+                    disabled={!locationPickerCity}
+                    className="w-full rounded-xl bg-stone-800 py-3.5 text-sm font-sans text-white transition-colors duration-200 hover:bg-stone-700 active:bg-stone-900 disabled:cursor-not-allowed disabled:bg-stone-200 disabled:text-stone-400"
                   >
                     确定
                   </button>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowLocationPicker(false)}
+                      className="rounded-xl border border-[#e8e3d8] bg-transparent py-3 text-sm font-sans text-stone-600 transition-colors duration-200 hover:bg-[#f0ede6] active:bg-[#ebe6dc]"
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLocationClear}
+                      className="rounded-xl border border-[#e8e3d8] bg-transparent py-3 text-sm font-sans text-stone-500 transition-colors duration-200 hover:bg-[#f0ede6] active:bg-[#ebe6dc]"
+                    >
+                      暂不填写
+                    </button>
+                  </div>
                 </div>
               </div>
-            </motion.div>
+              </motion.div>
+            </div>
           </>
         )}
       </AnimatePresence>
@@ -964,7 +1013,7 @@ export const BaZiView: React.FC = () => {
                           出生地
                         </label>
                         <div
-                          onClick={() => setShowLocationPicker(true)}
+                          onClick={openLocationPicker}
                           className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans cursor-pointer flex justify-between items-center hover:bg-[#f0ede6] transition-colors duration-200 focus:ring-2 focus:ring-stone-400 focus:border-stone-400"
                         >
                           <span>
@@ -1048,7 +1097,7 @@ export const BaZiView: React.FC = () => {
                           出生地
                         </label>
                         <div
-                          onClick={() => setShowLocationPicker(true)}
+                          onClick={openLocationPicker}
                           className="w-full bg-[#f8f6f0] border border-[#e8e3d8] rounded-md px-3 py-2 text-[#333333] font-sans cursor-pointer flex justify-between items-center hover:bg-[#f0ede6] transition-colors duration-200 focus:ring-2 focus:ring-stone-400 focus:border-stone-400"
                         >
                           <span>

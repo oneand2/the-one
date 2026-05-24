@@ -422,6 +422,28 @@ export const WorldNewsView: React.FC = () => {
     ? newsList.find(news => news.news_date === selectedDate)
     : null;
 
+  // 今日日期字符串
+  const todayStr = React.useMemo(() => {
+    const { year, month, day } = todayRef;
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }, [todayRef]);
+
+  // 昨日日期字符串
+  const yesterdayStr = React.useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }, []);
+
+  // 当选中的是今天且今日无新闻时，自动降级展示昨日新闻
+  const isShowingYesterdayFallback = selectedDate === todayStr && !selectedNews;
+  const fallbackNews = isShowingYesterdayFallback
+    ? (newsList.find(n => n.news_date === yesterdayStr) ?? null)
+    : null;
+
+  // 最终展示的新闻：优先今日，降级昨日
+  const displayNews = selectedNews ?? fallbackNews;
+
   if (loading) {
     return (
       <motion.div
@@ -569,16 +591,43 @@ export const WorldNewsView: React.FC = () => {
           </motion.div>
         )}
 
-        {selectedNews ? (() => {
-          const { categories, links } = parseContentByCategory(selectedNews.content);
+        {displayNews ? (() => {
+          const { categories, links } = parseContentByCategory(displayNews.content);
           
           return (
-            <div key={selectedNews.id}>
+            <div key={displayNews.id}>
+
+              {/* 今日无新闻时的昨日降级提示 */}
+              {isShowingYesterdayFallback && fallbackNews && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="mb-8 flex flex-col items-center gap-2"
+                >
+                  <div className="flex items-center gap-4 w-full max-w-xs mx-auto">
+                    <div className="flex-1 h-px bg-stone-200/80" />
+                    <span
+                      className="text-stone-400 text-[11px] tracking-[0.18em] whitespace-nowrap"
+                      style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                    >
+                      昨日
+                    </span>
+                    <div className="flex-1 h-px bg-stone-200/80" />
+                  </div>
+                  <p
+                    className="text-stone-400/80 text-[11.5px] tracking-widest text-center leading-relaxed"
+                    style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                  >
+                    今日新闻暂未更新，为您展示昨日新闻
+                  </p>
+                </motion.div>
+              )}
 
               {/* 按分类渲染卡片 */}
               <div className="space-y-0">
                 {categories.map((category, catIdx) => (
-                  <React.Fragment key={`${selectedNews.id}-cat-${catIdx}`}>
+                  <React.Fragment key={`${displayNews.id}-cat-${catIdx}`}>
                     <motion.article
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}

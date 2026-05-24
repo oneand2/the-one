@@ -1,0 +1,79 @@
+---
+description: The One 项目地图与同步维护规则
+alwaysApply: true
+---
+
+# 项目地图
+
+这是 AI 在本仓库工作时优先参考的高层项目地图。先用它理解框架与目录职责，再按当前任务读取必要文件，避免每次从零扫描项目。
+
+## 同步维护规则
+
+如果改动影响框架、路由结构、主要目录职责、数据模型、构建命令、部署/移动端打包方式，或 Supabase/AI 等核心集成，必须在同一次改动中同步更新本文件。保持内容简洁、准确，不要把临时调试记录写进这里。
+
+## 产品定位
+
+- 应用名：`二`。
+- 主体验：中文 Web 应用，首页以 tab 承载 `见天地`、`八字命理`、`荣格八维`、`见众生`、`决行藏`。
+- 核心功能：世界/新闻内容、八字分析、MBTI/荣格八维测试、六爻占卜、AI 聊天、用户资料、铜币/VIP 权限控制、历史记录保存。
+
+## 技术栈
+
+- 框架：Next.js App Router（`next` 16）+ React 19 + TypeScript。
+- 样式：Tailwind CSS 4，通过 `@tailwindcss/postcss` 接入；全局样式在 `src/app/globals.css`。
+- 鉴权/数据：Supabase，通过 `@supabase/ssr` 和 `@supabase/supabase-js` 使用。
+- AI/API：Next Route Handlers 中使用 OpenAI 兼容 SDK；默认、推理、宗师模式模型由环境变量选择。
+- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。
+
+## 关键目录
+
+- `src/app/`：App Router 页面、布局、加载/错误边界、Server Actions 和 API 路由。
+- `src/app/api/`：聊天、聊天会话、记录、鉴权辅助、用户资料、商城兑换、管理员 VIP、占卜等 Route Handlers。
+- `src/components/`：客户端 UI 组件，包括 tab、导航、鉴权 UI、图表、弹窗、八字/MBTI/六爻/世界新闻视图和全局错误处理。
+- `src/utils/`：领域逻辑和共享工具，包括八字、易经/六爻、缓存、VIP 判断、fetch 重试、Supabase 客户端。
+- `src/utils/supabase/`：浏览器端、服务端、service-role Supabase client 工厂。
+- `src/types/`：共享 TypeScript 类型，包括 tab ID 和导入的测算/测试数据。
+- `public/`：PWA manifest 和公开静态资源。
+- `android/`：Capacitor 使用的原生 Android 壳。
+- `docs/` 和根目录 `*.md`：功能说明、部署说明、验证指南和历史实现文档。
+
+## 路由形态
+
+- `src/app/layout.tsx` 定义 metadata、字体、全局登录入口、Supabase 预连接和延迟加载的布局附加组件。
+- `src/app/page.tsx` 是首页 tab 容器；tab 状态同步到 `tab` query 参数。
+- 主要独立页面包括 `/login`、`/profile`、`/shop`、`/world`、`/download`、`/juexingcang`、`/my/classical`、`/my/mbti`、`/my/liuyao`、`/report/classical`、`/report/mbti`、`/forgot-password`、`/reset-password`。
+- `src/middleware.ts` 刷新 Supabase session cookie，并保护 `/profile`、`/history`、`/my`。
+
+## 数据与鉴权
+
+- 浏览器端 Supabase 鉴权使用 `src/utils/supabase/client.ts`。
+- 服务端 Supabase 使用 `src/utils/supabase/server.ts`。
+- 跨用户或管理员级操作使用 `src/utils/supabase/admin.ts`，需要 `SUPABASE_SERVICE_ROLE_KEY`。
+- 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
+- `README.md` 说明 `daoyoushuju` 通过 `type` 和 `input_data` JSONB 存储保存记录。
+
+## 重要 API 区域
+
+- `src/app/api/chat/route.ts`：AI 聊天入口、铜币扣费、VIP/管理员豁免、联网搜索上下文、模型选择、八字/MBTI/六爻导入数据注入。
+- `src/app/api/chat-sessions/**`：聊天会话和消息持久化。
+- `src/app/api/records/**`：八字、MBTI、六爻历史记录 API。
+- `src/app/api/user/**`：用户资料和邀请码 API。
+- `src/app/api/shop/redeem/route.ts`：兑换码流程。
+- `src/app/api/divine/route.ts`：占卜相关服务端接口。
+
+## 常用命令
+
+- 安装依赖：`npm install`
+- 本地开发：`npm run dev`
+- 轮询模式开发：`npm run dev:poll`
+- 构建：`npm run build`
+- 启动生产服务：`npm run start`
+- 代码检查：`npm run lint`
+
+## 约定
+
+- 从 `src` 导入时使用 `@/*` TypeScript 路径别名。
+- 优先使用现有 Supabase helper，不要在功能代码里随意新建裸 client。
+- Route Handlers 放在 `src/app/api/**/route.ts`，UI 组件放在 `src/components`。
+- 不要提交 `.env.local` 中的密钥；环境相关行为继续通过环境变量配置。
+- 面向用户的文案以中文为主，保持现有产品语气。

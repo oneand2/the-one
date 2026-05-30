@@ -10,6 +10,8 @@ export interface BaziImportData {
     day: { gan: string; zhi: string };
     hour: { gan: string; zhi: string };
   };
+  // 格局（如：正官格、食神格、从财格等）
+  pattern?: string;
   // 强弱分析
   strength: string; // 身旺 | 身弱 | 中和
   strengthPercent: number;
@@ -93,9 +95,32 @@ export interface LiuyaoImportData {
   divineDate?: string;
 }
 
+// 占问前程导入数据（见天地「今日能量」卡片发起，借命理外壳做现实决策参考）
+export interface QianchengImportData {
+  type: 'qiancheng';
+  // 用户的前程问题（也是新闻检索的输入）
+  question: string;
+  // 完整八字解析（复用八字界面同一套解析逻辑：强弱、用神、十神/天干比例等）
+  bazi?: BaziImportData | null;
+  // 八字四柱（兜底/简版；当 bazi 缺失时使用）
+  pillars?: {
+    year: { gan: string; zhi: string };
+    month: { gan: string; zhi: string };
+    day: { gan: string; zhi: string };
+    hour: { gan: string; zhi: string };
+  } | null;
+  // 是否已知出生时辰（缺失时弱化时柱、不强行推断）
+  hasHour: boolean;
+  // 用神
+  yongshen?: string;
+  yongshenWuxing?: string;
+  name?: string;
+}
+
 // 综合导入数据
 export type ImportData = {
   bazi?: BaziImportData[];
   mbti?: MbtiImportData[];
   liuyao?: LiuyaoImportData[];
+  qiancheng?: QianchengImportData;
 };

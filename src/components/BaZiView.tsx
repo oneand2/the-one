@@ -4,7 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { analyzeBazi, BaziInput, generateClassicalBaziData } from '@/utils/baziLogic';
+import { BaziInput } from '@/utils/baziLogic';
+import { buildBaziImportData } from '@/utils/baziImport';
 
 type LocationInfo = {
   province: string;
@@ -461,44 +462,12 @@ export const BaZiView: React.FC = () => {
         input = { ...dateInput, directBazi: baziInput };
       }
 
-      const result = analyzeBazi(input);
-      const classicalData = generateClassicalBaziData(input);
-
-      const shishenRatio: Record<string, number> = {};
-      if (result.ssDistribution) {
-        const total = Object.values(result.ssDistribution).reduce((sum, val) => sum + (val as number), 0);
-        if (total > 0) {
-          Object.entries(result.ssDistribution).forEach(([key, val]) => {
-            shishenRatio[key] = (val as number) / total;
-          });
-        }
-      }
-
-      const ganRatio: Record<string, number> = {};
-      const pillarGans = [classicalData.pillars.year.gan, classicalData.pillars.month.gan, classicalData.pillars.day.gan, classicalData.pillars.hour.gan];
-      pillarGans.forEach(gan => {
-        ganRatio[gan] = (ganRatio[gan] || 0) + 0.25;
-      });
-
       const birthDate = inputMode === 'date'
         ? `${input.year}年${input.month}月${input.day}日 ${String(input.hour).padStart(2, '0')}:${String(input.minute).padStart(2, '0')}`
         : undefined;
 
       const importData = {
-        bazi: [{
-          type: 'bazi' as const,
-          pillars: classicalData.pillars,
-          strength: result.strength,
-          strengthPercent: result.peerEnergyPercent,
-          favorable: [result.climateGod, result.trueGod].filter(Boolean),
-          unfavorable: [],
-          shishenRatio,
-          ganRatio,
-          relationships: {},
-          name: name || undefined,
-          gender,
-          birthDate,
-        }]
+        bazi: [buildBaziImportData(input, { name: name || undefined, gender, birthDate })],
       };
 
       localStorage.removeItem('juexingcang-import-pending');

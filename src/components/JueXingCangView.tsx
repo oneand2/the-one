@@ -163,16 +163,42 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
   const renderMessageContent = (content: string) => {
     const parts: React.ReactNode[] = [];
+    let keySeq = 0;
+
+    // 把纯文本中的 URL 渲染为可点击链接（占问前程的来源溯源需要）
+    const pushTextWithLinks = (text: string) => {
+      const urlRegex = /(https?:\/\/[^\s，。、；）)】\]》"']+)/g;
+      let li = 0;
+      let um: RegExpExecArray | null;
+      while ((um = urlRegex.exec(text)) !== null) {
+        if (um.index > li) parts.push(text.slice(li, um.index));
+        const url = um[1];
+        parts.push(
+          <a
+            key={`url-${keySeq++}`}
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-stone-600 underline decoration-stone-300 underline-offset-2 break-all hover:text-amber-700 transition-colors"
+          >
+            {url}
+          </a>
+        );
+        li = um.index + url.length;
+      }
+      if (li < text.length) parts.push(text.slice(li));
+    };
+
     const regex = /\*\*([\s\S]+?)\*\*/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
     while ((match = regex.exec(content)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(content.slice(lastIndex, match.index));
+        pushTextWithLinks(content.slice(lastIndex, match.index));
       }
       parts.push(
-        <strong key={`bold-${match.index}`} className="font-semibold">
+        <strong key={`bold-${keySeq++}`} className="font-semibold">
           {match[1]}
         </strong>
       );
@@ -180,7 +206,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     }
 
     if (lastIndex < content.length) {
-      parts.push(content.slice(lastIndex));
+      pushTextWithLinks(content.slice(lastIndex));
     }
 
     return parts;
@@ -661,7 +687,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           useReasoning: mindMode === 'deep',
           useMeditation: mindMode === 'meditation',
           useSearch,
-          importData: getImportCount(effectiveImportData) > 0 ? effectiveImportData : undefined,
+          importData: (getImportCount(effectiveImportData) > 0 || effectiveImportData?.qiancheng) ? effectiveImportData : undefined,
         }),
         timeoutMs: mindMode === 'meditation' ? 90000 : 60000,
         retries: 2,
@@ -824,6 +850,41 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     setImportData(newImportData);
     handleSend('请帮我解卦', newImportData);
   };
+
+  // 从见天地「占问前程」跳转过来：读取暂存载荷，自动发起一次前程占问。
+  // 用「消费 localStorage 载荷」做去重（严格模式双跑/重复占问都安全），不要用会被
+  // cleanup 清掉的 setTimeout，否则在开发环境严格模式下发送会被取消、界面停在空白。
+  useEffect(() => {
+    if (!isActive) return;
+    if (searchParams?.get('qiancheng') == null) return;
+
+    let payload: import('@/types/import-data').QianchengImportData | null = null;
+    try {
+      const raw = localStorage.getItem('juexingcang-qiancheng-pending');
+      if (raw) {
+        payload = JSON.parse(raw);
+        localStorage.removeItem('juexingcang-qiancheng-pending'); // 立即消费，防重复
+      }
+    } catch { /* 忽略 */ }
+
+    // 清掉 URL 上的 qiancheng 参数，避免刷新重复触发
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.delete('qiancheng');
+      window.history.replaceState(null, '', url.toString());
+    } catch { /* 忽略 */ }
+
+    if (!payload || payload.type !== 'qiancheng' || !payload.question?.trim()) return;
+
+    // 占问前程不走六爻起卦；开新会话后立即发送（handleSend 会同步插入用户消息并进入加载态）
+    setLiuyaoMode(false);
+    setLiuyaoQuestion(null);
+    setCurrentSessionId(null);
+    setMessages([]);
+    const qcImport: ImportData = { qiancheng: payload };
+    setImportData(qcImport);
+    handleSend(payload.question.trim(), qcImport);
+  }, [isActive, searchParams]);
 
   const isDeep = mindMode === 'deep';
   const isMeditation = mindMode === 'meditation';

@@ -5,7 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Solar as SolarLib } from 'lunar-javascript';
 import { useRouter } from 'next/navigation';
 import { analyzeBazi } from '@/utils/baziLogic';
+import { buildBaziImportData } from '@/utils/baziImport';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import type { QianchengImportData, BaziImportData } from '@/types/import-data';
+
+type Pillars = QianchengImportData['pillars'];
 
 // ─── 天干五行映射 ─────────────────────────────────────────────────────────────
 const GAN_NAMES = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'] as const;
@@ -128,6 +132,25 @@ const STORAGE_KEY = 'daily-fortune-data-v2';
 interface StoredData {
   birthYear:number; birthMonth:number; birthDay:number; birthHour:number;
   yongshen:string; name?:string; pillarsStr?:string;
+  pillars?:Pillars; hasHour?:boolean;
+  bazi?:BaziImportData; // 完整八字解析（复用八字界面同一套逻辑）
+}
+
+// 占问前程跳转决行藏时，暂存载荷的 localStorage key
+const QIANCHENG_PENDING_KEY = 'juexingcang-qiancheng-pending';
+
+/** 把「甲子 乙丑 丙寅 丁卯」形式的四柱串解析为结构化四柱 */
+function parsePillarsStr(s?: string): Pillars | null {
+  if (!s) return null;
+  const parts = s.trim().split(/\s+/);
+  if (parts.length !== 4 || parts.some(p => p.length !== 2)) return null;
+  const [y, m, d, h] = parts;
+  return {
+    year:  { gan: y[0], zhi: y[1] },
+    month: { gan: m[0], zhi: m[1] },
+    day:   { gan: d[0], zhi: d[1] },
+    hour:  { gan: h[0], zhi: h[1] },
+  };
 }
 
 // ─── 八字排盘记录类型 ─────────────────────────────────────────────────────────
@@ -249,6 +272,10 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   const [showBreakdown,    setShowBreakdown]    = useState(false);
   const [showRecordPicker, setShowRecordPicker] = useState(false);
 
+  // 占问前程：用户处境/问题输入
+  const [qianchengQ, setQianchengQ] = useState('');
+  const [qcError,    setQcError]    = useState('');
+
   // ── 初始化：读 localStorage ──────────────────────────────────────────────────
   useEffect(()=>{
     try {
@@ -307,22 +334,28 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
     by:number, bm:number, bd:number, bh:number,
     nameHint='', pillarsHint='',
     directBazi?: {gans:string[];zhis:string[]},
+    hasHour=true,
   )=>{
     setIsCalculating(true); setCalcError('');
     setTimeout(()=>{
       try {
-        const result = analyzeBazi(directBazi
+        const baziInputObj = directBazi
           ? {year:by,month:bm,day:bd,hour:bh,directBazi}
-          : {year:by,month:bm,day:bd,hour:bh}
-        );
+          : {year:by,month:bm,day:bd,hour:bh};
+        const result = analyzeBazi(baziInputObj);
         const yg: string = result?.trueGod??'';
         if (!yg||yg==='无'||!GAN_NAMES.includes(yg as GanName)) {
           setCalcError('暂无法推算用神，建议前往八字板块进行详细分析');
           setIsCalculating(false); return;
         }
+        const pillars = (result?.pillars ?? parsePillarsStr(pillarsHint)) as Pillars;
+        // 复用八字界面同一套解析逻辑，构建完整八字数据供占问前程使用
+        let bazi: BaziImportData | undefined;
+        try { bazi = buildBaziImportData(baziInputObj, { name: nameHint || undefined }); } catch { bazi = undefined; }
         const data: StoredData = {
           birthYear:by,birthMonth:bm,birthDay:bd,birthHour:bh,yongshen:yg,
           name:nameHint||undefined, pillarsStr:pillarsHint||undefined,
+          pillars:pillars??undefined, hasHour, bazi,
         };
         setStoredData(data);
         localStorage.setItem(STORAGE_KEY,JSON.stringify(data));
@@ -340,19 +373,62 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
       const gans = p.gans.split(',');
       const zhis = p.zhis.split(',');
       const pStr = `${gans[0]}${zhis[0]} ${gans[1]}${zhis[1]} ${gans[2]}${zhis[2]} ${gans[3]}${zhis[3]}`;
-      runCalculate(1990,1,1,0, name, pStr, {gans,zhis});
+      runCalculate(1990,1,1,0, name, pStr, {gans,zhis}, true);
     } else if (p.year&&p.month&&p.day) {
-      runCalculate(+p.year,+p.month,+p.day,+(p.hour??'0'), name);
+      const hasHour = p.hour!==undefined && p.hour!==null && p.hour!=='';
+      runCalculate(+p.year,+p.month,+p.day,+(p.hour??'0'), name, '', undefined, hasHour);
     }
   },[runCalculate]);
 
   const handleConfirm = useCallback(()=>runCalculate(birthYear,birthMonth,birthDay,birthHour),[birthYear,birthMonth,birthDay,birthHour,runCalculate]);
   const handleReset   = useCallback(()=>{ if(storedData){setBirthYear(storedData.birthYear);setBirthMonth(storedData.birthMonth);setBirthDay(storedData.birthDay);setBirthHour(storedData.birthHour);} setCalcError(''); setShowSetup(true); },[storedData]);
-  const handleDivine  = useCallback(()=>{
+
+  // 占问前程：把用户处境 + 八字格局打包，跳转决行藏渲染三层结果
+  const handleQiancheng = useCallback(()=>{
     if(!storedData){setShowSetup(true);return;}
-    const q=`今日${year}年${month}月${day}日，${dayPillar?`日柱${dayPillar}，`:''}我命中用神为${storedData.yongshen}（${STEM_WUXING[storedData.yongshen]??''}），请结合今日日柱能量，为我详细占问今日时运休咎，分析今日在事业、情感、人际方面的吉凶与注意事项。`;
-    router.push(`/?tab=juexingcang&liuyao_question=${encodeURIComponent(q)}`);
-  },[year,month,day,dayPillar,storedData,router]);
+    const q = qianchengQ.trim();
+    if(!q){ setQcError('请先写下你想占问的前程之事'); return; }
+    setQcError('');
+    // 解析四柱：优先已存的结构化四柱，其次从四柱串解析，最后由生辰重新推算
+    let pillars: Pillars = storedData.pillars
+      ?? parsePillarsStr(storedData.pillarsStr)
+      ?? null;
+    if(!pillars){
+      try { pillars = analyzeBazi({year:storedData.birthYear,month:storedData.birthMonth,day:storedData.birthDay,hour:storedData.birthHour}).pillars as Pillars; }
+      catch { pillars = null; }
+    }
+    // 完整八字：优先已存的；老数据缺失时兜底重算。
+    // 注意：从排盘记录导入的存档其 birth* 是占位假值（1990-01-01），真正八字在四柱里，
+    // 因此兜底必须优先用已解析出的四柱（directBazi）构建，否则会算出错误日主。
+    let bazi: BaziImportData | null = storedData.bazi ?? null;
+    if(!bazi && pillars){
+      try {
+        bazi = buildBaziImportData(
+          { year:1990, month:1, day:1, hour:0, directBazi:{
+            gans:[pillars.year.gan,pillars.month.gan,pillars.day.gan,pillars.hour.gan],
+            zhis:[pillars.year.zhi,pillars.month.zhi,pillars.day.zhi,pillars.hour.zhi],
+          }},
+          { name: storedData.name }
+        );
+      } catch { bazi = null; }
+    }
+    if(!bazi){
+      try { bazi = buildBaziImportData({year:storedData.birthYear,month:storedData.birthMonth,day:storedData.birthDay,hour:storedData.birthHour}, { name: storedData.name }); }
+      catch { bazi = null; }
+    }
+    const payload: QianchengImportData = {
+      type:'qiancheng',
+      question:q,
+      bazi,
+      pillars: pillars ?? null,
+      hasHour: storedData.hasHour ?? true,
+      yongshen: storedData.yongshen,
+      yongshenWuxing: STEM_WUXING[storedData.yongshen] ?? undefined,
+      name: storedData.name,
+    };
+    try { localStorage.setItem(QIANCHENG_PENDING_KEY, JSON.stringify(payload)); } catch {}
+    router.push('/?tab=juexingcang&qiancheng=1');
+  },[qianchengQ,storedData,router]);
 
   // ── 选项 ──────────────────────────────────────────────────────────────────────
   const yearOpts  = useMemo(()=>Array.from({length:120},(_,i)=>new Date().getFullYear()-10-i),[]);
@@ -692,16 +768,34 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
           </AnimatePresence>
 
           <div className="h-px mb-4" style={{background:'rgba(0,0,0,0.06)'}}/>
-          <button onClick={handleDivine}
+
+          {/* ── 占问前程：写下处境，结合八字格局与近一年世间走向给现实参考 ── */}
+          <p className="text-[10px] font-sans tracking-[0.28em] mb-2.5" style={{color:'#a39888'}}>占 问 前 程</p>
+          <div className="rounded-xl mb-2.5"
+            style={{background:'rgba(0,0,0,0.025)',border:`1px solid ${qcError?'rgba(154,74,74,0.4)':'rgba(0,0,0,0.08)'}`}}>
+            <textarea
+              value={qianchengQ}
+              onChange={e=>{ setQianchengQ(e.target.value); if(qcError) setQcError(''); }}
+              rows={2}
+              placeholder="写下你正面临的抉择或处境，如：我要去做什么行业比较好？要不要回老家发展？"
+              className="w-full bg-transparent px-3.5 py-3 text-[13px] leading-relaxed resize-none focus:outline-none"
+              style={{color:'#3d3935',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}
+            />
+          </div>
+          {qcError && <p className="text-[11px] font-sans mb-2.5" style={{color:'#9a4a4a'}}>{qcError}</p>}
+
+          <button onClick={handleQiancheng}
             className="w-full py-3 rounded-xl text-[13px] tracking-wide transition-all duration-200 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98]"
             style={{background:'#3d3935',color:'#f5f2ed',border:'none',
               fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',boxShadow:'0 1px 4px rgba(0,0,0,0.12)'}}>
             <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="12" cy="12" r="9" strokeWidth={1.5}/>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 7v5l3 3"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h4l3 8 4-16 3 8h4"/>
             </svg>
-            占问今日详细运势
+            占问前程
           </button>
+          <p className="text-[10px] font-sans mt-2.5 text-center leading-relaxed" style={{color:'#b5ad9e'}}>
+            结合你的八字格局与近一年世间走向，给现实参考 · 仅供参考，最终决定在你
+          </p>
         </div>
       </motion.div>
     );

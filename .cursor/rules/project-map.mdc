@@ -54,12 +54,20 @@ alwaysApply: true
 
 ## 重要 API 区域
 
-- `src/app/api/chat/route.ts`：AI 聊天入口、铜币扣费、VIP/管理员豁免、联网搜索上下文、模型选择、八字/MBTI/六爻导入数据注入。
+- `src/app/api/chat/route.ts`：AI 聊天入口、铜币扣费、VIP/管理员豁免、联网搜索上下文、模型选择、八字/MBTI/六爻导入数据注入；并含「占问前程」分支（`importData.qiancheng`）：检索命中新闻 + 八字格局 + 用户问题，拼装三层结构提示词（`buildQianchengPrompt`）。
 - `src/app/api/chat-sessions/**`：聊天会话和消息持久化。
 - `src/app/api/records/**`：八字、MBTI、六爻历史记录 API。
 - `src/app/api/user/**`：用户资料和邀请码 API。
 - `src/app/api/shop/redeem/route.ts`：兑换码流程。
 - `src/app/api/divine/route.ts`：占卜相关服务端接口。
+- `src/app/api/admin/news-items/sync/route.ts`：管理员把 `world_news` 解析回填到结构化标题库 `news_items`（按日期或全量，幂等）。
+- `src/app/api/news-retrieval/preview/route.ts`：占问前程检索预览（调试用），返回扩展关键词与命中新闻。
+
+## 占问前程功能（见天地 → 决行藏）
+
+- 「见天地」今日能量卡片（`src/components/DailyFortuneCard.tsx`）填写处境问题，携带八字格局（四柱/用神）跳转决行藏（`?tab=juexingcang&qiancheng=1`，载荷存 localStorage `juexingcang-qiancheng-pending`）。
+- 决行藏（`src/components/JueXingCangView.tsx`）读取载荷后自动以 `importData.qiancheng` 发起占问，流式渲染「个人格局 / 全年大势 / 前程指引」三层结果。
+- 三级新闻漏斗：① 标题库 `news_items` ② `src/utils/newsRetrieval.ts` 关键词扩展+近一年匹配 Top N ③ 命中条目原文链接溯源。解析工具 `src/utils/newsItems.ts`。建表脚本 `src/app/api/world-news/news-items-schema.sql`。
 
 ## 常用命令
 

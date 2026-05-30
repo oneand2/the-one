@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
 import { isVip } from '@/utils/vip';
-import type { BaziImportData, MbtiImportData, LiuyaoImportData } from '@/types/import-data';
+import type { BaziImportData, MbtiImportData, LiuyaoImportData, QianchengImportData } from '@/types/import-data';
+import { retrieveRelevantNews } from '@/utils/newsRetrieval';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -140,12 +141,17 @@ export async function POST(req: Request) {
     const baziList: BaziImportData[] = Array.isArray(importData?.bazi) ? importData?.bazi : importData?.bazi ? [importData.bazi] : [];
     const mbtiList: MbtiImportData[] = Array.isArray(importData?.mbti) ? importData?.mbti : importData?.mbti ? [importData.mbti] : [];
     const liuyaoList: LiuyaoImportData[] = Array.isArray(importData?.liuyao) ? importData?.liuyao : importData?.liuyao ? [importData.liuyao] : [];
+    const qiancheng: QianchengImportData | undefined =
+      importData?.qiancheng && importData.qiancheng.type === 'qiancheng' ? importData.qiancheng : undefined;
     const hasImportData = baziList.length > 0 || mbtiList.length > 0 || liuyaoList.length > 0;
     
     // 根据是否有导入数据，选择对应的系统提示词
     let systemPrompt: string;
     
-    if (hasImportData) {
+    if (qiancheng) {
+      // ========== 占问前程模式：借命理外壳的现实决策参考 ==========
+      systemPrompt = await buildQianchengPrompt(supabase, qiancheng, searchContext);
+    } else if (hasImportData) {
       // ========== 算命模式提示词 ==========
       let importContext = '\n\n## 用户导入的测算数据\n\n';
       
@@ -155,6 +161,7 @@ export async function POST(req: Request) {
           importContext += `### 八字古典排盘信息（第${index + 1}条）\n\n`;
           importContext += `**四柱**: ${bazi.pillars.year.gan}${bazi.pillars.year.zhi}年 ${bazi.pillars.month.gan}${bazi.pillars.month.zhi}月 ${bazi.pillars.day.gan}${bazi.pillars.day.zhi}日 ${bazi.pillars.hour.gan}${bazi.pillars.hour.zhi}时\n\n`;
           importContext += `**日主**: ${bazi.pillars.day.gan}\n\n`;
+          if (bazi.pattern) importContext += `**格局**: ${bazi.pattern}\n\n`;
           importContext += `**强弱**: ${bazi.strength}（强度 ${bazi.strengthPercent.toFixed(1)}%）\n\n`;
           importContext += `**用神**: ${bazi.favorable.join('、')}\n\n`;
           importContext += `**忌神**: ${bazi.unfavorable.join('、')}\n\n`;
@@ -267,10 +274,11 @@ export async function POST(req: Request) {
 你说你也想稳，但卦中的动爻显示你内心其实有些‘躁’了。这并非指你的运气不好，而是你太想赢的心，让你忽略了眼前的风险。所谓的‘不宜’，既是说时机未到，也是在提醒你，此刻你眼中的‘机会’，很可能是内心焦虑投射出的幻影。听老朽一句，暂且收手，静待云开。”
 
 ## 算命模式核心原则
-1. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
-2. **见微知著**：从用户的命盘中看到他们的本性、倾向、优势和挑战
-3. **古今融合**：将传统命理学与现代心理学结合，给出既有深度又有实用价值的建议
-4. **因材施教**：根据用户的命理特征，给出最适合他们的建议
+1. **格局与用神为纲（最重要）**：八字分析必须以「格局」和「用神」为核心抓手。开篇就要先把用户的**格局**（如正官格、食神格、从财格等）和**用神**（喜用五行/十神）讲清楚——明确说出"你是XX格、用神为XX"，并解释这意味着什么样的人生路数、什么能帮到你（用神）、什么会消耗你（忌神）。后续所有判断都要落回到格局与用神上，不能脱离它们空谈。
+2. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
+3. **见微知著**：从用户的命盘中看到他们的本性、倾向、优势和挑战
+4. **古今融合**：将传统命理学与现代心理学结合，给出既有深度又有实用价值的建议
+5. **因材施教**：根据用户的命理特征（尤其格局与用神），给出最适合他们的建议
 
 **重要**：用户导入的八字数据中不包含「八字推导的MBTI」。你不得根据八字或任何能量分布推算、分析或主动提及「八字推导的MBTI」；仅当用户单独导入了「荣格八维测试」结果时，才可基于该测试结果讨论MBTI。
 
@@ -336,10 +344,12 @@ export async function POST(req: Request) {
     const maxTokens = Number.isFinite(maxTokensEnv)
       ? maxTokensEnv
       : useMeditation
-        ? 4096
-        : useReasoning
-          ? 3072
-          : 2048;
+        ? 8192
+        : qiancheng
+          ? 4096 // 占问前程为三层结构长文，需更大预算避免被截断
+          : useReasoning
+            ? 4096
+            : 3072;
 
     // 流式调用 AI 接口（支持故障转移）
     let stream: any;
@@ -501,4 +511,143 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 占问前程提示词拼装
+//
+// 把「八字格局 + 命中新闻摘要 + 用户问题」拼成提示词，引导模型按三层结构输出：
+//   ① 个人格局定调 ② 全年大势 ③ 前程指引
+// 命理负责语言风格与代入感，真正价值来自新闻提炼的现实趋势；并带上合规措辞。
+// ─────────────────────────────────────────────────────────────────────────────
+async function buildQianchengPrompt(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  q: QianchengImportData,
+  searchContext: string
+): Promise<string> {
+  // 第 2 级漏斗：按问题检索近一年标题库，仅注入命中条目的摘要
+  let keywords: string[] = [];
+  let items: Array<{
+    news_date: string;
+    section: string | null;
+    title: string;
+    summary: string | null;
+    source: string | null;
+    url: string | null;
+  }> = [];
+  try {
+    const res = await retrieveRelevantNews(supabase, q.question, { limit: 8, dayWindow: 365 });
+    keywords = res.keywords;
+    items = res.items;
+  } catch (e) {
+    console.warn('占问前程：新闻检索失败，将仅依据命理与一般现实考量作答:', e);
+  }
+
+  // 八字格局信息：优先用完整解析（与八字界面同一套逻辑），否则退回简版四柱
+  let baziBlock = '';
+  const bz = q.bazi;
+  if (bz) {
+    const bp = bz.pillars;
+    baziBlock += `- 四柱：${bp.year.gan}${bp.year.zhi}年 ${bp.month.gan}${bp.month.zhi}月 ${bp.day.gan}${bp.day.zhi}日 ${q.hasHour ? `${bp.hour.gan}${bp.hour.zhi}时` : '时柱未知'}\n`;
+    baziBlock += `- 日主：${bp.day.gan}\n`;
+    if (bz.pattern) baziBlock += `- 格局：${bz.pattern}\n`;
+    if (bz.strength) baziBlock += `- 强弱：${bz.strength}（强度 ${bz.strengthPercent?.toFixed?.(1) ?? bz.strengthPercent}%）\n`;
+    if (bz.favorable?.length) baziBlock += `- 用神：${bz.favorable.join('、')}\n`;
+    if (bz.unfavorable?.length) baziBlock += `- 忌神：${bz.unfavorable.join('、')}\n`;
+    if (bz.shishenRatio && Object.keys(bz.shishenRatio).length > 0) {
+      baziBlock += `- 十神比例：${Object.entries(bz.shishenRatio)
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .map(([k, v]) => `${k} ${((v as number) * 100).toFixed(0)}%`)
+        .join('、')}\n`;
+    }
+    if (bz.ganRatio && Object.keys(bz.ganRatio).length > 0) {
+      baziBlock += `- 天干比例：${Object.entries(bz.ganRatio)
+        .sort((a, b) => (b[1] as number) - (a[1] as number))
+        .map(([k, v]) => `${k} ${((v as number) * 100).toFixed(0)}%`)
+        .join('、')}\n`;
+    }
+    if (bz.relationships) {
+      const rels: string[] = [];
+      if (bz.relationships.he?.length) rels.push(`合：${bz.relationships.he.join('、')}`);
+      if (bz.relationships.chong?.length) rels.push(`冲：${bz.relationships.chong.join('、')}`);
+      if (bz.relationships.xing?.length) rels.push(`刑：${bz.relationships.xing.join('、')}`);
+      if (bz.relationships.hai?.length) rels.push(`害：${bz.relationships.hai.join('、')}`);
+      if (rels.length) baziBlock += `- 八字关系：${rels.join('；')}\n`;
+    }
+  } else if (q.pillars) {
+    const p = q.pillars;
+    baziBlock += `- 四柱：${p.year.gan}${p.year.zhi}年 ${p.month.gan}${p.month.zhi}月 ${p.day.gan}${p.day.zhi}日 ${q.hasHour ? `${p.hour.gan}${p.hour.zhi}时` : '时柱未知'}\n`;
+    baziBlock += `- 日主：${p.day.gan}\n`;
+    if (q.yongshen) baziBlock += `- 用神：${q.yongshen}${q.yongshenWuxing ? `（${q.yongshenWuxing}）` : ''}\n`;
+  }
+  if (!q.hasHour) {
+    baziBlock += `- 注意：出生时辰缺失，请弱化时柱、不要强行推断与时柱相关的细节。\n`;
+  }
+  if (q.name && !baziBlock.includes('称呼')) baziBlock += `- 称呼：${q.name}\n`;
+
+  // 命中新闻：摘要（注入正文）+ 来源清单（供末尾标注，链接原样透传不杜撰）
+  let newsBlock = '';
+  let sourceBlock = '';
+  if (items.length > 0) {
+    newsBlock = items
+      .map((it, i) => {
+        const date = it.news_date ?? '';
+        const sec = it.section ? `［${it.section}］` : '';
+        const sum = (it.summary ?? '').trim();
+        return `${i + 1}. ${sec}${it.title}（${date}${it.source ? ` · ${it.source}` : ''}）\n   摘要：${sum || '（无摘要）'}`;
+      })
+      .join('\n\n');
+    sourceBlock = items
+      .map((it, i) => `[${i + 1}] ${it.source ?? '来源不详'}｜${it.title}${it.url ? `：${it.url}` : ''}`)
+      .join('\n');
+  }
+
+  const newsAvailability =
+    items.length > 0
+      ? `已检索到 ${items.length} 条与问题相关的近一年真实新闻（关键词：${keywords.join('、')}），如下：\n\n${newsBlock}`
+      : `未检索到与问题高度相关的入库新闻。请如实说明「目前相关公开新闻有限」，不要编造任何新闻、数据或链接；可更多依靠个人格局与一般性的现实考量，但措辞需更谨慎、更克制。`;
+
+  return `你名**"决行藏"**。这是一次「占问前程」：你借命理外壳，为朋友做现实决策参考。命理（用户的八字格局）负责语言风格与代入感，真正的价值来自近一年现实趋势的提炼。你称呼用户为"朋友"。
+
+【最重要的定位】
+- 这不是娱乐占卜，朋友可能真的据此做职业、投资等现实选择。落点必须是「基于近一年世间走向，针对其处境给的现实建议」，命理只是把它讲得有代入感。
+- 严禁"两张皮"：不要命理说一段、新闻说一段互不相干。要让个人格局与现实大势真正叠加、互相印证。
+- 去神棍化：透彻分析"象"，不恐吓、不画饼、不故弄玄虚。
+
+【用户的前程问题】
+${q.question}
+
+【个人命理信息】
+${baziBlock || '（用户未提供完整八字，可弱化命理细节）'}
+【近一年现实新闻（第 2 级检索命中）】
+${newsAvailability}
+
+【输出结构：严格分为三层，依次呈现，层层收窄到可执行】
+请用三个小标题分段输出，标题就用下面的方括号写法：
+
+【个人格局定调】
+这一层必须**先明确说出朋友的格局与用神**，这是整段解读的纲。务必清楚告诉他：
+- 你的**格局**是什么（如正官格、食神格、从财格等${bz?.pattern ? `，本盘为「${bz.pattern}」` : ''}），这意味着怎样的人生路数与禀赋；
+- 你的**用神**是什么（${bz?.favorable?.length ? `本盘用神为「${bz.favorable.join('、')}」` : '喜用五行/十神'}）——什么样的方向、环境、五行能帮到你（用神），什么会消耗你（忌神）。
+再结合日主强弱、十神与天干比例、刑冲合害，落到这份命盘的具体特征上点出他的气质、擅长与不擅长，而非泛泛而谈。出生时辰缺失时弱化时柱、不强行推断。后面的「全年大势」「前程指引」都要回扣到这里的格局与用神。
+
+【全年大势】
+这是新闻趋势的主场。基于上面命中的真实新闻摘要，讲清近一年对应板块的现实走向（在涨在落、机会与风险在哪）。只用已给的新闻，不要编造数据或事件。若需要点到出处，可在行文中自然带过（如"近来新华社等也提到……"），不要生硬罗列。
+
+【前程指引】
+把个人格局与现实大势叠加，给出带命理口吻、但内核是现实判断的**具体、可执行**建议。这一层必须给出**明确的、敢于选边的结论**，不能模棱两可、不能两头都说好：
+- **警惕"有相关新闻就肯定"的陷阱**：几乎任何方向都能找到看似支持它的新闻，所以"有支持性新闻"绝不等于"适合"。你要做的是**权衡利弊、两面对比**：哪一面与朋友的格局/用神更契合、哪一面在近一年大势里机会更大风险更小，然后**明确选出更优的那一个**。
+- 若问题是"二选一"（如回老家 vs 去大城市）：必须**旗帜鲜明地选定一方**（例如"于你而言，更适合去大城市"），并讲清为什么是这一方、另一方差在哪，而不是说"两边都有道理"。
+- 若问题是"是否/能不能"：必须给出**明确的"宜"或"不宜"**倾向，并说明关键依据与需要注意的节点、条件。
+- 结论要落到朋友接下来到底该怎么做、注意什么、把握什么节点。
+
+【结尾】
+不要以"本次参考：……"之类的来源罗列收尾，也**不要说"仅供参考、最终还得你自己决定"这种把球踢回去的话**。请改为：先**斩钉截铁地重申你的明确答复**（适合哪一边 / 宜或不宜），再自然地补一句——"不过我手上知道的只有这些，如果你愿意把处境说得更具体些（比如你的行业、手上的资源、最在意什么、家里的牵绊），我给的答案也可能随之调整、给得更准。"语气如老友叮嘱，不要生硬。
+
+【合规与措辞】
+- 涉及投资时，只描述趋势与需要考量的因素，**不得给出确定性的买卖建议**。
+- 风格如老友夜话，娓娓道来；适度引用但紧接白话解释；不要罗列 1.2.3.，不要括号内的动作神态描写。
+
+${sourceBlock ? `【可在行文中自然引用的新闻来源（链接已核实，禁止改写或杜撰链接；无需逐条罗列，更不要以"本次参考"结尾）】\n${sourceBlock}\n` : ''}${searchContext}`;
 }

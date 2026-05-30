@@ -27,6 +27,37 @@ export default function AdminNewsPage() {
 
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [backfilling, setBackfilling] = useState(false);
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+
+  // 同步结构化标题库（占问前程检索用）。date 为空则全量回填历史
+  const syncNewsItems = async (date?: string) => {
+    const res = await fetch('/api/admin/news-items/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(date ? { date } : {}),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data?.error || `同步失败（${res.status}）`);
+    }
+    return data as { dates: number; items: number };
+  };
+
+  const handleBackfill = async () => {
+    if (!confirm('将解析全部历史新闻并重建标题库，可重复执行。是否继续？')) return;
+    setBackfilling(true);
+    setSyncMsg(null);
+    try {
+      const data = await syncNewsItems();
+      setSyncMsg(`✅ 标题库已重建：${data.dates} 天 / ${data.items} 条`);
+    } catch (e) {
+      setSyncMsg(`❌ 回填失败：${e instanceof Error ? e.message : '未知错误'}`);
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const loadNews = async () => {
     try {
@@ -125,6 +156,14 @@ export default function AdminNewsPage() {
           console.error('插入错误:', insertError);
           throw new Error(`插入失败: ${insertError.message} (代码: ${insertError.code || '未知'})`);
         }
+      }
+
+      // 同步结构化标题库（供占问前程检索），失败不阻断发布
+      try {
+        const synced = await syncNewsItems(newsDate);
+        setSyncMsg(`✅ 标题库已同步：${synced.items} 条`);
+      } catch (e) {
+        setSyncMsg(`⚠️ 新闻已发布，但标题库同步失败：${e instanceof Error ? e.message : '未知错误'}`);
       }
 
       setSuccess(true);
@@ -577,6 +616,21 @@ export default function AdminNewsPage() {
               >
                 {testingConnection ? '测试中…' : '🔧 测试数据库连接'}
               </button>
+
+              <button
+                type="button"
+                onClick={handleBackfill}
+                disabled={backfilling}
+                className="w-full px-4 py-2 bg-stone-50 text-stone-700 border border-stone-200 font-sans text-xs rounded-lg hover:bg-stone-100 disabled:opacity-60"
+              >
+                {backfilling ? '回填中…' : '📚 回填标题库（解析全部历史新闻，占问前程用）'}
+              </button>
+
+              {syncMsg && (
+                <div className="px-4 py-2 bg-stone-50 border border-stone-200 rounded-lg text-stone-600 text-xs font-sans whitespace-pre-wrap">
+                  {syncMsg}
+                </div>
+              )}
             </div>
           </div>
 

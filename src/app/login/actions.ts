@@ -1,6 +1,5 @@
 'use server';
 
-import { headers } from 'next/headers';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 
@@ -135,30 +134,54 @@ export async function verifySignupOtp(formData: FormData): Promise<AuthResult> {
   return { redirectUrl: nextUrl };
 }
 
-/** 请求重置密码：向邮箱发送重置链接（仅支持邮箱注册用户） */
+/** 请求重置密码：向邮箱发送验证码（仅支持邮箱注册用户；需在 Supabase 重置密码邮件模板中使用 {{ .Token }}） */
 export async function requestPasswordReset(formData: FormData): Promise<AuthResult> {
   const email = (formData.get('email') as string)?.trim() ?? '';
   if (!email || !email.includes('@')) {
     return { error: '请输入有效的邮箱地址' };
   }
+  if (email.endsWith(NO_EMAIL_SUFFIX)) {
+    return { error: 'IP 注册用户无法通过邮箱找回密码' };
+  }
 
   const supabase = await createClient();
-  const headerList = await headers();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  const forwardedProto = headerList.get('x-forwarded-proto');
-  const forwardedHost = headerList.get('x-forwarded-host');
-  const host = forwardedHost || headerList.get('host');
-  const proto = forwardedProto || (host?.includes('localhost') ? 'http' : 'https');
-  const baseUrl = siteUrl || (host ? `${proto}://${host}` : 'http://localhost:3000');
-  const redirectTo = `${baseUrl}/auth/callback?next=${encodeURIComponent('/reset-password')}`;
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
 
   if (error) {
     return { error: '发送失败：' + (error.message || '请稍后重试') };
   }
-  return {
-    redirectUrl:
-      '/login?message=已向该邮箱发送重置链接，请查收邮件并点击链接设置新密码。未收到请检查垃圾箱&next=' + encodeURIComponent('/'),
-  };
+  return { otpEmail: email };
+}
+
+/** 验证找回密码 OTP 并设置新密码 */
+export async function verifyPasswordResetOtp(formData: FormData): Promise<AuthResult> {
+  const email = (formData.get('email') as string)?.trim() ?? '';
+  const token = (formData.get('token') as string)?.trim() ?? '';
+  const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
+
+  if (!email || !token) {
+    return { error: '请填写邮箱与验证码' };
+  }
+  if (password !== confirmPassword) {
+    return { error: '两次输入的密码不一致' };
+  }
+  if (!password || password.length < 6) {
+    return { error: '密码至少 6 位' };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'recovery' });
+
+  if (error || !data.user) {
+    return { error: '验证码错误或已过期，请重新输入' };
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if (updateError) {
+    return { error: '设置密码失败：' + (updateError.message || '请稍后重试') };
+  }
+
+  await supabase.auth.signOut();
+  return { redirectUrl: '/login?message=密码已更新，请使用新密码登录' };
 }

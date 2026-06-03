@@ -12,12 +12,9 @@ export default async function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-[#FBF9F4] flex items-center justify-center px-6">
       <div className="w-full max-w-md">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif text-stone-800 tracking-wider mb-3">
-            找回密码
-          </h1>
-          <p className="text-sm text-stone-500 font-sans">
-            请输入注册时使用的邮箱，我们将发送重置链接
+        <div className="text-center mb-8">
+          <p className="text-sm text-stone-500 font-sans leading-relaxed">
+            请输入注册时使用的邮箱，我们将发送验证码，验证后即可设置新密码
           </p>
         </div>
 

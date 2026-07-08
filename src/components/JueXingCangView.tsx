@@ -1278,10 +1278,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
                 <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto mb-4 text-[#2c2c2c]">
-                  <rect x="0" y="20" width="44" height="20" />
-                  <rect x="56" y="20" width="44" height="20" />
-                  <rect x="0" y="60" width="44" height="20" />
-                  <rect x="56" y="60" width="44" height="20" />
+                  <rect x="0" y="20" width="100" height="20" />
+                  <rect x="0" y="60" width="100" height="20" />
                 </svg>
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">

@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
 import { LunarCalendarCard } from '@/components/LunarCalendarCard';
 import { ZiwuLiuzhuClock } from '@/components/ZiwuLiuzhuClock';
-import { DailyFortuneCard } from '@/components/DailyFortuneCard';
 
 interface WorldNews {
   id: string;
@@ -568,15 +567,6 @@ export const WorldNewsView: React.FC = () => {
 
       {/* 子午流注钟 */}
       <ZiwuLiuzhuClock />
-
-      {/* 今日运势分数卡片 */}
-      {selectedDateParts && (
-        <DailyFortuneCard
-          year={selectedDateParts.year}
-          month={selectedDateParts.month}
-          day={selectedDateParts.day}
-        />
-      )}
 
       <div className="space-y-0 pb-8">
         {/* 顶部分隔横线 */}

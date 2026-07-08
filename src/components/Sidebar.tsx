@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import type { TabType } from '@/types/tabs';
-
-const SUBMENU_LEAVE_DELAY_MS = 180;
 
 interface SidebarProps {
   activeTab: TabType;
@@ -15,45 +13,21 @@ interface SidebarProps {
   onMouseLeave: () => void;
 }
 
-type TabItem = 
-  | { id: 'guanshi' | 'wendao'; label: string; subTabs?: never }
-  | { id: 'juexingcang'; label: string; subTabs?: never }
-  | { id: 'guanxin'; label: string; subTabs: Array<{ id: TabType; label: string }> };
+type TabItem = { id: 'guanshi' | 'wendao' | 'guanxin' | 'juexingcang'; label: string };
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuexingcangActive, isCollapsed, onMouseEnter, onMouseLeave }) => {
-  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
-  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const clearLeaveTimer = useCallback(() => {
-    if (leaveTimerRef.current) {
-      clearTimeout(leaveTimerRef.current);
-      leaveTimerRef.current = null;
-    }
-  }, []);
-
-  const scheduleLeave = useCallback(() => {
-    clearLeaveTimer();
-    leaveTimerRef.current = setTimeout(() => setHoveredTab(null), SUBMENU_LEAVE_DELAY_MS);
-  }, [clearLeaveTimer]);
-
-  const handleSubMenuEnter = useCallback((tabId: string) => {
-    clearLeaveTimer();
-    setHoveredTab(tabId);
-  }, [clearLeaveTimer]);
-
   const tabs: TabItem[] = [
-    { id: 'guanshi' as const, label: '见天地' },
-    { id: 'wendao' as const, label: '见众生' },
-    { 
-      id: 'guanxin' as const, 
-      label: '见自己',
-      subTabs: [
-        { id: 'bazi' as TabType, label: '八字' },
-        { id: 'mbti' as TabType, label: '八维' },
-      ]
-    },
-    { id: 'juexingcang' as const, label: '决行藏' },
+    { id: 'guanshi', label: '见天地' },
+    { id: 'wendao', label: '见众生' },
+    { id: 'guanxin', label: '见自己' },
+    { id: 'juexingcang', label: '决行藏' },
   ];
+
+  const isTabActive = (tab: TabItem) => {
+    if (tab.id === 'guanxin') return activeTab === 'guanxin' || activeTab === 'bazi' || activeTab === 'mbti';
+    if (tab.id === 'juexingcang') return Boolean(isJuexingcangActive);
+    return activeTab === tab.id;
+  };
 
   return (
     <div
@@ -209,38 +183,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
               className="w-full flex flex-col items-center justify-center" 
               style={{ gap: '28px' }}
             >
-              {tabs.map((tab) => (
-                <div 
+              {tabs.map((tab) => {
+                const active = isTabActive(tab);
+                return (
+                <div
                   key={tab.id}
                   className="relative flex items-center justify-center"
-                  onMouseEnter={() => {
-                    clearLeaveTimer();
-                    if ('subTabs' in tab) setHoveredTab(tab.id);
-                  }}
-                  onMouseLeave={() => ('subTabs' in tab ? scheduleLeave() : setHoveredTab(null))}
                 >
                   <button
-                    onClick={() => {
-                      if ('subTabs' in tab && tab.subTabs) {
-                        // 如果有子菜单，点击时切换到第一个子选项
-                        onTabChange(tab.subTabs[0].id);
-                      } else {
-                        const tabId = tab.id;
-                        if (tabId === 'guanshi' || tabId === 'wendao' || tabId === 'juexingcang') {
-                          onTabChange(tabId);
-                        }
-                      }
-                    }}
+                    onClick={() => onTabChange(tab.id)}
                     className="relative flex items-center justify-center"
                   >
-                    <span 
+                    <span
                       className="transition-all duration-500"
                       style={{
                         fontSize: '15px',
                         letterSpacing: '0.35em',
-                        color: ('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'juexingcang' && activeTab === tab.id) || (tab.id === 'juexingcang' && isJuexingcangActive)
-                          ? '#57534e' 
-                          : '#a8a29e',
+                        color: active ? '#57534e' : '#a8a29e',
                         fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
                         fontWeight: 400,
                         display: 'block',
@@ -249,9 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
                     >
                       {tab.label}
                     </span>
-                    
+
                     {/* 选中指示器 */}
-                    {(('subTabs' in tab && tab.subTabs && tab.subTabs.some(sub => sub.id === activeTab)) || (tab.id !== 'juexingcang' && activeTab === tab.id) || (tab.id === 'juexingcang' && isJuexingcangActive)) && (
+                    {active && (
                       <motion.div
                         layoutId="activeIndicator"
                         style={{
@@ -272,106 +231,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
                       />
                     )}
                   </button>
-
-                  {/* 子菜单 - 优雅的垂直布局 */}
-                  {'subTabs' in tab && tab.subTabs && (
-                    <AnimatePresence>
-                      {hoveredTab === tab.id && (
-                        <motion.div
-                          initial={{ opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -8 }}
-                          transition={{ 
-                            duration: 0.35,
-                            ease: [0.25, 0.1, 0.25, 1]
-                          }}
-                          className="absolute left-full top-1/2 -translate-y-1/2"
-                          style={{ marginLeft: '32px' }}
-                          onMouseEnter={() => handleSubMenuEnter(tab.id)}
-                          onMouseLeave={scheduleLeave}
-                        >
-                          {/* 装饰性连接线 */}
-                          <div 
-                            className="absolute right-full top-1/2 -translate-y-1/2"
-                            style={{ width: '20px', height: '1px', backgroundColor: 'rgba(168, 162, 158, 0.15)' }}
-                          />
-                          
-                          {/* 子菜单容器 */}
-                          <div className="relative">
-                            {/* 上装饰线 */}
-                            <div 
-                              style={{ 
-                                width: '12px', 
-                                height: '1px', 
-                                backgroundColor: 'rgba(168, 162, 158, 0.2)',
-                                marginBottom: '18px',
-                                marginLeft: 'auto',
-                                marginRight: 'auto',
-                              }}
-                            />
-                            
-                            {/* 选项列表 */}
-                            <div className="flex flex-col" style={{ gap: '20px' }}>
-                              {tab.subTabs?.map((subTab, index) => (
-                                <button
-                                  key={subTab.id}
-                                  onClick={() => onTabChange(subTab.id)}
-                                  className="relative group"
-                                >
-                                  <span
-                                    className="transition-all duration-400"
-                                    style={{
-                                      fontSize: '14px',
-                                      letterSpacing: '0.25em',
-                                      color: activeTab === subTab.id ? '#57534e' : '#c7c3be',
-                                      fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
-                                      fontWeight: 400,
-                                      display: 'block',
-                                      textAlign: 'center',
-                                    }}
-                                  >
-                                    {subTab.label}
-                                  </span>
-                                  
-                                  {/* 选中时的装饰点 */}
-                                  {activeTab === subTab.id && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      style={{
-                                        position: 'absolute',
-                                        right: '-8px',
-                                        top: '50%',
-                                        transform: 'translateY(-50%)',
-                                        width: '3px',
-                                        height: '3px',
-                                        borderRadius: '50%',
-                                        backgroundColor: '#78716c',
-                                      }}
-                                    />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                            
-                            {/* 下装饰线 */}
-                            <div 
-                              style={{ 
-                                width: '12px', 
-                                height: '1px', 
-                                backgroundColor: 'rgba(168, 162, 158, 0.2)',
-                                marginTop: '18px',
-                                marginLeft: 'auto',
-                                marginRight: 'auto',
-                              }}
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  )}
                 </div>
-              ))}
+                );
+              })}
             </nav>
 
             {/* 下装饰线 */}
@@ -391,11 +253,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
 
           {/* Bottom Section: 下联 + 装饰线条 */}
           <div className="hidden md:flex w-full flex-col items-center flex-shrink-0" style={{ gap: '24px' }}>
-            {/* 下联：一一如孤镜 忘二空恋影 */}
+            {/* 下联：行至苦厄处 正是修行时 */}
             <div className="flex items-center justify-center gap-3">
-              {/* 第一行：一一如孤镜 */}
+              {/* 第一行：行至苦厄处 */}
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
-                {['一', '一', '如', '孤', '镜'].map((char, i) => (
+                {['行', '至', '苦', '厄', '处'].map((char, i) => (
                   <span
                     key={i}
                     className="text-stone-400"
@@ -413,9 +275,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
               </div>
               {/* 间隔 */}
               <div style={{ width: '6px' }} />
-              {/* 第二行：忘二空恋影 */}
+              {/* 第二行：正是修行时 */}
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
-                {['忘', '二', '空', '恋', '影'].map((char, i) => (
+                {['正', '是', '修', '行', '时'].map((char, i) => (
                   <span
                     key={i}
                     className="text-stone-400"

@@ -8,7 +8,7 @@ import { MobileNav } from '@/components/MobileNav';
 import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
 import type { TabType } from '@/types/tabs';
 
-const VALID_TABS: TabType[] = ['guanshi', 'bazi', 'mbti', 'wendao', 'juexingcang'];
+const VALID_TABS: TabType[] = ['guanshi', 'guanxin', 'bazi', 'mbti', 'wendao', 'juexingcang'];
 
 function getTabFromUrl(): TabType {
   if (typeof window === 'undefined') return 'guanshi';
@@ -24,6 +24,10 @@ const Sidebar = dynamic(
 // 大组件按需加载，首屏只加载当前 tab，第二次进入或切换回来时从缓存/内存秒开
 const WorldNewsView = dynamic(
   () => import('@/components/WorldNewsView').then((mod) => mod.WorldNewsView),
+  { ssr: false, loading: () => <TabLoading /> }
+);
+const GuanXinView = dynamic(
+  () => import('@/components/GuanXinView').then((mod) => mod.GuanXinView),
   { ssr: false, loading: () => <TabLoading /> }
 );
 const BaZiView = dynamic(
@@ -116,19 +120,6 @@ const HomeContent: React.FC = () => {
                 transition={{ duration: 0.2 }}
               >
                 {activeTab === 'guanshi' ? (
-                  // 老阳 - 两条实心横杠（粗细行距与少阴一致）
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="100" height="20" />
-                    <rect x="0" y="60" width="100" height="20" />
-                  </svg>
-                ) : activeTab === 'wendao' ? (
-                  // 少阳 - 上实下虚
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="100" height="20" />
-                    <rect x="0" y="60" width="44" height="20" />
-                    <rect x="56" y="60" width="44" height="20" />
-                  </svg>
-                ) : activeTab === 'juexingcang' ? (
                   // 老阴 - 四象（粗细与少阴一致，rect 44x20）
                   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="44" height="20" />
@@ -136,24 +127,39 @@ const HomeContent: React.FC = () => {
                     <rect x="0" y="60" width="44" height="20" />
                     <rect x="56" y="60" width="44" height="20" />
                   </svg>
-                ) : (
+                ) : activeTab === 'wendao' ? (
                   // 少阴 - 上虚下实
                   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
                     <rect x="0" y="20" width="44" height="20" />
                     <rect x="56" y="20" width="44" height="20" />
                     <rect x="0" y="60" width="100" height="20" />
                   </svg>
+                ) : activeTab === 'juexingcang' ? (
+                  // 老阳 - 两条实心横杠（粗细行距与少阴一致）
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
+                    <rect x="0" y="20" width="100" height="20" />
+                    <rect x="0" y="60" width="100" height="20" />
+                  </svg>
+                ) : (
+                  // 少阳 - 上实下虚
+                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
+                    <rect x="0" y="20" width="100" height="20" />
+                    <rect x="0" y="60" width="44" height="20" />
+                    <rect x="56" y="60" width="44" height="20" />
+                  </svg>
                 )}
               </motion.div>
               <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : '决行藏'}
+                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'guanxin' ? '见自己' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : '决行藏'}
               </h1>
               <p className="text-sm text-stone-600 font-sans text-center">
-                {activeTab === 'guanshi' 
+                {activeTab === 'guanshi'
                   ? '世界会越来越好，你也是'
                   : activeTab === 'wendao'
                   ? '观点广场，待续'
-                  : activeTab === 'bazi' 
+                  : activeTab === 'guanxin'
+                  ? '知己即知天，请成为自己的答案'
+                  : activeTab === 'bazi'
                   ? '知己即知天，请成为自己的答案'
                   : activeTab === 'mbti'
                   ? '知己即知天，请成为自己的答案'
@@ -190,6 +196,11 @@ const HomeContent: React.FC = () => {
                   <div className="w-8 h-px bg-stone-200/60 mt-6" />
                 </div>
               )}
+              {visitedTabs.has('guanxin') && (
+                <div className={activeTab === 'guanxin' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanxin'}>
+                  <GuanXinView onNavigate={handleTabChange} />
+                </div>
+              )}
               {visitedTabs.has('bazi') && (
                 <div className={activeTab === 'bazi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'bazi'}>
                   <BaZiView />
@@ -197,7 +208,7 @@ const HomeContent: React.FC = () => {
               )}
               {visitedTabs.has('mbti') && (
                 <div className={activeTab === 'mbti' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'mbti'}>
-                  <MbtiTestView />
+                  <MbtiTestView autoStart />
                 </div>
               )}
               {visitedTabs.has('juexingcang') && (

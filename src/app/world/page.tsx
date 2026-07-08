@@ -412,7 +412,7 @@ export default function WorldPage() {
               animate={{ scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              {/* 老阳图标 - 两条实线 */}
+              {/* 老阴图标 - 两条断线 */}
               <svg 
                 viewBox="0 0 100 100" 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -420,8 +420,10 @@ export default function WorldPage() {
                 className="w-8 h-8 mx-auto mb-4" 
                 style={{ color: '#2c2c2c' }}
               >
-                <rect x="0" y="22" width="100" height="20" fill="currentColor" />
-                <rect x="0" y="58" width="100" height="20" fill="currentColor" />
+                <rect x="0" y="22" width="44" height="20" fill="currentColor" />
+                <rect x="56" y="22" width="44" height="20" fill="currentColor" />
+                <rect x="0" y="58" width="44" height="20" fill="currentColor" />
+                <rect x="56" y="58" width="44" height="20" fill="currentColor" />
               </svg>
             </motion.div>
             <h1 className="text-3xl font-serif text-[#333333] leading-tight">

@@ -37,10 +37,6 @@ const ZHI_CANG_GAN: Record<string, Record<string, number>> = {
 const WUXING_SHENG: Record<string,string> = {'木':'火','火':'土','土':'金','金':'水','水':'木'};
 const WUXING_KE:   Record<string,string> = {'木':'土','土':'水','水':'火','火':'金','金':'木'};
 
-// ─── 时辰 ─────────────────────────────────────────────────────────────────────
-const HOUR_ZHI = ['子','丑','丑','寅','寅','卯','卯','辰','辰','巳','巳','午','午','未','未','申','申','酉','酉','戌','戌','亥','亥','子'];
-const hourLabel = (h: number) => `${String(h).padStart(2,'0')}时·${HOUR_ZHI[h]}时`;
-
 // ─── 五行色（干支）────────────────────────────────────────────────────────────
 const WUXING_CHAR_COLOR: Record<string,string> = {
   '甲':'#7a9b85','乙':'#7a9b85','寅':'#7a9b85','卯':'#7a9b85',
@@ -187,62 +183,6 @@ function recordPillarDisplay(r: ClassicalRecord): { gans: string[]; zhis: string
   return null;
 }
 
-// ─── 简易选择器 ───────────────────────────────────────────────────────────────
-const NumSelect: React.FC<{
-  label:string; value:number; options:number[]; labelFn?:(v:number)=>string; onChange:(v:number)=>void;
-}> = ({label,value,options,labelFn,onChange}) => {
-  const [open,setOpen] = useState(false);
-  return (
-    <div className="flex-1 min-w-0">
-      <p className="text-[9.5px] font-sans mb-1" style={{color:'#b5ad9e'}}>{label}</p>
-      <div className="relative">
-        <button type="button" onClick={()=>setOpen(v=>!v)}
-          className="w-full rounded-lg px-2.5 py-2 flex items-center justify-between transition-colors"
-          style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
-          <span className="text-[13px] leading-none truncate"
-            style={{color:'#3d3935',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-            {labelFn?labelFn(value):value}
-          </span>
-          <motion.svg animate={{rotate:open?180:0}} transition={{duration:.18}}
-            className="w-3 h-3 flex-shrink-0 ml-1" fill="none" stroke="#b5ad9e" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"/>
-          </motion.svg>
-        </button>
-        <AnimatePresence>
-          {open&&(
-            <motion.div initial={{opacity:0,y:-4}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-4}}
-              transition={{duration:.13}}
-              // 用 fixed 定位 portal 避免被父容器裁切
-              className="absolute left-0 right-0 mt-1 rounded-lg z-[200]"
-              style={{
-                background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.09)',
-                boxShadow:'0 6px 20px rgba(0,0,0,0.13)',maxHeight:'180px',overflowY:'auto',
-              }}
-              ref={el=>{
-                if(el) setTimeout(()=>{
-                  const sel=el.querySelector(`[data-v="${value}"]`) as HTMLElement;
-                  if(sel) el.scrollTop=sel.offsetTop-el.clientHeight/2+sel.clientHeight/2;
-                },10);
-              }}>
-              {options.map(opt=>(
-                <button key={opt} data-v={opt} type="button"
-                  onClick={()=>{onChange(opt);setOpen(false);}}
-                  className="w-full text-left px-3 py-2 transition-colors"
-                  style={{
-                    background:opt===value?'rgba(0,0,0,0.04)':'transparent',color:'#3d3935',
-                    fontSize:'12px',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif',
-                  }}>
-                  {labelFn?labelFn(opt):opt}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-};
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 interface Props { year:number; month:number; day:number; }
 
@@ -262,12 +202,6 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   // 八字排盘记录
   const [records,      setRecords]      = useState<ClassicalRecord[]|null>(null); // null=loading
   const [recordsFailed,setRecordsFailed]= useState(false);
-
-  // 手动表单
-  const [birthYear,  setBirthYear]  = useState(1990);
-  const [birthMonth, setBirthMonth] = useState(1);
-  const [birthDay,   setBirthDay]   = useState(1);
-  const [birthHour,  setBirthHour]  = useState(12);
 
   const [showBreakdown,    setShowBreakdown]    = useState(false);
   const [showRecordPicker, setShowRecordPicker] = useState(false);
@@ -380,8 +314,8 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
     }
   },[runCalculate]);
 
-  const handleConfirm = useCallback(()=>runCalculate(birthYear,birthMonth,birthDay,birthHour),[birthYear,birthMonth,birthDay,birthHour,runCalculate]);
-  const handleReset   = useCallback(()=>{ if(storedData){setBirthYear(storedData.birthYear);setBirthMonth(storedData.birthMonth);setBirthDay(storedData.birthDay);setBirthHour(storedData.birthHour);} setCalcError(''); setShowSetup(true); },[storedData]);
+  // 「修改」：重新打开排盘选择
+  const handleReset = useCallback(()=>{ setCalcError(''); setShowSetup(true); },[]);
 
   // 占问前程：把用户处境 + 八字格局打包，跳转决行藏渲染三层结果
   const handleQiancheng = useCallback(()=>{
@@ -430,12 +364,6 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
     router.push('/?tab=juexingcang&qiancheng=1');
   },[qianchengQ,storedData,router]);
 
-  // ── 选项 ──────────────────────────────────────────────────────────────────────
-  const yearOpts  = useMemo(()=>Array.from({length:120},(_,i)=>new Date().getFullYear()-10-i),[]);
-  const monthOpts = useMemo(()=>[1,2,3,4,5,6,7,8,9,10,11,12],[]);
-  const dayOpts   = useMemo(()=>{ const m=new Date(birthYear,birthMonth,0).getDate(); return Array.from({length:m},(_,i)=>i+1); },[birthYear,birthMonth]);
-  const hourOpts  = useMemo(()=>Array.from({length:24},(_,i)=>i),[]);
-
   const yongshen   = storedData?.yongshen??'';
   const yongshenWx = STEM_WUXING[yongshen]??'';
   const wxStyle    = yongshenWx ? WUXING_COLORS[yongshenWx] : {text:'#9e9588',bg:'transparent'};
@@ -444,10 +372,8 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
 
   // ── 骨架屏 ───────────────────────────────────────────────────────────────────
   if (!hydrated) return (
-    <div className="w-full mb-8 rounded-2xl" style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
+    <div className="w-full mb-8 rounded-2xl" style={{background:'#fbf9f4',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
       <div className="px-5 pt-5 pb-5">
-        <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
-        <div className="h-px my-3" style={{background:'rgba(0,0,0,0.06)'}}/>
         <div className="flex gap-5 items-center">
           <div className="w-[104px] h-[104px] rounded-full bg-stone-100/80 animate-pulse flex-shrink-0"/>
           <div className="flex-1 space-y-2">
@@ -470,72 +396,69 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
         <motion.div key="setup"
           initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.26}}
           className="w-full mb-8 rounded-2xl"
-          style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}
+          style={{background:'#fbf9f4',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}
         >
           <div className="px-5 pt-5 pb-5">
             {/* 标题栏 */}
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
-              {storedData&&<button onClick={()=>setShowSetup(false)} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>取消</button>}
-            </div>
-            <div className="h-px mb-4" style={{background:'rgba(0,0,0,0.06)'}}/>
-
-            {/* ── 从排盘导入按钮 ── */}
-            <button
-              onClick={()=>setShowRecordPicker(true)}
-              disabled={recordsLoading}
-              className="w-full mb-4 rounded-xl px-4 py-3 flex items-center justify-between transition-all duration-200 hover:bg-stone-50 active:bg-stone-100"
-              style={{background:'rgba(0,0,0,0.025)',border:'1px solid rgba(0,0,0,0.08)'}}
-            >
-              <div className="flex items-center gap-2.5">
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#a39888" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                </svg>
-                <span className="text-[12.5px]"
-                  style={{color:'#4a4642',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-                  从我的八字排盘中选择
-                </span>
-                {hasRecords && (
-                  <span className="text-[9.5px] font-sans px-1.5 py-0.5 rounded-full"
-                    style={{background:'rgba(0,0,0,0.06)',color:'#9e9588'}}>
-                    {records!.length}条
-                  </span>
-                )}
+            {storedData&&(
+              <div className="flex items-center justify-end mb-3">
+                <button onClick={()=>setShowSetup(false)} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>取消</button>
               </div>
-              {recordsLoading
-                ? <span className="w-3.5 h-3.5 border-2 border-stone-200 border-t-stone-400 rounded-full animate-spin flex-shrink-0"/>
-                : <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#c4bdb0" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9 5l7 7-7 7"/>
+            )}
+
+            {/* 说明 */}
+            <p className="text-[11.5px] leading-relaxed mb-4"
+              style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+              选取一份八字排盘，以日柱与用神推演今日能量。
+            </p>
+
+            {(hasRecords || recordsLoading) ? (
+              /* ── 从排盘选择按钮 ── */
+              <button
+                onClick={()=>setShowRecordPicker(true)}
+                disabled={recordsLoading || isCalculating}
+                className="w-full rounded-xl px-4 py-3.5 flex items-center justify-between transition-all duration-200 hover:bg-stone-50 active:bg-stone-100"
+                style={{background:'rgba(0,0,0,0.025)',border:'1px solid rgba(0,0,0,0.08)'}}
+              >
+                <div className="flex items-center gap-2.5">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#a39888" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                   </svg>
-              }
-            </button>
+                  <span className="text-[12.5px]"
+                    style={{color:'#4a4642',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                    从我的八字排盘中选择
+                  </span>
+                  {hasRecords && (
+                    <span className="text-[9.5px] font-sans px-1.5 py-0.5 rounded-full"
+                      style={{background:'rgba(0,0,0,0.06)',color:'#9e9588'}}>
+                      {records!.length}条
+                    </span>
+                  )}
+                </div>
+                {recordsLoading || isCalculating
+                  ? <span className="w-3.5 h-3.5 border-2 border-stone-200 border-t-stone-400 rounded-full animate-spin flex-shrink-0"/>
+                  : <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#c4bdb0" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9 5l7 7-7 7"/>
+                    </svg>
+                }
+              </button>
+            ) : (
+              /* ── 暂无排盘：引导至下方八字卡片 ── */
+              <div className="rounded-xl px-4 py-4 flex items-start gap-2.5"
+                style={{background:'rgba(0,0,0,0.02)',border:'1px dashed rgba(0,0,0,0.12)'}}>
+                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#b5ad9e" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <p className="text-[12px] leading-relaxed"
+                  style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                  暂无八字排盘。请在下方「八字命理」卡片中录入生辰并完成「古典排盘」，即可回到此处选取，照见今日能量。
+                </p>
+              </div>
+            )}
 
-            {/* 分割线 */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px" style={{background:'rgba(0,0,0,0.06)'}}/>
-              <span className="text-[9.5px] font-sans" style={{color:'#c4bdb0'}}>或手动输入生辰</span>
-              <div className="flex-1 h-px" style={{background:'rgba(0,0,0,0.06)'}}/>
-            </div>
-
-            {/* 手动输入 */}
-            <div className="flex gap-2 mb-4" style={{overflow:'visible',position:'relative',zIndex:10}}>
-              <NumSelect label="出生年" value={birthYear} options={yearOpts} onChange={setBirthYear}/>
-              <NumSelect label="月" value={birthMonth} options={monthOpts} onChange={v=>{setBirthMonth(v);const m=new Date(birthYear,v,0).getDate();if(birthDay>m)setBirthDay(m);}}/>
-              <NumSelect label="日" value={birthDay} options={dayOpts} onChange={setBirthDay}/>
-              <NumSelect label="时" value={birthHour} options={hourOpts} labelFn={hourLabel} onChange={setBirthHour}/>
-            </div>
-
-            {calcError&&<p className="text-[11px] font-sans mb-3" style={{color:'#9a4a4a'}}>{calcError}</p>}
-
-            <button onClick={handleConfirm} disabled={isCalculating}
-              className="w-full py-3 rounded-xl text-[13px] tracking-wide transition-all duration-200 flex items-center justify-center gap-2"
-              style={{background:isCalculating?'rgba(0,0,0,0.06)':'#3d3935',color:isCalculating?'#b5ad9e':'#f5f2ed',border:'none',
-                fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-              {isCalculating
-                ? <><span className="inline-block w-3.5 h-3.5 border-2 border-stone-400 border-t-transparent rounded-full animate-spin"/>推算中…</>
-                : '推算今日能量'}
-            </button>
+            {calcError&&<p className="text-[11px] font-sans mt-3" style={{color:'#9a4a4a'}}>{calcError}</p>}
           </div>
         </motion.div>
 
@@ -592,12 +515,12 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
                       <p className="text-[13px] mb-3" style={{color:'#9e9588',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
                         暂无保存的八字记录
                       </p>
-                      <button onClick={()=>{setShowRecordPicker(false);router.push('/?tab=bazi');}}
+                      <button onClick={()=>setShowRecordPicker(false)}
                         className="text-[11.5px] font-sans flex items-center gap-1 mx-auto transition-opacity hover:opacity-70"
                         style={{color:'#9e9588'}}>
-                        前往八字板块排盘
+                        请在下方「八字命理」中排盘
                         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5l7 7-7 7"/>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
                         </svg>
                       </button>
                     </div>
@@ -619,7 +542,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
                             disabled={isCalculating}
                             className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 transition-colors"
                             style={{
-                              background:'#fdfcf9',
+                              background:'#fbf9f4',
                               borderBottom: i<records!.length-1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
                             }}
                           >
@@ -678,19 +601,15 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
       <motion.div key="score"
         initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.28}}
         className="w-full mb-8 rounded-2xl overflow-hidden"
-        style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
+        style={{background:'#fbf9f4',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
         <div className="px-5 pt-5 pb-5">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
-            <div className="flex items-center gap-2.5">
-              {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>
-                用神 {yongshen} · {yongshenWx}
-              </span>
-              <button onClick={handleReset} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>修改</button>
-            </div>
+          <div className="flex items-center justify-end gap-2.5 mb-4">
+            {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>
+              用神 {yongshen} · {yongshenWx}
+            </span>
+            <button onClick={handleReset} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>修改</button>
           </div>
-          <div className="h-px mt-3 mb-4" style={{background:'rgba(0,0,0,0.06)'}}/>
 
           <div className="flex items-center gap-5 mb-4">
             <div className="relative flex-shrink-0 w-[104px] h-[104px]">
@@ -804,16 +723,12 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   // ── 等待日柱加载 ──────────────────────────────────────────────────────────────
   return (
     <div className="w-full mb-8 rounded-2xl overflow-hidden"
-      style={{background:'#fdfcf9',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
+      style={{background:'#fbf9f4',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}>
       <div className="px-5 pt-5 pb-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>今 日 能 量</span>
-          {storedData&&<div className="flex items-center gap-2">
-            {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
-            <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>用神 {yongshen} · {yongshenWx}</span>
-          </div>}
-        </div>
-        <div className="h-px mb-4" style={{background:'rgba(0,0,0,0.06)'}}/>
+        {storedData&&<div className="flex items-center justify-end gap-2 mb-4">
+          {storedData.name&&<span className="text-[10px] font-sans" style={{color:'#9e9588'}}>{storedData.name}</span>}
+          <span className="text-[10px] px-2 py-0.5 rounded-full font-sans" style={{background:wxStyle.bg,color:wxStyle.text}}>用神 {yongshen} · {yongshenWx}</span>
+        </div>}
         <div className="flex gap-5 items-center">
           <div className="w-[104px] h-[104px] rounded-full bg-stone-100/80 animate-pulse flex-shrink-0"/>
           <div className="flex-1 space-y-2">

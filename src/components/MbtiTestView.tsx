@@ -1158,23 +1158,28 @@ function MbtiResultActions({
   );
 }
 
-export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneReturn?: () => void }> = ({ initialResult, onStandaloneReturn }) => {
-  const [testStatus, setTestStatus] = useState<TestStatus>(initialResult ? 'result' : 'intro');
+const buildShuffledQuestions = (): Question[] => {
+  const questions = questionsData as Question[];
+  return shuffleArray(questions).map(q => ({
+    ...q,
+    options: shuffleArray(q.options), // 同时打乱选项
+  }));
+};
+
+export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneReturn?: () => void; autoStart?: boolean }> = ({ initialResult, onStandaloneReturn, autoStart }) => {
+  // autoStart：跳过介绍页，挂载即进入测试（用于「见自己」卡片直接进入）
+  const [testStatus, setTestStatus] = useState<TestStatus>(initialResult ? 'result' : autoStart ? 'testing' : 'intro');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [result, setResult] = useState<TestResult | null>(initialResult ?? null);
 
-  // 随机化题目和选项（只在开始测试时初始化一次）
-  const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
+  // 随机化题目和选项（只在开始测试时初始化一次；autoStart 时直接初始化避免介绍页闪现）
+  const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>(
+    () => (!initialResult && autoStart ? buildShuffledQuestions() : [])
+  );
 
   const startTest = () => {
-    // 随机打乱题目
-    const questions = questionsData as Question[];
-    const shuffled = shuffleArray(questions).map(q => ({
-      ...q,
-      options: shuffleArray(q.options) // 同时打乱选项
-    }));
-    setShuffledQuestions(shuffled);
+    setShuffledQuestions(buildShuffledQuestions());
     setCurrentQuestionIndex(0);
     setUserAnswers([]);
     setTestStatus('testing');
@@ -1304,12 +1309,16 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
     setTestStatus('result');
   };
 
-  // 重新开始
+  // 重新开始：autoStart 模式下直接重新进入测试，不回到介绍页
   const restart = () => {
-    setTestStatus('intro');
     setResult(null);
     setUserAnswers([]);
-    setShuffledQuestions([]);
+    if (autoStart) {
+      startTest();
+    } else {
+      setTestStatus('intro');
+      setShuffledQuestions([]);
+    }
   };
 
   // 介绍页面

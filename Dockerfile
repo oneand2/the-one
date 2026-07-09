@@ -6,7 +6,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
@@ -29,7 +29,7 @@ COPY questions.json mbti_final_cleaned.json ./
 COPY public ./public
 COPY src ./src
 
-RUN npm run build
+RUN npx next build --webpack
 
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
@@ -43,7 +43,7 @@ RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --legacy-peer-deps --include=dev && npm cache clean --force
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

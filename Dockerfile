@@ -43,7 +43,7 @@ RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps --include=dev && npm cache clean --force
+COPY --from=deps /app/node_modules ./node_modules
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public

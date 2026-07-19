@@ -307,6 +307,15 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
   const [open,    setOpen]    = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [nowHour, setNowHour] = useState(() => new Date().getHours());
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)');
+    const syncViewport = () => setIsDesktop(media.matches);
+    syncViewport();
+    media.addEventListener('change', syncViewport);
+    return () => media.removeEventListener('change', syncViewport);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setNowHour(new Date().getHours()), 60_000);
@@ -618,46 +627,55 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
               onClick={handleClose}
             />
 
-            {/* 面板 */}
+            {/* 面板：移动端为底部抽屉，桌面端为居中的纸册式对开布局 */}
             <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 34, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden"
+              initial={isDesktop ? { opacity: 0, scale: 0.96, y: 18 } : { y: '100%' }}
+              animate={isDesktop ? { opacity: 1, scale: 1, y: 0 } : { y: 0 }}
+              exit={isDesktop ? { opacity: 0, scale: 0.97, y: 12 } : { y: '100%' }}
+              transition={isDesktop
+                ? { duration: 0.48, ease: [0.32, 0.72, 0, 1] }
+                : { type: 'spring', damping: 34, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50 flex flex-col overflow-hidden rounded-t-[24px]
+                         md:inset-8 md:m-auto md:h-[calc(100dvh-4rem)]
+                         md:rounded-[30px] md:p-[6px]"
               style={{
-                maxHeight: '92dvh',
-                background: '#faf8f4',
-                borderRadius: '24px 24px 0 0',
+                width: isDesktop ? 'min(1120px, calc(100vw - 64px))' : undefined,
+                maxHeight: isDesktop ? '840px' : '92dvh',
+                background: isDesktop ? '#e8e2d8' : '#faf8f4',
+                boxShadow: isDesktop
+                  ? '0 34px 90px rgba(54,45,34,0.18), 0 8px 28px rgba(54,45,34,0.08)'
+                  : 'none',
               }}
             >
-              {/* 把手 */}
-              <div className="flex-shrink-0 flex justify-center pt-3 pb-1">
-                <div className="w-8 h-[3px] rounded-full" style={{ background: '#d4cdc3' }} />
-              </div>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[#faf8f4] md:rounded-[24px]">
+                {/* 把手 */}
+                <div className="flex-shrink-0 flex justify-center pt-3 pb-1 md:hidden">
+                  <div className="w-8 h-[3px] rounded-full" style={{ background: '#d4cdc3' }} />
+                </div>
 
-              {/* 顶栏 */}
-              <div className="flex-shrink-0 flex items-center justify-between px-6 py-2.5">
-                <span
-                  className="text-[10px] font-sans tracking-[0.38em]"
-                  style={{ color: '#a39888' }}
-                >
-                  黄 历 详 情
-                </span>
-                <button
-                  onClick={handleClose}
-                  className="w-7 h-7 flex items-center justify-center rounded-full
-                             transition-colors hover:bg-stone-100 active:bg-stone-200"
-                  style={{ color: '#a39888' }}
-                >
-                  <svg className="w-[15px] h-[15px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+                {/* 移动端顶栏 */}
+                <div className="flex-shrink-0 flex items-center justify-between px-6 py-2.5 md:hidden">
+                  <span
+                    className="text-[10px] font-sans tracking-[0.38em]"
+                    style={{ color: '#a39888' }}
+                  >
+                    黄 历 详 情
+                  </span>
+                  <button
+                    onClick={handleClose}
+                    aria-label="关闭黄历详情"
+                    className="w-7 h-7 flex items-center justify-center rounded-full
+                               transition-colors hover:bg-stone-100 active:bg-stone-200"
+                    style={{ color: '#a39888' }}
+                  >
+                    <svg className="w-[15px] h-[15px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
 
-              {/* 可滚动内容 */}
-              <div className="overflow-y-auto flex-1 px-6 pb-14">
+                {/* 移动端可滚动内容 */}
+                <div className="overflow-y-auto flex-1 px-6 pb-14 md:hidden">
 
                 {/* ① 英雄日期区 */}
                 <div className="text-center pt-4 pb-9">
@@ -829,7 +847,161 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                     ))}
                   </div>
                 </div>
+                </div>
 
+                {/* 桌面端：无印纸册式非对称布局 */}
+                <div className="hidden min-h-0 flex-1 md:grid md:grid-cols-[330px_minmax(0,1fr)]">
+                  <aside
+                    className="relative flex min-h-0 flex-col overflow-hidden px-10 py-9"
+                    style={{
+                      background: 'linear-gradient(145deg, #f2eee6 0%, #eee8dd 100%)',
+                      borderRight: '1px solid rgba(71,62,50,0.08)',
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-sans tracking-[0.4em] text-[#948979]">黄 历</span>
+                      <span className="text-[9px] font-sans tabular-nums tracking-[0.12em] text-[#b1a797]">
+                        {String(month).padStart(2, '0')} / {String(day).padStart(2, '0')}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-1 flex-col justify-center py-7">
+                      <div
+                        className="tabular-nums leading-[0.76] text-[#24211c]"
+                        style={{
+                          fontSize: '138px',
+                          fontWeight: 100,
+                          fontFamily: '"Hiragino Mincho ProN", "Songti SC", "STSong", Georgia, serif',
+                          letterSpacing: '-0.07em',
+                        }}
+                      >
+                        {day}
+                      </div>
+                      <div className="mt-8 h-px w-10 bg-[#8e806d]/45" />
+                      <p
+                        className="mt-7 text-[18px] tracking-[0.22em] text-[#39342d]"
+                        style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                      >
+                        {lunarMonthChinese}{lunarDayChinese}
+                      </p>
+                      <p className="mt-2 text-[10px] font-sans tracking-[0.22em] text-[#948979]">
+                        {weekDay}&ensp;·&ensp;{year}年{month}月
+                      </p>
+                      <p
+                        className="mt-5 max-w-[230px] text-[12px] leading-6 tracking-[0.08em] text-[#71685c]"
+                        style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                      >
+                        <ColoredGanZhi str={yearGanZhi} defaultColor="#71685c" />&thinsp;
+                        <ColoredGanZhi str={monthGanZhi} defaultColor="#71685c" />&thinsp;
+                        <ColoredGanZhi str={dayGanZhi} defaultColor="#71685c" />
+                        <br />岁次{yearGanZhi.replace('年', '')} · 属{shengXiao}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 border-t border-[#756957]/10 pt-5">
+                      {[
+                        { label: '建除', value: `${zhiXing}日` },
+                        { label: tianShenType || '神煞', value: tianShen },
+                        { label: '冲煞', value: `冲${chongShengXiao} · 煞${sha}` },
+                      ].map((item) => (
+                        <div key={item.label} className="flex items-center justify-between">
+                          <span className="text-[9px] font-sans tracking-[0.18em] text-[#a59b8c]">{item.label}</span>
+                          <span
+                            className="text-[12px] tracking-[0.08em] text-[#50493f]"
+                            style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
+                          >
+                            {item.value}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </aside>
+
+                  <section className="relative flex min-h-0 flex-col">
+                    <header
+                      className="flex h-[72px] flex-shrink-0 items-center justify-between px-10"
+                      style={{ borderBottom: '1px solid rgba(71,62,50,0.07)' }}
+                    >
+                      <div>
+                        <p className="text-[10px] font-sans tracking-[0.34em] text-[#8f8577]">黄 历 详 情</p>
+                        <p className="mt-1.5 text-[9px] font-sans tracking-[0.12em] text-[#bbb2a5]">
+                          宜顺时而为，忌逆势强求
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleClose}
+                        aria-label="关闭黄历详情"
+                        className="group flex h-9 w-9 items-center justify-center rounded-full bg-[#f1eee8]
+                                   text-[#93897b] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+                                   hover:rotate-90 hover:bg-[#e9e4dc] hover:text-[#4d463d] active:scale-95"
+                      >
+                        <svg className="h-[14px] w-[14px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </header>
+
+                    <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto px-10 py-8">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-[22px] bg-[#f1f4ed] px-6 py-5 ring-1 ring-[#668064]/10">
+                          <YiJiBlock type="yi" items={yi} />
+                        </div>
+                        <div className="rounded-[22px] bg-[#f5efed] px-6 py-5 ring-1 ring-[#8a5f59]/10">
+                          <YiJiBlock type="ji" items={ji} />
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] gap-4">
+                        <div className="rounded-[22px] bg-[#f7f4ee] px-6 py-5 ring-1 ring-black/[0.035]">
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-[9px] font-sans tracking-[0.28em] text-[#9e9485]">日 辰</span>
+                            <span className="text-[8px] font-sans tracking-[0.12em] text-[#c0b8ac]">DAY NOTE</span>
+                          </div>
+                          {[
+                            { label: '纳音五行', value: dayNaYin },
+                            { label: '廿八宿', value: `${xiuGong}方 · ${xiu}${xiuZheng} · ${xiuAnimal}` },
+                            { label: tianShenType || '神煞', value: tianShen, accent: isHuangDao ? 'gold' as const : undefined },
+                          ].map((item) => (
+                            <InfoRow key={item.label} label={item.label} value={item.value} accent={item.accent} />
+                          ))}
+                        </div>
+
+                        <div className="rounded-[22px] bg-[#f7f4ee] px-6 py-5 ring-1 ring-black/[0.035]">
+                          <div className="mb-4 flex items-center justify-between">
+                            <span className="text-[9px] font-sans tracking-[0.28em] text-[#9e9485]">四 柱</span>
+                            <span className="text-[8px] font-sans text-[#c0b8ac]">
+                              {isToday ? `此时${currentZhiName}时` : `${currentZhiName}时`}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-4">
+                            {([
+                              { label: '年', pillar: yearPillar },
+                              { label: '月', pillar: monthPillar },
+                              { label: '日', pillar: dayPillar },
+                              { label: '时', pillar: timePillar },
+                            ] as { label: string; pillar: string }[]).map(({ label, pillar }, i) => (
+                              <DesktopPillar key={label} label={label} pillar={pillar} divided={i > 0} />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 rounded-[22px] bg-[#f7f4ee] px-6 py-5 ring-1 ring-black/[0.035]">
+                        <div className="mb-4 flex items-baseline justify-between">
+                          <span className="text-[9px] font-sans tracking-[0.28em] text-[#9e9485]">时 辰 吉 凶</span>
+                          <span className="text-[8px] font-sans tracking-[0.08em] text-[#c0b8ac]">
+                            黄黑道 · 日破 · 五不遇 · 旬空 · 贵人
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-6 gap-2">
+                          {shiChen.map((sc, i) => (
+                            <ShiChenCell key={i} sc={sc} isCurrent={i === currentZhiIdx} />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
               </div>
             </motion.div>
           </>
@@ -906,6 +1078,42 @@ const InfoRow: React.FC<{
     </span>
   </div>
 );
+
+const DesktopPillar: React.FC<{
+  label: string; pillar: string; divided: boolean;
+}> = ({ label, pillar, divided }) => {
+  const gan = pillar?.[0] ?? '';
+  const zhi = pillar?.[1] ?? '';
+  const isEmpty = !gan && !zhi;
+
+  return (
+    <div
+      className="flex flex-col items-center py-1"
+      style={{ borderLeft: divided ? '1px solid rgba(71,62,50,0.07)' : 'none' }}
+    >
+      <span className="mb-3 text-[8px] font-sans tracking-[0.18em] text-[#b3aa9d]">{label}</span>
+      <span
+        className="text-[24px] leading-none"
+        style={{
+          color: isEmpty ? '#d8d2c8' : (WUXING_COLOR[gan] ?? '#3d3935'),
+          fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
+        }}
+      >
+        {gan || '·'}
+      </span>
+      <span className="my-2 h-px w-3 bg-black/[0.08]" />
+      <span
+        className="text-[24px] leading-none"
+        style={{
+          color: isEmpty ? '#d8d2c8' : (WUXING_COLOR[zhi] ?? '#3d3935'),
+          fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif',
+        }}
+      >
+        {zhi || '·'}
+      </span>
+    </div>
+  );
+};
 
 const ShiChenCell: React.FC<{ sc: ShiChenInfo; isCurrent: boolean }> = ({ sc, isCurrent }) => {
   const isJi = sc.luck === '吉';

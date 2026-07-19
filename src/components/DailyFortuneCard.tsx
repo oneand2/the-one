@@ -406,11 +406,13 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
               </div>
             )}
 
-            {/* 说明 */}
-            <p className="text-[11.5px] leading-relaxed mb-4"
-              style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-              选取一份八字排盘，以日柱与用神推演今日能量。
-            </p>
+            {/* 说明：有排盘时沿用原界面，空状态使用独立引导。 */}
+            {(hasRecords || recordsLoading) && (
+              <p className="text-[11.5px] leading-relaxed mb-4"
+                style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                选取一份八字排盘，以日柱与用神推演今日能量。
+              </p>
+            )}
 
             {(hasRecords || recordsLoading) ? (
               /* ── 从排盘选择按钮 ── */
@@ -445,16 +447,55 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
               </button>
             ) : (
               /* ── 暂无排盘：引导至下方八字卡片 ── */
-              <div className="rounded-xl px-4 py-4 flex items-start gap-2.5"
-                style={{background:'rgba(0,0,0,0.02)',border:'1px dashed rgba(0,0,0,0.12)'}}>
-                <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="#b5ad9e" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
-                <p className="text-[12px] leading-relaxed"
-                  style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-                  暂无八字排盘。请在下方「八字命理」卡片中录入生辰并完成「古典排盘」，即可回到此处选取，照见今日能量。
-                </p>
+              <div className="border-t border-stone-200/70 pt-4">
+                <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
+                  <div className="grid grid-cols-4 gap-1.5 border-r border-stone-200/80 pr-4 sm:pr-5" aria-hidden>
+                    {['年','月','日','时'].map((pillar,index)=>(
+                      <div key={pillar} className="flex flex-col items-center gap-1.5">
+                        <span className="font-sans text-[8px] text-stone-300">{pillar}</span>
+                        <span
+                          className="h-4 w-1 rounded-[1px]"
+                          style={{background:['#a8b6a1','#c3a895','#9caebe','#b9aa83'][index]}}
+                        />
+                        <span className="h-2.5 w-1 rounded-[1px] bg-stone-300/70" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-[16px] tracking-[0.08em] text-stone-700"
+                      style={{fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                      请先创建八字排盘
+                    </h3>
+                    <p className="mt-1.5 text-[11.5px] leading-[1.8] text-stone-500"
+                      style={{fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                      填写出生日期和时间，完成排盘后即可查看专属于你的今日能量。
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex items-center gap-2 font-sans text-[9px] tracking-[0.12em] text-stone-300" aria-hidden>
+                  <span>填写出生信息</span>
+                  <span className="h-px flex-1 bg-stone-200/80" />
+                  <span>生成排盘</span>
+                  <span className="h-px flex-1 bg-stone-200/80" />
+                  <span>查看今日能量</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={()=>document.getElementById('bazi-sheet')?.scrollIntoView({behavior:'smooth',block:'start'})}
+                  className="group mt-4 flex min-h-11 w-full items-center gap-4 py-1 font-sans text-[11px] tracking-[0.16em] text-stone-600 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99]"
+                >
+                  <span className="h-px flex-1 bg-stone-200/90 transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-stone-300" aria-hidden />
+                  <span className="transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:text-stone-800">
+                    开始创建排盘
+                  </span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ebe3d8] text-[#7f6b59] ring-1 ring-inset ring-[#dfd3c5] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-y-0.5 group-hover:scale-105 group-hover:bg-[#dfd3c5]">
+                    <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14m0 0l-5-5m5 5l5-5"/>
+                    </svg>
+                  </span>
+                </button>
               </div>
             )}
 

@@ -30,7 +30,7 @@ jobs:
         env:
           DEPLOY_HOST: 47.116.143.76
           DEPLOY_USER: admin
-          DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEY }}
+          DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEYC }}
           DEPLOY_PATH: /opt/the-one
         run: |
           set -eu

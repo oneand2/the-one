@@ -18,12 +18,20 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Build production image
+        run: |
+          docker build --platform linux/amd64 \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ikiznnuenehlutcjpukd.supabase.co \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_OYt-uH0GcjByAVS4n5yygA_HEBcV04Z \
+            --build-arg NEXT_PUBLIC_SITE_URL=https://www.the-one-and-the-two.com \
+            -t the-one-app:latest .
+
       - name: Deploy over SSH
         env:
-          DEPLOY_HOST: ${{ secrets.ALIYUN_HOST }}
-          DEPLOY_USER: ${{ secrets.ALIYUN_USER }}
+          DEPLOY_HOST: 47.116.143.76
+          DEPLOY_USER: admin
           DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEY }}
-          DEPLOY_PATH: ${{ secrets.ALIYUN_DEPLOY_PATH }}
+          DEPLOY_PATH: /opt/the-one
         run: |
           set -eu
           test -n "$DEPLOY_HOST"
@@ -40,6 +48,10 @@ jobs:
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
             "sudo mkdir -p '$DEPLOY_PATH'"
 
+          docker save the-one-app:latest | gzip \
+            | ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
+              "gunzip | sudo docker load"
+
           tar \
             --exclude='.git' \
             --exclude='node_modules' \
@@ -54,6 +66,6 @@ jobs:
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
           set -eu
-          sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --build --remove-orphans
+          sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --no-build --remove-orphans
           sudo docker compose --project-directory "$DEPLOY_PATH" ps
           EOF

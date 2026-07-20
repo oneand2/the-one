@@ -1,5 +1,6 @@
 services:
   app:
+    image: the-one-app:latest
     build:
       context: .
       dockerfile: Dockerfile

@@ -1,0 +1,59 @@
+name: Deploy to Aliyun
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: aliyun-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        env:
+          DEPLOY_HOST: ${{ secrets.ALIYUN_HOST }}
+          DEPLOY_USER: ${{ secrets.ALIYUN_USER }}
+          DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.ALIYUN_DEPLOY_PATH }}
+        run: |
+          set -eu
+          test -n "$DEPLOY_HOST"
+          test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_KEY"
+          test -n "$DEPLOY_PATH"
+
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/aliyun_deploy_key"
+          chmod 600 "$HOME/.ssh/aliyun_deploy_key"
+
+          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo mkdir -p '$DEPLOY_PATH'"
+
+          tar \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='.env*' \
+            --exclude='android/.gradle' \
+            --exclude='android/app/build' \
+            --exclude='android/build' \
+            -czf - . \
+            | ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
+              "sudo tar -xzf - -C '$DEPLOY_PATH'"
+
+          ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
+          set -eu
+          sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --build --remove-orphans
+          sudo docker compose --project-directory "$DEPLOY_PATH" ps
+          EOF

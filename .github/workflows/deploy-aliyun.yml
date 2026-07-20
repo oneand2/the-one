@@ -46,7 +46,12 @@ jobs:
           ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "sudo mkdir -p '$DEPLOY_PATH'"
+            "set -eu; \
+             sudo mkdir -p '$DEPLOY_PATH/backups'; \
+             BACKUP_DIR='$DEPLOY_PATH/backups/auto-before-deploy-'\$(date +%Y%m%d-%H%M%S); \
+             sudo mkdir -p \"\$BACKUP_DIR\"; \
+             if test -f '$DEPLOY_PATH/nginx.conf'; then sudo cp '$DEPLOY_PATH/nginx.conf' \"\$BACKUP_DIR/nginx.conf\"; fi; \
+             if test -f '$DEPLOY_PATH/docker-compose.yml'; then sudo cp '$DEPLOY_PATH/docker-compose.yml' \"\$BACKUP_DIR/docker-compose.yml\"; fi"
 
           docker save the-one-app:latest | gzip \
             | ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
@@ -66,6 +71,11 @@ jobs:
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" <<EOF
           set -eu
+          sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" config --quiet
+          sudo docker exec the-one-nginx-1 nginx -t
           sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --no-build --remove-orphans
+          curl --fail --silent --show-error --max-time 20 --insecure \
+            --resolve www.the-one-and-the-two.com:443:127.0.0.1 \
+            https://www.the-one-and-the-two.com/ > /dev/null
           sudo docker compose --project-directory "$DEPLOY_PATH" ps
           EOF

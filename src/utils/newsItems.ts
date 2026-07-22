@@ -264,6 +264,14 @@ export function parseNewsContent(content: string): ParsedNewsItem[] {
     if (target) target.url = link.url;
   }
 
+  // skill 要求查证区使用「原报道标题」，它可能与编辑后的简报标题完全不同。
+  // 精确/包含匹配失败时，按固定的六条新闻顺序回填剩余链接。
+  const unmatchedLinks = links.filter((link) => !items.some((item) => item.url === link.url));
+  const itemsWithoutUrls = items.filter((item) => !item.url);
+  for (let i = 0; i < Math.min(unmatchedLinks.length, itemsWithoutUrls.length); i++) {
+    itemsWithoutUrls[i].url = unmatchedLinks[i].url;
+  }
+
   // 只保留有标题的有效条目
   return items.filter((it) => it.title && it.title.trim());
 }

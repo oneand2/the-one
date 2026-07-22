@@ -7,7 +7,8 @@
     "dev:poll": "WATCHPACK_POLLING=true WATCHPACK_POLLING_INTERVAL=1000 next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "news:publish": "tsx scripts/publish-world-news.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.2",
@@ -41,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.1",
     "typescript": "^5"
   }
 }

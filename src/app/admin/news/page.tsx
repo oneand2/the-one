@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { getNextNonEmptyLine, isBoldNewsHeading, looksLikeDatedNewsBody, nextNonEmptyLineIsBold, stripNewsHeading } from '@/utils/newsMarkdown';
 
 interface NewsItem {
   id: string;
@@ -317,7 +318,6 @@ export default function AdminNewsPage() {
   const parseContent = (text: string) => {
     const lines = text.split('\n');
     const parsed: Array<{ type: 'h1' | 'h2' | 'text' | 'source' | 'bullish' | 'bearish' | 'empty' | 'links_title' | 'link'; content: string }> = [];
-    const stripMarkdownHeading = (value: string) => value.replace(/^#{1,3}\s+/, '').trim();
 
     let lastWasEmpty = false;
     let lastNonEmptyType: 'h1' | 'h2' | 'text' | 'source' | 'bullish' | 'bearish' | 'links_title' | 'link' | null = null;
@@ -325,7 +325,8 @@ export default function AdminNewsPage() {
     let hasH1 = false; // 是否已经出现过H1
     let inLinksSection = false; // 标记是否进入"新闻链接查证"部分
 
-    for (const line of lines) {
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex];
       const trimmed = line.trim();
 
       if (trimmed === '') {
@@ -393,7 +394,10 @@ export default function AdminNewsPage() {
       // 一级标题判断：
       const isMarkdownH1 = /^#{1,2}\s+/.test(trimmed);
       const isMarkdownH2 = /^#{3}\s+/.test(trimmed);
-      const headingText = stripMarkdownHeading(trimmed);
+      const isBoldHeading = isBoldNewsHeading(trimmed);
+      const boldSectionHeading = isBoldHeading && nextNonEmptyLineIsBold(lines, lineIndex);
+      const headingText = stripNewsHeading(trimmed);
+      const nextLineStartsBody = looksLikeDatedNewsBody(getNextNonEmptyLine(lines, lineIndex));
       // 1. 前面有空行、或开头、或紧跟在消息来源后面
       // 2. 字符数很少（≤12）
       // 3. 没有括号、引号等符号
@@ -407,8 +411,9 @@ export default function AdminNewsPage() {
         lastNonEmptyType === 'bullish' ||
         lastNonEmptyType === 'bearish';
 
-      if ((isMarkdownH1 ||
-          ((lastWasEmpty || parsed.length === 0 || followsCompletedItem) &&
+      if ((isMarkdownH1 || boldSectionHeading ||
+          (!isBoldHeading && (lastWasEmpty || parsed.length === 0 || followsCompletedItem) &&
+          !nextLineStartsBody &&
           isVeryShort &&
           hasNoPunctuation &&
           notAfterH2 &&
@@ -435,7 +440,9 @@ export default function AdminNewsPage() {
                            headingText.length > 12 &&
                            headingText.length < 80;
 
-      const shouldBeH2 = (isMarkdownH2 ||
+      const shouldBeH2 = (isMarkdownH2 || (isBoldHeading && !boldSectionHeading) ||
+                        (lastNonEmptyType === 'h1' && nextLineStartsBody) ||
+                        (followsCompletedItem && nextLineStartsBody) ||
                         (isPotentialH2 &&
                         (lastNonEmptyType === 'h1' ||
                          lastNonEmptyType === 'source' ||

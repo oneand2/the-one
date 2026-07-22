@@ -1,4 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
+
+import { getNextNonEmptyLine, isBoldNewsHeading, looksLikeDatedNewsBody, nextNonEmptyLineIsBold, stripNewsHeading } from './newsMarkdown';
 // 新闻标题库解析工具
 //
 // 把 world_news 表里「一天一行」的自由文本 content，解析成一条条结构化新闻：
@@ -38,8 +40,6 @@ interface ParsedLink {
   url: string;
 }
 
-const stripMarkdownHeading = (value: string) => value.replace(/^#{1,3}\s+/, '').trim();
-
 /**
  * 把整段新闻文本分词为带类型的 token 列表。
  * 该逻辑移植自 /admin/news 的 parseContent，确保与管理端预览结果一致。
@@ -54,7 +54,8 @@ function tokenize(text: string): Token[] {
   let hasH1 = false;
   let inLinksSection = false;
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+    const line = lines[lineIndex];
     const trimmed = line.trim();
 
     if (trimmed === '') {
@@ -114,7 +115,10 @@ function tokenize(text: string): Token[] {
 
     const isMarkdownH1 = /^#{1,2}\s+/.test(trimmed);
     const isMarkdownH2 = /^#{3}\s+/.test(trimmed);
-    const headingText = stripMarkdownHeading(trimmed);
+    const isBoldHeading = isBoldNewsHeading(trimmed);
+    const boldSectionHeading = isBoldHeading && nextNonEmptyLineIsBold(lines, lineIndex);
+    const headingText = stripNewsHeading(trimmed);
+    const nextLineStartsBody = looksLikeDatedNewsBody(getNextNonEmptyLine(lines, lineIndex));
 
     const isVeryShort = headingText.length <= 12;
     const hasNoPunctuation = !/[（()）""'']/.test(headingText);
@@ -127,8 +131,9 @@ function tokenize(text: string): Token[] {
 
     // 一级标题（板块）
     if (
-      (isMarkdownH1 ||
-        ((lastWasEmpty || parsed.length === 0 || followsCompletedItem) &&
+      (isMarkdownH1 || boldSectionHeading ||
+        (!isBoldHeading && (lastWasEmpty || parsed.length === 0 || followsCompletedItem) &&
+          !nextLineStartsBody &&
           isVeryShort &&
           hasNoPunctuation &&
           notAfterH2 &&
@@ -148,6 +153,9 @@ function tokenize(text: string): Token[] {
     const isPotentialH2 = hasH1 && headingText.length > 12 && headingText.length < 80;
     const shouldBeH2 =
       isMarkdownH2 ||
+      (isBoldHeading && !boldSectionHeading) ||
+      (lastNonEmptyType === 'h1' && nextLineStartsBody) ||
+      (followsCompletedItem && nextLineStartsBody) ||
       (isPotentialH2 &&
         (lastNonEmptyType === 'h1' ||
           lastNonEmptyType === 'source' ||

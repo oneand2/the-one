@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getNextNonEmptyLine, isBoldNewsHeading, looksLikeDatedNewsBody, nextNonEmptyLineIsBold, stripNewsHeading } from '@/utils/newsMarkdown';
 
 interface WorldNews {
   id: string;
@@ -136,7 +137,8 @@ export default function WorldPage() {
     let lastWasEmpty = false;
     let lastNonEmptyType: 'h1' | 'content' | 'source' | 'bullish' | 'bearish' | null = null;
 
-    for (const line of lines) {
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      const line = lines[lineIndex];
       const trimmed = line.trim();
       
       // 空行处理
@@ -182,20 +184,25 @@ export default function WorldPage() {
         lastNonEmptyType === 'source' ||
         lastNonEmptyType === 'bullish' ||
         lastNonEmptyType === 'bearish';
-      const isH1 = (lastWasEmpty || categories.length === 0 || followsCompletedItem) && 
+      const isBoldHeading = isBoldNewsHeading(trimmed);
+      const headingText = stripNewsHeading(trimmed);
+      const boldSectionHeading = isBoldHeading && nextNonEmptyLineIsBold(lines, lineIndex);
+      const nextLineStartsBody = looksLikeDatedNewsBody(getNextNonEmptyLine(lines, lineIndex));
+      const isH1 = !isBoldHeading && (lastWasEmpty || categories.length === 0 || followsCompletedItem) &&
+                   !nextLineStartsBody &&
                    lastNonEmptyType !== 'h1' &&
-                   trimmed.length <= 12 && 
-                   !/[（()）""'']/.test(trimmed) &&
+                   headingText.length <= 12 &&
+                   !/[（()）""'']/.test(headingText) &&
                    isNotSource &&
                    isNotBullish &&
                    isNotBearish;
 
-      if (isH1 || line.startsWith('## ')) {
+      if (isH1 || boldSectionHeading || line.startsWith('## ')) {
         if (currentCategory) {
           categories.push(currentCategory);
         }
         currentCategory = {
-          title: line.startsWith('## ') ? line.replace('## ', '').trim() : trimmed,
+          title: headingText,
           content: []
         };
         lastWasEmpty = false;
@@ -229,6 +236,8 @@ export default function WorldPage() {
     for (let idx = 0; idx < contentLines.length; idx++) {
       const line = contentLines[idx];
       const trimmed = line.trim();
+      const isBoldHeading = isBoldNewsHeading(trimmed);
+      const headingText = stripNewsHeading(trimmed);
 
       // 空行
       if (trimmed === '') {
@@ -297,22 +306,24 @@ export default function WorldPage() {
       //    - 紧跟在消息来源后面（lastNonEmptyType === 'source'，无需空行）
       //    - 前面有空行 + 已经连续出现2段正文
       //    - 上一条新闻以消息来源/利好/利空收尾（兼容无空行粘贴）
-      const lengthOk = trimmed.length > 12 && trimmed.length < 80;
+      const lengthOk = headingText.length > 12 && headingText.length < 80;
       const followsCompletedItem =
         lastNonEmptyType === 'source' ||
         lastNonEmptyType === 'bullish' ||
         lastNonEmptyType === 'bearish';
       
-      const shouldBeH2 = lengthOk && 
+      const shouldBeH2 = isBoldHeading ||
+                        ((lastNonEmptyType === null || followsCompletedItem) && looksLikeDatedNewsBody(getNextNonEmptyLine(contentLines, idx))) ||
+                        (lengthOk &&
                         (idx === 0 || 
                          lastNonEmptyType === 'source' || 
                          followsCompletedItem ||
-                         (lastWasEmpty && consecutiveParagraphs >= 2));
+                         (lastWasEmpty && consecutiveParagraphs >= 2)));
 
       if (shouldBeH2) {
         elements.push(
           <h3 key={`h2-${idx}`} className="font-sans text-[14.5px] font-semibold text-stone-800 leading-relaxed mb-3 mt-5 first:mt-0">
-            {trimmed}
+            {headingText}
           </h3>
         );
         lastWasEmpty = false;

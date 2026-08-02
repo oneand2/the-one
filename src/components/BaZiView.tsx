@@ -1072,7 +1072,7 @@ export const BaZiView: React.FC = () => {
       <LocationPicker />
 
       <p className="text-center text-xs text-stone-400 font-sans py-6">
-        注：本网站仅提供排盘服务，请勿将本网站用于封建迷信活动。
+        注：排盘内容属于传统文化资料，仅供阅读与自我观察；现实选择请立足事实，由你独立判断。
       </p>
     </div>
   );

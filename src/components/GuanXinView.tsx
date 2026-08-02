@@ -260,7 +260,7 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
                     抽取每日一卦
                   </h2>
                   <p className="mt-2 text-[13px] leading-7 tracking-[0.04em] text-stone-500" style={{ fontFamily: KAITI }}>
-                    静心一息，聆听上天的指引。
+                    静心一息，看此刻心往何处。
                   </p>
                 </div>
                 <div className="flex justify-start border-t border-stone-200/70 pt-2 sm:justify-end sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">

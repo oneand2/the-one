@@ -1422,7 +1422,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="flex items-center justify-center gap-3 py-2">
                 <span className="text-sm text-stone-500 tracking-wide">静态标签</span>
                 <span className="text-stone-300 text-lg">→</span>
-                <span className="text-sm text-stone-800 font-semibold tracking-wide">动态修行</span>
+                <span className="text-sm text-stone-800 font-semibold tracking-wide">动态成长</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed text-justify">
                 拒绝标签化人格，性格非牢笼，而是独特的『法门』。真正的成长往往来源于我们对自己阴影人格的整合。
@@ -1459,7 +1459,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="space-y-2 text-sm text-stone-700 pl-4 font-medium">
                 <p>• 功能坐席的宫位秩序</p>
                 <p>• 八维全谱的完整图景</p>
-                <p>• 人生道场的修行指引</p>
+                <p>• 人生现场的成长指引</p>
               </div>
             </div>
           </div>
@@ -1885,7 +1885,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         </motion.div>
 
         {/* ═══════════════════════════════════════════════════════════
-            2. 灵魂侧写卡片
+            2. 内在侧写卡片
         ═══════════════════════════════════════════════════════════ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1898,8 +1898,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="text-lg font-serif text-stone-800">修行指引</h3>
-              <p className="text-xs text-stone-500">灵魂侧写与成长方向</p>
+              <h3 className="text-lg font-serif text-stone-800">成长指引</h3>
+              <p className="text-xs text-stone-500">内在侧写与成长方向</p>
             </div>
           </div>
           

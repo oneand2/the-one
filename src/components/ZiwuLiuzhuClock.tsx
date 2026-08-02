@@ -23,7 +23,7 @@ const ZHI_LIST = [
   { name: '卯', meridian: '大肠经当令', summary: '宜起而排便', detail: '天地阳气升起，大肠蠕动最旺盛，是清理体内糟粕的最佳时机。', phase: '早晨 · 阳气生发' },
   { name: '辰', meridian: '胃经当令', summary: '宜温食饱腹', detail: '胃系统消化能力最强，进食温热且营养丰富的早餐最能化生气血。', phase: '早晨 · 阳气生发' },
   { name: '巳', meridian: '脾经当令', summary: '宜高效工作', detail: '脾将营养运化至全身，此时大脑供血最充足，是逻辑思维和创作的黄金时间。', phase: '早晨 · 阳气生发' },
-  { name: '午', meridian: '心经当令', summary: '宜小憩养神', detail: '阴阳交替之时，心气最易波动，短暂的午休可以安抚神明。', phase: '中午 · 阴阳交替' },
+  { name: '午', meridian: '心经当令', summary: '宜小憩养神', detail: '阴阳交替之时，心气最易波动，短暂的午休可以安抚心神。', phase: '中午 · 阴阳交替' },
   { name: '未', meridian: '小肠经当令', summary: '宜多饮清茶', detail: '小肠泌别清浊，此时摄入水分有助于精华的吸收和浊液的排泄。', phase: '中午 · 阴阳交替' },
   { name: '申', meridian: '膀胱经当令', summary: '宜适度运动', detail: '膀胱经气最足，也是人体记忆力最好的时段，无论是体力活动还是深度思考都很合适。', phase: '中午 · 阴阳交替' },
   { name: '酉', meridian: '肾经当令', summary: '宜静坐收心', detail: '肾主藏精，此时应停止剧烈消耗，让气血能量开始向体内储藏。', phase: '傍晚 · 收敛藏精' },

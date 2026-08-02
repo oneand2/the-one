@@ -48,6 +48,22 @@ function zhiIdxToHour(i: number): number {
   return i === 0 ? 0 : i * 2 - 1;
 }
 
+const ALMANAC_RITUAL_TERMS = new Set([
+  '祭祀', '安香', '酬神', '开光', '普渡', '祈福', '造庙', '斋醮',
+  '安葬', '成服', '除服', '合寿木', '开生坟', '立碑', '启钻', '入殓',
+  '行丧', '修坟', '移柩',
+]);
+
+/**
+ * 将传统黄历词条转换为更适合现代日历产品的展示文案。
+ * 这里只调整用户可见文字，不改变 lunar-javascript 的历法计算结果。
+ */
+function formatAlmanacItems(items: string[]): string[] {
+  return Array.from(new Set(items.map((item) => (
+    ALMANAC_RITUAL_TERMS.has(item) ? '礼俗' : item
+  ))));
+}
+
 // ─────────────────────────────────────────────
 // 深度神煞映射表
 // ─────────────────────────────────────────────
@@ -383,7 +399,8 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
           dayGanZhi:   lunar.getDayInGanZhi()   + '日',
           shengXiao:   lunar.getYearShengXiao(),
           weekDay:     WEEK_DAYS[new Date(year, month - 1, day).getDay()],
-          yi: lunar.getDayYi() ?? [], ji: lunar.getDayJi() ?? [],
+          yi: formatAlmanacItems(lunar.getDayYi() ?? []),
+          ji: formatAlmanacItems(lunar.getDayJi() ?? []),
           dayNaYin:  lunar.getDayNaYin(),
           zhiXing:   lunar.getZhiXing(),
           xiu:       lunar.getXiu(), xiuGong: lunar.getGong(),
@@ -497,7 +514,7 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                   )}
                 </>
               ) : (
-                <span style={{ color: '#c4bdb0' }}>{loadError ? '今日黄历加载失败' : '加载中…'}</span>
+                <span style={{ color: '#c4bdb0' }}>{loadError ? '今日历法加载失败' : '加载中…'}</span>
               )}
             </p>
           </div>
@@ -589,6 +606,9 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                 )}
               </div>
             ))}
+            <p className="pt-1 text-[9px] font-sans tracking-[0.08em]" style={{ color: '#c4bdb0' }}>
+              传统历法摘录 · 仅作文化资料浏览
+            </p>
           </div>
 
           {/* ── 底栏 ── */}
@@ -599,7 +619,7 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
               </span>
             ) : (
               <span className="text-[10px] font-sans tracking-wider" style={{ color: '#a39888' }}>
-                黄历详情加载中…
+                历法详情加载中…
               </span>
             )}
             <span className="text-[10px] font-sans flex items-center gap-0.5" style={{ color: '#a39888' }}>
@@ -659,11 +679,11 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                     className="text-[10px] font-sans tracking-[0.38em]"
                     style={{ color: '#a39888' }}
                   >
-                    黄 历 详 情
+                    历 法 详 情
                   </span>
                   <button
                     onClick={handleClose}
-                    aria-label="关闭黄历详情"
+                    aria-label="关闭历法详情"
                     className="w-7 h-7 flex items-center justify-center rounded-full
                                transition-colors hover:bg-stone-100 active:bg-stone-200"
                     style={{ color: '#a39888' }}
@@ -859,7 +879,7 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                     }}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-sans tracking-[0.4em] text-[#948979]">黄 历</span>
+                      <span className="text-[9px] font-sans tracking-[0.4em] text-[#948979]">传 统 历 法</span>
                       <span className="text-[9px] font-sans tabular-nums tracking-[0.12em] text-[#b1a797]">
                         {String(month).padStart(2, '0')} / {String(day).padStart(2, '0')}
                       </span>
@@ -923,14 +943,14 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
                       style={{ borderBottom: '1px solid rgba(71,62,50,0.07)' }}
                     >
                       <div>
-                        <p className="text-[10px] font-sans tracking-[0.34em] text-[#8f8577]">黄 历 详 情</p>
+                        <p className="text-[10px] font-sans tracking-[0.34em] text-[#8f8577]">历 法 详 情</p>
                         <p className="mt-1.5 text-[9px] font-sans tracking-[0.12em] text-[#bbb2a5]">
                           宜顺时而为，忌逆势强求
                         </p>
                       </div>
                       <button
                         onClick={handleClose}
-                        aria-label="关闭黄历详情"
+                        aria-label="关闭历法详情"
                         className="group flex h-9 w-9 items-center justify-center rounded-full bg-[#f1eee8]
                                    text-[#93897b] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
                                    hover:rotate-90 hover:bg-[#e9e4dc] hover:text-[#4d463d] active:scale-95"

@@ -41,12 +41,32 @@ cp .env.production.example .env.production
 - `AI_API_KEY`
 - `AI_BASE_URL`
 
+如果通过 GitHub Actions 自动部署，还需要在仓库的 Actions variables 中设置：
+
+- `OPERATOR_NAME`：与营业执照、支付宝签约主体一致的运营者全称
+- `CUSTOMER_SERVICE_EMAIL`：页面公开展示的客服邮箱
+- `ICP_NUMBER`：ICP备案号；未取得时留空，不要填写占位内容
+- `PUBLIC_SECURITY_NUMBER`：公安联网备案号；未取得时留空
+
 建议配置：
 
 - `NEXT_PUBLIC_SITE_URL`
 - `AI_MODEL_NAME`
 - `AI_REASONER_MODEL_NAME`
 - `TAVILY_API_KEY`
+- `NEXT_PUBLIC_OPERATOR_NAME`
+- `NEXT_PUBLIC_CUSTOMER_SERVICE_EMAIL`
+- `NEXT_PUBLIC_ICP_NUMBER`
+- `NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER`
+
+支付宝电脑网站支付需要额外配置：
+
+- `ALIPAY_APP_ID`
+- `ALIPAY_SELLER_ID`
+- `ALIPAY_PRIVATE_KEY_BASE64`
+- `ALIPAY_PUBLIC_KEY_BASE64`
+- `ALIPAY_KEY_TYPE`（支付宝密钥工具默认通常为 `PKCS8`）
+- 沙箱测试时可选 `ALIPAY_GATEWAY`，生产环境留空
 
 宗师模式需要额外配置：
 
@@ -107,7 +127,15 @@ docker compose --env-file .env.production up -d --build
 - 支付回调必须使用公网 HTTPS 地址。
 - 支付回调接口需要验签、幂等处理、订单状态机和金额校验。
 
-当前代码中尚未发现微信支付或支付宝支付实现，不能直接开通真实交易。
+当前代码已实现支付宝电脑网站支付下单、异步验签、金额与商户校验、订单幂等入账。Supabase 支付订单迁移已经应用到当前生产项目；正式交易前仍需在服务器配置支付宝应用参数，并用支付宝沙箱或小额真实订单完成一次端到端验收。
+
+支付回调地址固定为：
+
+- `https://你的生产域名/api/payments/alipay/notify`
+
+支付完成返回页面为：
+
+- `https://你的生产域名/shop`
 
 ## 8. 上线前检查清单
 

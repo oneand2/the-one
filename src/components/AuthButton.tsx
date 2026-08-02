@@ -227,7 +227,7 @@ export function AuthButton() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 font-sans"
               >
                 <Download className="w-4 h-4 text-stone-500" />
-                客户端下载
+                添加到主屏幕
               </Link>
               <Link
                 href="/my/classical"

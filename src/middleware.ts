@@ -2,6 +2,11 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
+  // APK 暂停公开分发；历史文件即使仍存在于旧镜像中也不可下载。
+  if (request.nextUrl.pathname === '/app-release.apk') {
+    return new NextResponse(null, { status: 410 });
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -78,7 +83,7 @@ export const config = {
      * - _next/static (静态文件)
      * - _next/image (图片优化)
      * - favicon.ico (favicon)
-     * - public 文件夹中的文件
+     * - 常用图片文件
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

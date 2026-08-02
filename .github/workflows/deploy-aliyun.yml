@@ -24,6 +24,10 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_URL=https://ikiznnuenehlutcjpukd.supabase.co \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_OYt-uH0GcjByAVS4n5yygA_HEBcV04Z \
             --build-arg NEXT_PUBLIC_SITE_URL=https://www.the-one-and-the-two.com \
+            --build-arg NEXT_PUBLIC_OPERATOR_NAME="${{ vars.OPERATOR_NAME }}" \
+            --build-arg NEXT_PUBLIC_CUSTOMER_SERVICE_EMAIL="${{ vars.CUSTOMER_SERVICE_EMAIL }}" \
+            --build-arg NEXT_PUBLIC_ICP_NUMBER="${{ vars.ICP_NUMBER }}" \
+            --build-arg NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER="${{ vars.PUBLIC_SECURITY_NUMBER }}" \
             -t the-one-app:latest .
 
       - name: Deploy over SSH

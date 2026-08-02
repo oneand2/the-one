@@ -4,6 +4,7 @@ import { AuthButton } from "@/components/AuthButton";
 import { DeferredLayoutExtras } from "@/components/DeferredLayoutExtras";
 import { PreconnectSupabase } from "@/components/PreconnectSupabase";
 import { RootErrorBoundary } from "@/components/RootErrorBoundary";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,7 +37,7 @@ export const metadata: Metadata = {
   // 👇 网页标签页显示的标题
   title: "二 - 让自己 让世界变得更好",
   applicationName: "二",
-  description: "相信终有一天，人与人之间会彼此理解。",
+  description: "自我探索、心理类型与传统文化工具，以及清楚透明的数字内容服务。",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -80,6 +81,7 @@ export default function RootLayout({
             <AuthButton />
           </div>
           {children}
+          <SiteFooter />
           <DeferredLayoutExtras />
         </RootErrorBoundary>
       </body>

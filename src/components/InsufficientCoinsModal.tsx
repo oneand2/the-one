@@ -24,7 +24,7 @@ export function InsufficientCoinsModal({ open, needCoins, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-stone-800 text-center mb-6">
-          铜币不足，本次需要 {needCoins} 铜币。请先充值后再试。
+          铜币不足，本次需要 {needCoins} 铜币。请选择数字内容服务包后再试。
         </p>
         <div className="flex gap-3">
           <button
@@ -39,7 +39,7 @@ export function InsufficientCoinsModal({ open, needCoins, onClose }: Props) {
             onClick={handleGetCoins}
             className="flex-1 py-2.5 rounded-lg bg-stone-800 text-white text-sm hover:bg-stone-700"
           >
-            获取铜币
+            查看服务包
           </button>
         </div>
       </div>

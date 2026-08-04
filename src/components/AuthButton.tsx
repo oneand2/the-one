@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle, Download } from 'lucide-react';
+import { ChevronDown, CalendarRange, Brain, Sparkles, UserCircle, Download, LifeBuoy } from 'lucide-react';
 import { CopperCoinIcon } from './CopperCoinIcon';
 import { isLifetimeVip } from '@/utils/vip';
 import { clearRecordsCaches } from '@/utils/cache';
+import { SITE_INFO } from '@/config/siteInfo';
 
 export function AuthButton() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export function AuthButton() {
   const [vipExpiresAt, setVipExpiresAt] = useState<string | null | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,6 +133,7 @@ export function AuthButton() {
     if (!menuOpen) return;
     const close = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setSupportOpen(false);
         setMenuOpen(false);
       }
     };
@@ -192,7 +195,12 @@ export function AuthButton() {
           </button>
           <button
             type="button"
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={() => {
+              setMenuOpen((open) => {
+                if (open) setSupportOpen(false);
+                return !open;
+              });
+            }}
             className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors font-sans text-sm text-stone-700"
           >
             <span className="hidden sm:inline max-w-[140px] truncate">
@@ -211,7 +219,7 @@ export function AuthButton() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.15 }}
-              className="absolute top-full right-0 mt-1 w-52 py-1 bg-white border border-stone-200 rounded-xl shadow-lg z-50"
+              className="absolute top-full right-0 mt-2 w-64 overflow-hidden rounded-2xl bg-white/95 py-1.5 shadow-[0_18px_50px_rgba(68,64,60,0.14)] ring-1 ring-stone-900/8 z-50"
             >
               <Link
                 href="/profile"
@@ -253,6 +261,65 @@ export function AuthButton() {
                 <Sparkles className="w-4 h-4 text-stone-500" />
                 我的周易解卦
               </Link>
+              <div className="mx-3 my-1 border-t border-stone-100" />
+              <button
+                type="button"
+                aria-expanded={supportOpen}
+                aria-controls="auth-support-menu"
+                onClick={() => setSupportOpen((open) => !open)}
+                className="group flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-stone-700 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-stone-50 font-sans"
+              >
+                <LifeBuoy className="w-4 h-4 text-stone-500" />
+                <span className="flex-1">服务与支持</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 text-stone-400 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${supportOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+              <AnimatePresence initial={false}>
+                {supportOpen && (
+                  <motion.div
+                    id="auth-support-menu"
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
+                    className="mx-2 mb-1 rounded-xl bg-stone-50/90 px-2 py-1 ring-1 ring-stone-900/5"
+                  >
+                    {[
+                      ['/service', '服务与计费'],
+                      ['/refund', '退款与售后'],
+                      ['/terms', '用户协议'],
+                      ['/privacy', '隐私政策'],
+                      ['/operator', '经营者信息'],
+                    ].map(([href, label]) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => {
+                          setSupportOpen(false);
+                          setMenuOpen(false);
+                        }}
+                        className="block rounded-lg px-3 py-2 text-[13px] text-stone-600 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white hover:text-stone-900"
+                      >
+                        {label}
+                      </Link>
+                    ))}
+                    <a
+                      href={`mailto:${SITE_INFO.customerServiceEmail}`}
+                      onClick={() => {
+                        setSupportOpen(false);
+                        setMenuOpen(false);
+                      }}
+                      className="block rounded-lg px-3 py-2 transition-colors duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-white"
+                    >
+                      <span className="block text-[13px] text-stone-600">联系客服</span>
+                      <span className="mt-0.5 block truncate text-[11px] text-stone-400">
+                        {SITE_INFO.customerServiceEmail}
+                      </span>
+                    </a>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="my-1 border-t border-stone-100" />
               <button
                 type="button"

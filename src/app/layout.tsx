@@ -4,7 +4,6 @@ import { AuthButton } from "@/components/AuthButton";
 import { DeferredLayoutExtras } from "@/components/DeferredLayoutExtras";
 import { PreconnectSupabase } from "@/components/PreconnectSupabase";
 import { RootErrorBoundary } from "@/components/RootErrorBoundary";
-import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -81,7 +80,6 @@ export default function RootLayout({
             <AuthButton />
           </div>
           {children}
-          <SiteFooter />
           <DeferredLayoutExtras />
         </RootErrorBoundary>
       </body>

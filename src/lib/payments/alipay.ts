@@ -62,7 +62,7 @@ function createSdk() {
       alipayPublicKey: env.publicKey,
       signType: 'RSA2',
       keyType: env.keyType,
-      gateway: env.gateway,
+      ...(env.gateway ? { gateway: env.gateway } : {}),
     }),
   };
 }

@@ -1,0 +1,61 @@
+name: Diagnose Alipay Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Inspect Alipay runtime configuration and recent errors
+        env:
+          DEPLOY_HOST: 47.116.143.76
+          DEPLOY_USER: admin
+          DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEYC }}
+        run: |
+          set -eu
+          install -m 700 -d "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/aliyun_deploy_key"
+          chmod 600 "$HOME/.ssh/aliyun_deploy_key"
+          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+
+          ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF_REMOTE'
+          set -eu
+          CONTAINER=the-one-app-1
+
+          sudo docker exec -i "$CONTAINER" node <<'EOF_NODE'
+          const crypto = require('node:crypto');
+
+          const required = [
+            'ALIPAY_APP_ID',
+            'ALIPAY_SELLER_ID',
+            'ALIPAY_PRIVATE_KEY_BASE64',
+            'ALIPAY_PUBLIC_KEY_BASE64',
+          ];
+          const missing = required.filter((name) => !process.env[name]);
+          if (missing.length) throw new Error(`Missing environment values: ${missing.join(', ')}`);
+
+          const privatePem = Buffer.from(process.env.ALIPAY_PRIVATE_KEY_BASE64, 'base64').toString('utf8');
+          const alipayPublicPem = Buffer.from(process.env.ALIPAY_PUBLIC_KEY_BASE64, 'base64').toString('utf8');
+          const privateKey = crypto.createPrivateKey(privatePem);
+          crypto.createPublicKey(alipayPublicPem);
+          const applicationPublicDer = crypto.createPublicKey(privateKey).export({ type: 'spki', format: 'der' });
+          const fingerprint = crypto.createHash('sha256').update(applicationPublicDer).digest('hex').slice(0, 16);
+
+          console.log(JSON.stringify({
+            environmentReady: true,
+            privateKeyType: privateKey.asymmetricKeyType,
+            applicationPublicKeyFingerprint: fingerprint,
+            alipayPublicKeyValid: true,
+            keyType: process.env.ALIPAY_KEY_TYPE || 'not-set',
+            appIdLength: process.env.ALIPAY_APP_ID.length,
+            sellerIdLength: process.env.ALIPAY_SELLER_ID.length,
+          }));
+          EOF_NODE
+
+          echo '--- Recent Alipay creation errors ---'
+          sudo docker logs --since 60m "$CONTAINER" 2>&1 \
+            | grep -A 12 -B 2 'create alipay page url error' \
+            | tail -80 || true
+          EOF_REMOTE

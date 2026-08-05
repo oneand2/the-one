@@ -40,6 +40,13 @@ jobs:
           ALIPAY_SELLER_ID: ${{ secrets.ALIPAY_SELLER_ID }}
           ALIPAY_PRIVATE_KEY_BASE64: ${{ secrets.ALIPAY_PRIVATE_KEY_BASE64 }}
           ALIPAY_PUBLIC_KEY_BASE64: ${{ secrets.ALIPAY_PUBLIC_KEY_BASE64 }}
+          WECHAT_PAY_APP_ID: ${{ secrets.WECHAT_PAY_APP_ID }}
+          WECHAT_PAY_MCH_ID: ${{ secrets.WECHAT_PAY_MCH_ID }}
+          WECHAT_PAY_API_V3_KEY: ${{ secrets.WECHAT_PAY_API_V3_KEY }}
+          WECHAT_PAY_PRIVATE_KEY_BASE64: ${{ secrets.WECHAT_PAY_PRIVATE_KEY_BASE64 }}
+          WECHAT_PAY_CERT_SERIAL_NO: ${{ secrets.WECHAT_PAY_CERT_SERIAL_NO }}
+          WECHAT_PAY_PUBLIC_KEY_BASE64: ${{ secrets.WECHAT_PAY_PUBLIC_KEY_BASE64 }}
+          WECHAT_PAY_PUBLIC_KEY_ID: ${{ secrets.WECHAT_PAY_PUBLIC_KEY_ID }}
         run: |
           set -eu
           test -n "$DEPLOY_HOST"
@@ -50,8 +57,15 @@ jobs:
           test -n "$ALIPAY_SELLER_ID"
           test -n "$ALIPAY_PRIVATE_KEY_BASE64"
           test -n "$ALIPAY_PUBLIC_KEY_BASE64"
+          test -n "$WECHAT_PAY_APP_ID"
+          test -n "$WECHAT_PAY_MCH_ID"
+          test -n "$WECHAT_PAY_API_V3_KEY"
+          test -n "$WECHAT_PAY_PRIVATE_KEY_BASE64"
+          test -n "$WECHAT_PAY_CERT_SERIAL_NO"
+          test -n "$WECHAT_PAY_PUBLIC_KEY_BASE64"
+          test -n "$WECHAT_PAY_PUBLIC_KEY_ID"
 
-          PAYMENT_ENV_FILE="$RUNNER_TEMP/alipay-production.env"
+          PAYMENT_ENV_FILE="$RUNNER_TEMP/payment-production.env"
           umask 077
           {
             printf 'ALIPAY_APP_ID=%s\n' "$ALIPAY_APP_ID"
@@ -59,6 +73,13 @@ jobs:
             printf 'ALIPAY_PRIVATE_KEY_BASE64=%s\n' "$ALIPAY_PRIVATE_KEY_BASE64"
             printf 'ALIPAY_PUBLIC_KEY_BASE64=%s\n' "$ALIPAY_PUBLIC_KEY_BASE64"
             printf 'ALIPAY_KEY_TYPE=PKCS8\n'
+            printf 'WECHAT_PAY_APP_ID=%s\n' "$WECHAT_PAY_APP_ID"
+            printf 'WECHAT_PAY_MCH_ID=%s\n' "$WECHAT_PAY_MCH_ID"
+            printf 'WECHAT_PAY_API_V3_KEY=%s\n' "$WECHAT_PAY_API_V3_KEY"
+            printf 'WECHAT_PAY_PRIVATE_KEY_BASE64=%s\n' "$WECHAT_PAY_PRIVATE_KEY_BASE64"
+            printf 'WECHAT_PAY_CERT_SERIAL_NO=%s\n' "$WECHAT_PAY_CERT_SERIAL_NO"
+            printf 'WECHAT_PAY_PUBLIC_KEY_BASE64=%s\n' "$WECHAT_PAY_PUBLIC_KEY_BASE64"
+            printf 'WECHAT_PAY_PUBLIC_KEY_ID=%s\n' "$WECHAT_PAY_PUBLIC_KEY_ID"
           } > "$PAYMENT_ENV_FILE"
 
           install -m 700 -d "$HOME/.ssh"
@@ -76,15 +97,15 @@ jobs:
              if test -f '$DEPLOY_PATH/docker-compose.yml'; then sudo cp '$DEPLOY_PATH/docker-compose.yml' \"\$BACKUP_DIR/docker-compose.yml\"; fi"
 
           scp -i "$HOME/.ssh/aliyun_deploy_key" "$PAYMENT_ENV_FILE" \
-            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/alipay-production.env"
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/payment-production.env"
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
             "set -eu; \
              sudo touch '$DEPLOY_PATH/.env.production'; \
-             sudo cp '$DEPLOY_PATH/.env.production' '$DEPLOY_PATH/backups/env-production-before-alipay-sync'; \
-             sudo sed -i '/^ALIPAY_/d' '$DEPLOY_PATH/.env.production'; \
-             sudo sh -c \"printf '\\n' >> '$DEPLOY_PATH/.env.production'; cat /tmp/alipay-production.env >> '$DEPLOY_PATH/.env.production'\"; \
-             rm -f /tmp/alipay-production.env"
+             sudo cp '$DEPLOY_PATH/.env.production' '$DEPLOY_PATH/backups/env-production-before-payment-sync'; \
+             sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' '$DEPLOY_PATH/.env.production'; \
+             sudo sh -c \"printf '\\n' >> '$DEPLOY_PATH/.env.production'; cat /tmp/payment-production.env >> '$DEPLOY_PATH/.env.production'\"; \
+             rm -f /tmp/payment-production.env"
 
           docker save the-one-app:latest | gzip \
             | ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \

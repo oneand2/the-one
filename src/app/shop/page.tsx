@@ -2,16 +2,27 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, Check, Coins, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
+import { AlertCircle, Check, Coins, QrCode, ShieldCheck, X } from 'lucide-react';
 import { COIN_PACKAGES, formatCny } from '@/lib/payments/coinPackages';
 
 type PaymentMessage = { type: 'success' | 'error' | 'info'; text: string } | null;
+type PaymentProvider = 'alipay' | 'wechat';
+type WechatPayment = {
+  outTradeNo: string;
+  qrDataUrl: string;
+  expiresAt: number;
+  packageName: string;
+  coins: number;
+  status: 'pending' | 'paid' | 'expired';
+};
 
 export default function ShopPage() {
-  const [loadingPackage, setLoadingPackage] = useState<string | null>(null);
+  const [loadingPayment, setLoadingPayment] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
   const [message, setMessage] = useState<PaymentMessage>(null);
+  const [wechatPayment, setWechatPayment] = useState<WechatPayment | null>(null);
 
   useEffect(() => {
     fetch('/api/user/profile', { credentials: 'include' })
@@ -61,15 +72,69 @@ export default function ShopPage() {
     return () => { cancelled = true; };
   }, []);
 
-  const handlePurchase = async (packageId: string) => {
+  useEffect(() => {
+    if (!wechatPayment || wechatPayment.status !== 'pending') return;
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer: number | undefined;
+
+    const checkOrder = async () => {
+      if (cancelled) return;
+      if (Date.now() >= wechatPayment.expiresAt) {
+        setWechatPayment((current) => current ? { ...current, status: 'expired' } : null);
+        return;
+      }
+
+      attempts += 1;
+      try {
+        const reconcile = attempts === 5 || attempts % 15 === 0 ? '&reconcile=1' : '';
+        const response = await fetch(
+          `/api/payments/wechat/status?order=${encodeURIComponent(wechatPayment.outTradeNo)}${reconcile}`,
+          { credentials: 'include', cache: 'no-store' }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (response.ok && data.status === 'paid' && data.credited_at) {
+          setWechatPayment((current) => current ? { ...current, status: 'paid' } : null);
+          setMessage({ type: 'success', text: `${wechatPayment.coins} 枚铜币已到账。感谢你的支持。` });
+          window.dispatchEvent(new CustomEvent('coins-should-refresh'));
+          fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
+            .then((profileResponse) => (profileResponse.ok ? profileResponse.json() : null))
+            .then((profile) => {
+              if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+            })
+            .catch(() => undefined);
+          return;
+        }
+      } catch {
+        // 网络波动时继续轮询；服务器回调仍会独立完成入账。
+      }
+
+      if (!cancelled) timer = window.setTimeout(checkOrder, 2000);
+    };
+
+    void checkOrder();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [wechatPayment]);
+
+  const handlePurchase = async (provider: PaymentProvider, packageId: string) => {
     if (!accepted) {
       setMessage({ type: 'error', text: '请先阅读并同意服务与退款规则。' });
       return;
     }
-    setLoadingPackage(packageId);
+
+    const coinPackage = COIN_PACKAGES.find((item) => item.id === packageId);
+    if (!coinPackage) return;
+
+    setLoadingPayment(`${provider}:${packageId}`);
     setMessage(null);
     try {
-      const response = await fetch('/api/payments/alipay/create', {
+      const response = await fetch(`/api/payments/${provider}/create`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -80,15 +145,36 @@ export default function ShopPage() {
         window.location.href = `/login?next=${encodeURIComponent('/shop')}`;
         return;
       }
-      if (!response.ok || typeof data.paymentUrl !== 'string') {
+      if (!response.ok) {
         setMessage({ type: 'error', text: data.error || '暂时无法创建订单，请稍后再试。' });
         return;
       }
-      window.location.assign(data.paymentUrl);
+
+      if (provider === 'alipay') {
+        if (typeof data.paymentUrl !== 'string') {
+          setMessage({ type: 'error', text: '支付宝收银台创建失败，请稍后再试。' });
+          return;
+        }
+        window.location.assign(data.paymentUrl);
+        return;
+      }
+
+      if (typeof data.outTradeNo !== 'string' || typeof data.qrDataUrl !== 'string') {
+        setMessage({ type: 'error', text: '微信支付二维码创建失败，请稍后再试。' });
+        return;
+      }
+      setWechatPayment({
+        outTradeNo: data.outTradeNo,
+        qrDataUrl: data.qrDataUrl,
+        expiresAt: Date.now() + Number(data.expiresInSeconds || 900) * 1000,
+        packageName: coinPackage.name,
+        coins: coinPackage.coins,
+        status: 'pending',
+      });
     } catch {
       setMessage({ type: 'error', text: '网络连接异常，请稍后再试。' });
     } finally {
-      setLoadingPackage(null);
+      setLoadingPayment(null);
     }
   };
 
@@ -144,14 +230,25 @@ export default function ShopPage() {
                 </div>
                 <span className="text-lg text-stone-800">{formatCny(item.amountCents)}</span>
               </div>
-              <button
-                type="button"
-                onClick={() => handlePurchase(item.id)}
-                disabled={loadingPackage !== null}
-                className="mt-6 rounded-xl bg-stone-800 px-4 py-3 text-sm text-white transition hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loadingPackage === item.id ? '正在创建订单…' : '支付宝支付'}
-              </button>
+              <div className="mt-6 grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePurchase('wechat', item.id)}
+                  disabled={loadingPayment !== null}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#07C160] px-4 py-3 text-sm text-white transition hover:bg-[#06AD56] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <QrCode className="h-4 w-4" />
+                  {loadingPayment === `wechat:${item.id}` ? '正在生成二维码…' : '微信扫码支付'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePurchase('alipay', item.id)}
+                  disabled={loadingPayment !== null}
+                  className="rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-700 transition hover:border-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loadingPayment === `alipay:${item.id}` ? '正在创建订单…' : '支付宝支付'}
+                </button>
+              </div>
             </article>
           ))}
         </section>
@@ -161,7 +258,7 @@ export default function ShopPage() {
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-stone-600" />
             <div className="text-sm leading-7 text-stone-600">
               <h2 className="mb-1 font-medium text-stone-800">清楚、可核验的交付</h2>
-              <p>支付成功后，支付宝服务器会通知本网站，铜币将直接增加到当前登录账户，订单与交付全程由系统自动完成。</p>
+              <p>支付成功后，支付宝或微信支付服务器会通知本网站，铜币将直接增加到当前登录账户，订单与交付全程由系统自动完成。</p>
             </div>
           </div>
         </section>
@@ -186,6 +283,69 @@ export default function ShopPage() {
           <Link href="/operator" className="hover:text-stone-800">经营者信息</Link>
         </div>
       </div>
+
+      {wechatPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/45 px-4 py-8 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wechat-payment-title"
+            className="relative w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setWechatPayment(null)}
+              aria-label="关闭微信支付窗口"
+              className="absolute right-4 top-4 rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {wechatPayment.status === 'paid' ? (
+              <div className="py-10">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check className="h-8 w-8" />
+                </span>
+                <h2 id="wechat-payment-title" className="mt-5 text-2xl font-serif text-stone-900">支付成功</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-600">{wechatPayment.coins} 枚铜币已经到账。</p>
+                <button
+                  type="button"
+                  onClick={() => setWechatPayment(null)}
+                  className="mt-7 rounded-xl bg-stone-800 px-8 py-3 text-sm text-white hover:bg-stone-700"
+                >
+                  完成
+                </button>
+              </div>
+            ) : wechatPayment.status === 'expired' ? (
+              <div className="py-10">
+                <AlertCircle className="mx-auto h-12 w-12 text-amber-600" />
+                <h2 id="wechat-payment-title" className="mt-5 text-2xl font-serif text-stone-900">二维码已失效</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-600">请关闭窗口后重新选择微信支付。</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs tracking-[0.22em] text-[#07A951]">微信支付</p>
+                <h2 id="wechat-payment-title" className="mt-3 text-2xl font-serif text-stone-900">
+                  请使用微信扫一扫
+                </h2>
+                <p className="mt-2 text-sm text-stone-500">{wechatPayment.packageName} · {wechatPayment.coins} 枚铜币</p>
+                <div className="mx-auto mt-6 w-fit rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
+                  <Image
+                    src={wechatPayment.qrDataUrl}
+                    width={320}
+                    height={320}
+                    unoptimized
+                    alt="微信支付二维码"
+                    className="h-64 w-64"
+                  />
+                </div>
+                <p className="mt-5 text-sm leading-6 text-stone-600">二维码将在15分钟后失效，付款完成后本页会自动确认到账。</p>
+                <p className="mt-2 text-xs leading-5 text-stone-400">请直接打开微信“扫一扫”，不要从相册识别二维码。</p>
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </main>
   );
 }

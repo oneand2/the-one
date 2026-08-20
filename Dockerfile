@@ -35,6 +35,7 @@ COPY package.json package-lock.json ./
 COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs ./
 COPY questions.json mbti_final_cleaned.json ./
 COPY public ./public
+COPY content ./content
 COPY src ./src
 
 RUN npx next build --webpack

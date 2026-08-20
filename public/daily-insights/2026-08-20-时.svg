@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">乳母生意：从巴黎被送往乡村乳母家的婴儿</title>
+  <rect width="360" height="136" fill="#F3F0E8"/>
+  <path d="M34 102H129M47 102V57H116V102M40 57L81 35L123 57M60 70H74M88 70H102" fill="#D7DDD4" fill-opacity=".58" stroke="#5F6D63" stroke-opacity=".48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M246 102H328M257 102V72H317V102M251 72L287 51L323 72" fill="#E6DACC" fill-opacity=".58" stroke="#776956" stroke-opacity=".48" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M120 94C150 73 181 70 211 79C229 84 242 83 258 78" stroke="#8E6A5E" stroke-opacity=".42" stroke-width="1.15" stroke-dasharray="3 5" stroke-linecap="round"/>
+  <g transform="translate(160 48)">
+    <path d="M0 28C0 16 10 6 22 6C34 6 44 16 44 28V52H0V28Z" fill="#CBD5CC" fill-opacity=".82" stroke="#5E6C63" stroke-opacity=".58"/>
+    <circle cx="22" cy="19" r="6" fill="#B98272" fill-opacity=".72"/>
+    <path d="M10 42C18 35 27 35 35 42" stroke="#F3F0E8" stroke-opacity=".78" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M8 52H36" stroke="#695F52" stroke-opacity=".52" stroke-linecap="round"/>
+  </g>
+  <g fill="#8A978F" fill-opacity=".36"><circle cx="139" cy="45" r="1.4"/><circle cx="229" cy="54" r="1.4"/><circle cx="233" cy="104" r="1.1"/></g>
+  <circle cx="219" cy="33" r="11" fill="#B66D5C" fill-opacity=".22"/>
+  <path d="M32 112C110 108 233 110 329 114" stroke="#718078" stroke-opacity=".2" stroke-linecap="round"/>
+</svg>

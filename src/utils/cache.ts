@@ -95,6 +95,7 @@ export function clearCached(key: string): void {
 /** 缓存 key 与 TTL 常量 */
 export const CACHE_KEYS = {
   WORLD_NEWS: 'world_news_list',
+  DAILY_INSIGHTS: 'daily_insights_list',
   RECORDS_CLASSICAL: 'records_classical',
   RECORDS_MBTI: 'records_mbti',
   RECORDS_LIUYAO: 'records_liuyao',

@@ -22,8 +22,9 @@ const Sidebar = dynamic(
 );
 
 // 大组件按需加载，首屏只加载当前 tab，第二次进入或切换回来时从缓存/内存秒开
-const WorldNewsView = dynamic(
-  () => import('@/components/WorldNewsView').then((mod) => mod.WorldNewsView),
+// 见天地：黄历 + 子午流注 + 今日见闻（新闻板块已下线，见 WorldNewsView.tsx）
+const GuanShiView = dynamic(
+  () => import('@/components/GuanShiView').then((mod) => mod.GuanShiView),
   { ssr: false, loading: () => <TabLoading /> }
 );
 const GuanXinView = dynamic(
@@ -174,7 +175,7 @@ const HomeContent: React.FC = () => {
               <div className="max-w-md mx-auto relative">
                 {visitedTabs.has('guanshi') && (
                 <div className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
-                  <WorldNewsView />
+                  <GuanShiView />
                 </div>
               )}
               {visitedTabs.has('wendao') && (

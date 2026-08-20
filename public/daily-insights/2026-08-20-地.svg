@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">母亲的家：伴侣各自居住的两个母系家庭</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <circle cx="180" cy="28" r="12" fill="#B66D5C" fill-opacity=".34"/>
+  <path d="M37 105H148M48 105V61H137V105M42 61L92 35L143 61M62 68H122" fill="#D4DDD5" fill-opacity=".58" stroke="#59685F" stroke-opacity=".56" stroke-width="1.05" stroke-linejoin="round"/>
+  <path d="M212 105H323M223 105V61H312V105M217 61L267 35L318 61M237 68H297" fill="#E5D8CA" fill-opacity=".56" stroke="#776956" stroke-opacity=".5" stroke-width="1.05" stroke-linejoin="round"/>
+  <g fill="#7D8C82" fill-opacity=".72"><circle cx="72" cy="79" r="4"/><circle cx="91" cy="76" r="4"/><circle cx="110" cy="81" r="4"/></g>
+  <g stroke="#65746A" stroke-opacity=".58" stroke-linecap="round"><path d="M65 96C66 87 68 83 72 83C76 83 78 87 79 96M84 96C85 84 87 80 91 80C95 80 97 84 98 96M103 96C104 88 106 85 110 85C114 85 116 88 117 96"/></g>
+  <circle cx="267" cy="80" r="4" fill="#9C7768" fill-opacity=".76"/>
+  <path d="M259 97C260 87 263 84 267 84C271 84 274 87 275 97" stroke="#8B6A5D" stroke-opacity=".62" stroke-linecap="round"/>
+  <path d="M138 84C160 69 181 69 204 83M204 83L198 79M204 83L199 88" stroke="#A06457" stroke-opacity=".56" stroke-width="1.1" stroke-dasharray="3 4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M221 93C197 109 166 109 139 94M139 94L145 90M139 94L145 98" stroke="#6B7A70" stroke-opacity=".42" stroke-width="1.05" stroke-dasharray="3 4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="181" cy="83" r="2" fill="#A86456" fill-opacity=".7"/>
+  <path d="M31 113C121 109 236 110 329 114" stroke="#718078" stroke-opacity=".19" stroke-linecap="round"/>
+</svg>

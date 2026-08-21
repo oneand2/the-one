@@ -1,0 +1,577 @@
+.page {
+  --auth-paper: #fbf9f4;
+  --auth-ink: #3d3935;
+  --auth-ink-strong: #292524;
+  --auth-title: #333333;
+  --auth-muted: #8a8175;
+  --auth-faint: #b5ad9e;
+  --auth-line: #e8e3d8;
+  --auth-hairline: rgba(0, 0, 0, 0.07);
+  --auth-kaiti: "Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif;
+  --auth-songti: "Songti SC", "STSong", "Hiragino Mincho ProN", var(--font-crimson-text), Georgia, serif;
+  position: relative;
+  display: grid;
+  min-height: 100dvh;
+  place-items: center;
+  padding: max(64px, env(safe-area-inset-top, 0px)) 24px max(48px, env(safe-area-inset-bottom, 0px));
+  background: var(--auth-paper);
+  color: var(--auth-ink);
+}
+
+.page,
+.page * {
+  box-sizing: border-box;
+}
+
+.homeLink {
+  position: fixed;
+  top: max(20px, env(safe-area-inset-top, 0px));
+  left: max(20px, env(safe-area-inset-left, 0px));
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--auth-muted);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: color 400ms ease;
+}
+
+.homeLink:hover {
+  color: var(--auth-ink);
+}
+
+.homeArrow {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--auth-hairline);
+  font-size: 15px;
+}
+
+.experience {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 420px;
+  animation: experience-in 700ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.emblem {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 18px;
+  place-items: center;
+  color: #2c2c2c;
+  animation: emblem-in 640ms 60ms cubic-bezier(0.2, 0.78, 0.18, 1) both;
+}
+
+.emblemSvg {
+  width: 32px;
+  height: 32px;
+}
+
+.titleState,
+.stateFrame {
+  animation: state-in 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #a8a29e;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.34em;
+}
+
+.title {
+  margin: 0;
+  color: var(--auth-title);
+  font-family: var(--auth-songti);
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+}
+
+.subtitle {
+  margin: 12px 0 0;
+  color: var(--auth-muted);
+  font-family: var(--auth-kaiti);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.notice,
+.error {
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.notice {
+  color: #6b6254;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--auth-line);
+}
+
+.error {
+  color: #8a4a4a;
+  background: rgba(138, 74, 74, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(138, 74, 74, 0.16);
+}
+
+.shell {
+  border-radius: 16px;
+  background: var(--auth-paper);
+  border: 1px solid var(--auth-hairline);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.panel {
+  overflow: hidden;
+  padding: 24px 24px 26px;
+  border-radius: 16px;
+}
+
+.modeSwitcher {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--auth-line);
+}
+
+.modeIndicator {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 50%;
+  height: 1.5px;
+  background: var(--auth-ink-strong);
+}
+
+.modeButton {
+  position: relative;
+  z-index: 1;
+  height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--auth-muted);
+  cursor: pointer;
+  font-family: var(--auth-kaiti);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  transition: color 400ms ease;
+}
+
+.modeButtonActive {
+  color: var(--auth-ink-strong);
+}
+
+.modeButton:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -2px 0 rgba(176, 159, 115, 0.4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldCore {
+  display: flex;
+  flex-direction: column;
+}
+
+.fieldRow {
+  padding: 10px 2px 12px;
+  border-bottom: 1px solid var(--auth-line);
+}
+
+.fieldMeta {
+  display: flex;
+  min-height: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fieldLabel {
+  color: var(--auth-muted);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+
+.fieldAction {
+  border: 0;
+  background: none;
+  color: var(--auth-muted);
+  cursor: pointer;
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: color 400ms ease;
+}
+
+.fieldAction:hover {
+  color: var(--auth-ink);
+}
+
+.input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--auth-ink-strong);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.input::placeholder {
+  color: #c4bdb0;
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.primaryButton {
+  display: flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--auth-ink-strong);
+  color: #f8f5ee;
+  cursor: pointer;
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  transition: background 400ms ease, opacity 400ms ease, transform 400ms ease;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #3d3935;
+}
+
+.primaryButton:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.primaryButton:disabled {
+  cursor: wait;
+  opacity: 0.45;
+}
+
+.secondaryAction {
+  align-self: center;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--auth-muted);
+  cursor: pointer;
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  transition: color 400ms ease;
+}
+
+.secondaryAction:hover {
+  color: var(--auth-ink);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--auth-faint);
+  font-family: var(--auth-kaiti);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+.divider::before,
+.divider::after {
+  height: 1px;
+  flex: 1;
+  background: var(--auth-line);
+  content: '';
+}
+
+.providerButton {
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px 0 10px;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--auth-ink);
+  box-shadow: inset 0 0 0 1px var(--auth-hairline);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: background 400ms ease;
+}
+
+.providerButton:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.providerButton:active {
+  transform: scale(0.99);
+}
+
+.providerIdentity {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.wechatSeal {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(7, 193, 96, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(7, 193, 96, 0.18);
+  color: #087f3f;
+  font-family: var(--auth-kaiti);
+  font-size: 14px;
+}
+
+.providerArrow {
+  color: var(--auth-faint);
+  font-size: 14px;
+}
+
+.providerHint,
+.formHint,
+.choiceIntro {
+  margin: 0;
+  color: var(--auth-faint);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 10px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.choiceIntro {
+  color: var(--auth-muted);
+  font-size: 11px;
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.choiceButton {
+  display: flex;
+  min-height: 108px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--auth-ink);
+  cursor: pointer;
+  text-align: left;
+  box-shadow: inset 0 0 0 1px var(--auth-hairline);
+  transition: background 400ms ease;
+}
+
+.choiceButton:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.choiceButton:focus-visible,
+.primaryButton:focus-visible,
+.providerButton:focus-visible,
+.secondaryAction:focus-visible,
+.homeLink:focus-visible,
+.fieldAction:focus-visible,
+.legal a:focus-visible {
+  outline: 2px solid rgba(176, 159, 115, 0.42);
+  outline-offset: 3px;
+}
+
+.choiceSeal {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--auth-line);
+  color: #8a7548;
+  font-family: var(--auth-kaiti);
+  font-size: 14px;
+}
+
+.choiceTitle {
+  display: block;
+  font-family: var(--auth-songti);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.choiceDetail {
+  display: block;
+  margin-top: 4px;
+  color: var(--auth-faint);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.otpIntro {
+  padding: 2px 8px 0;
+  text-align: center;
+}
+
+.otpEmail {
+  display: block;
+  margin-top: 5px;
+  color: var(--auth-ink);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.otpInput {
+  text-align: center;
+  font-size: 20px;
+  letter-spacing: 0.32em;
+}
+
+.legal {
+  margin: 20px auto 0;
+  max-width: 360px;
+  color: var(--auth-faint);
+  font-family: var(--font-geist-sans), "PingFang SC", sans-serif;
+  font-size: 10px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.legal a {
+  color: var(--auth-muted);
+  text-decoration: none;
+  transition: color 400ms ease;
+}
+
+.legal a:hover {
+  color: var(--auth-ink);
+}
+
+@media (max-width: 560px) {
+  .page {
+    display: block;
+    width: 100%;
+    padding: max(84px, calc(env(safe-area-inset-top, 0px) + 64px)) 20px max(36px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .experience {
+    margin: 0 auto;
+  }
+
+  .homeLink {
+    top: max(14px, env(safe-area-inset-top, 0px));
+    left: 14px;
+  }
+
+  .homeLinkText {
+    display: none;
+  }
+
+  .brand {
+    margin-bottom: 30px;
+  }
+
+  .panel {
+    padding: 20px 18px 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homeLink,
+  .modeButton,
+  .primaryButton,
+  .providerButton,
+  .secondaryAction,
+  .choiceButton {
+    transition-duration: 1ms;
+  }
+
+  .experience,
+  .emblem,
+  .titleState,
+  .stateFrame {
+    animation-duration: 1ms;
+  }
+}
+
+@keyframes experience-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes emblem-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes state-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}

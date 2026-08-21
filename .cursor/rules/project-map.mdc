@@ -49,7 +49,7 @@ alwaysApply: true
 - 浏览器端 Supabase 鉴权使用 `src/utils/supabase/client.ts`。
 - 服务端 Supabase 使用 `src/utils/supabase/server.ts`。
 - 跨用户或管理员级操作使用 `src/utils/supabase/admin.ts`，需要 `SUPABASE_SERVICE_ROLE_KEY`。
-- 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
+- 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、`wechat_identities`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
 - `README.md` 说明 `daoyoushuju` 通过 `type` 和 `input_data` JSONB 存储保存记录。
 
 ## 重要 API 区域
@@ -58,6 +58,7 @@ alwaysApply: true
 - `src/app/api/chat-sessions/**`：聊天会话和消息持久化。
 - `src/app/api/records/**`：八字、MBTI、六爻历史记录 API。
 - `src/app/api/user/**`：用户资料和邀请码 API。
+- `src/app/api/auth/wechat/**`：微信网站扫码登录与账号绑定；需 `WECHAT_LOGIN_APP_ID` / `WECHAT_LOGIN_APP_SECRET`。
 - `src/app/api/shop/redeem/route.ts`：兑换码流程。
 - `src/app/api/divine/route.ts`：占卜相关服务端接口。
 - `src/app/api/admin/news-items/sync/route.ts`：管理员把 `world_news` 解析回填到结构化标题库 `news_items`（按日期或全量，幂等）。

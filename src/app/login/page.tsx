@@ -1,6 +1,8 @@
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { LoginForm } from './LoginForm';
+import styles from './login.module.css';
 
 export default async function LoginPage({
   searchParams,
@@ -14,48 +16,27 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = (params.next as string) || '/';
   const message = params.message as string;
+  const wechatEnabled = Boolean(
+    process.env.WECHAT_LOGIN_APP_ID?.trim()
+    && process.env.WECHAT_LOGIN_APP_SECRET?.trim()
+    && process.env.NEXT_PUBLIC_SITE_URL?.trim()
+  );
   
   if (user) {
     redirect(next);
   }
 
   return (
-    <div className="min-h-screen bg-[#FBF9F4] flex items-center justify-center px-6">
-      <div className="w-full max-w-md">
-        {/* 主标题 */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif text-stone-800 tracking-wider mb-3">
-            欢迎
-          </h1>
-          <p className="text-sm text-stone-500 font-sans">
-            世界即道场，让我们一起修行
-          </p>
-        </div>
-
-        {/* 提示消息 */}
-        {message && (
-          <div className="mb-6 px-4 py-3 bg-stone-100 border border-stone-300 rounded-lg">
-            <p className="text-sm text-stone-700 font-sans text-center">
-              {message}
-            </p>
-          </div>
-        )}
-
-        {/* 登录表单 */}
-        <div className="bg-white/40 backdrop-blur-sm rounded-2xl shadow-sm p-8 border border-stone-200/50">
-          <LoginForm next={next} />
-        </div>
-
-        {/* 返回首页 */}
-        <div className="text-center mt-8">
-          <a
-            href="/"
-            className="text-sm text-stone-500 hover:text-stone-800 font-sans transition-colors"
-          >
-            ← 返回首页
-          </a>
-        </div>
-      </div>
-    </div>
+    <main className={styles.page}>
+      <Link href="/" className={styles.homeLink} aria-label="返回首页">
+        <span className={styles.homeArrow} aria-hidden="true">←</span>
+        <span className={styles.homeLinkText}>返回首页</span>
+      </Link>
+      <LoginForm
+        next={next}
+        wechatEnabled={wechatEnabled}
+        message={message}
+      />
+    </main>
   );
 }

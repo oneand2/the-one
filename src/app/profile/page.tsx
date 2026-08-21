@@ -21,6 +21,12 @@ export default function ProfilePage() {
   const [vipDuration, setVipDuration] = useState<'1m' | '3m' | '6m' | '1y' | 'lifetime'>('1m');
   const [vipSubmitting, setVipSubmitting] = useState(false);
   const [vipMessage, setVipMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [wechatStatus, setWechatStatus] = useState<{
+    configured: boolean;
+    bound: boolean;
+    nickname?: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
@@ -53,6 +59,23 @@ export default function ProfilePage() {
         })
         .catch((e) => setError(e instanceof Error ? e.message : '加载失败'))
         .finally(() => setLoading(false));
+
+      fetch('/api/auth/wechat/status', { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((status) => {
+          if (status) setWechatStatus(status);
+        })
+        .catch(() => {});
+
+      const message = new URLSearchParams(window.location.search).get('message');
+      if (message) {
+        if (message === '微信绑定成功') {
+          setNotice(message);
+        } else {
+          setError(message);
+        }
+        window.history.replaceState({}, '', '/profile');
+      }
     });
   }, [router]);
 
@@ -114,6 +137,12 @@ export default function ProfilePage() {
           </div>
         )}
 
+        {notice && (
+          <div className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-sans text-emerald-800">
+            {notice}
+          </div>
+        )}
+
         <div className="space-y-8">
           <div>
             <label className="block text-sm font-sans text-stone-700 mb-2">昵称</label>
@@ -136,6 +165,35 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+
+          {wechatStatus?.configured && (
+            <div className="border-t border-stone-200 pt-6">
+              <label className="mb-2 block text-sm font-sans text-stone-700">微信登录</label>
+              {wechatStatus.bound ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3">
+                  <p className="text-sm font-sans text-emerald-800">已绑定微信</p>
+                  {wechatStatus.nickname && (
+                    <p className="mt-1 text-xs font-sans text-emerald-700/75">{wechatStatus.nickname}</p>
+                  )}
+                  <p className="mt-2 text-xs leading-5 text-stone-500">
+                    以后可以直接在登录页使用微信扫码进入当前账号。
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="mb-3 text-xs leading-5 text-stone-500">
+                    绑定后，微信扫码登录仍会进入当前账号，铜币、VIP 和历史记录不会变化。
+                  </p>
+                  <a
+                    href="/api/auth/wechat/start?mode=bind&next=/profile"
+                    className="inline-flex rounded-lg border border-[#07C160]/35 bg-[#07C160]/5 px-4 py-2.5 font-sans text-sm text-[#087f3f] transition-colors hover:bg-[#07C160]/10"
+                  >
+                    绑定微信
+                  </a>
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-sans text-stone-700 mb-2">邀请码</label>

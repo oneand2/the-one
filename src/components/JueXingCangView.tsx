@@ -1994,7 +1994,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                     handleSend();
                   }
                 }}
-                placeholder="请输入问题..."
+                placeholder="请输入问题… 例：我要不要离职？"
                 className="w-full px-7 pt-5 pb-3 bg-transparent border-none outline-none 
                   resize-none text-[14px] text-[#333333] placeholder-stone-400 
                   font-light tracking-wide leading-loose max-h-40"

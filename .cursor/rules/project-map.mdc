@@ -14,7 +14,7 @@ alwaysApply: true
 ## 产品定位
 
 - 应用名：`二`。
-- 主体验：中文 Web 应用，首页以 tab 承载 `见天地`、`八字命理`、`荣格八维`、`见众生`、`决行藏`。
+- 主体验：中文 Web 应用，首页以 tab 承载 `见天地`、`见自己`、`见众生`、`决行藏`。八字排盘与荣格八维已并入「见自己」。
 - 核心功能：世界/新闻内容、八字分析、MBTI/荣格八维测试、六爻占卜、AI 聊天、用户资料、铜币/VIP 权限控制、历史记录保存。
 
 ## 技术栈
@@ -23,24 +23,26 @@ alwaysApply: true
 - 样式：Tailwind CSS 4，通过 `@tailwindcss/postcss` 接入；全局样式在 `src/app/globals.css`。
 - 鉴权/数据：Supabase，通过 `@supabase/ssr` 和 `@supabase/supabase-js` 使用。
 - AI/API：Next Route Handlers 中使用 OpenAI 兼容 SDK；默认、推理、宗师模式模型由环境变量选择。
-- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。
+- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。原生 iOS 项目位于 `ios/`；网页可用 `?embed=ios` 嵌入。
 
 ## 关键目录
 
 - `src/app/`：App Router 页面、布局、加载/错误边界、Server Actions 和 API 路由。
-- `src/app/api/`：聊天、聊天会话、记录、鉴权辅助、用户资料、商城兑换、管理员 VIP、占卜等 Route Handlers。
+- `src/app/api/`：聊天、聊天会话、记录、鉴权辅助、用户资料、商城兑换、管理员 VIP、占卜、以及 `mobile/` 原生客户端接口等 Route Handlers。
+- `src/generated/`：由 `design/mobile-ui.tokens.json` 生成的移动端 UI 契约。
 - `src/components/`：客户端 UI 组件，包括 tab、导航、鉴权 UI、图表、弹窗、八字/MBTI/六爻/世界新闻视图和全局错误处理。
 - `src/utils/`：领域逻辑和共享工具，包括八字、易经/六爻、缓存、VIP 判断、fetch 重试、Supabase 客户端。
 - `src/utils/supabase/`：浏览器端、服务端、service-role Supabase client 工厂。
 - `src/types/`：共享 TypeScript 类型，包括 tab ID 和导入的测算/测试数据。
 - `public/`：PWA manifest 和公开静态资源。
 - `android/`：Capacitor 使用的原生 Android 壳。
+- `ios/`：原生 SwiftUI iOS 项目。
 - `docs/` 和根目录 `*.md`：功能说明、部署说明、验证指南和历史实现文档。
 
 ## 路由形态
 
 - `src/app/layout.tsx` 定义 metadata、字体、全局登录入口、Supabase 预连接和延迟加载的布局附加组件。
-- `src/app/page.tsx` 是首页 tab 容器；tab 状态同步到 `tab` query 参数。
+- `src/app/page.tsx` 是首页 tab 容器；tab 状态同步到 `tab` query 参数。旧地址 `?tab=bazi` 会映射到 `guanxin`（见自己）。`/report/classical` 返回也回到见自己，不再打开旧八字页。
 - 主要独立页面包括 `/login`、`/profile`、`/shop`、`/world`、`/download`、`/juexingcang`、`/my/classical`、`/my/mbti`、`/my/liuyao`、`/report/classical`、`/report/mbti`、`/forgot-password`、`/reset-password`。
 - `src/middleware.ts` 刷新 Supabase session cookie，并保护 `/profile`、`/history`、`/my`。
 

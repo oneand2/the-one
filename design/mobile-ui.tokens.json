@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "referenceViewport": {
+    "width": 402,
+    "height": 874,
+    "contentMaxWidth": 448
+  },
+  "colors": {
+    "background": "#FBF9F4",
+    "foreground": "#171717",
+    "ink": "#3D3935",
+    "headerGlyph": "#2C2C2C",
+    "headerTitle": "#333333",
+    "stone900": "#1C1917",
+    "stone800": "#292524",
+    "stone700": "#44403C",
+    "stone600": "#57534E",
+    "stone500": "#78716C",
+    "stone400": "#A8A29E",
+    "stone300": "#D6D3D1",
+    "stone200": "#E7E5E4",
+    "stone100": "#F5F5F4",
+    "secondaryInk": "#57534E",
+    "faint": "#C4BDB0",
+    "authMuted": "#8A8175",
+    "authFaint": "#B5AD9E",
+    "authLine": "#E8E3D8",
+    "lunarInk": "#1E1C18",
+    "lunarMeta": "#A39888",
+    "lunarDate": "#B5AD9E",
+    "lunarText": "#4A4642",
+    "warmWhite": "#FDFCF9",
+    "jade": "#5B7A5B",
+    "jadeLight": "#7A9B85",
+    "cinnabar": "#8A4A4A",
+    "gold": "#B09F73",
+    "wood": "#7A9B85",
+    "fire": "#BA6E65",
+    "earth": "#8B5F45",
+    "metal": "#B09F73",
+    "water": "#6B7C97"
+  },
+  "alpha": {
+    "hairline": 0.07,
+    "softShadow": 0.035,
+    "pressedFill": 0.20,
+    "disabled": 0.45
+  },
+  "fontFamilies": {
+    "sans": "system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif",
+    "serif": "'Songti SC', 'STSong', 'Hiragino Mincho ProN', Georgia, serif",
+    "kaiti": "'Kaiti SC', KaiTi, STKaiti, '华文楷体', '楷体', Georgia, serif"
+  },
+  "typography": {
+    "pageTitle": { "family": "serif", "size": 30, "lineHeight": 37.5, "letterSpacing": 0, "weight": 400 },
+    "pageSubtitle": { "family": "sans", "size": 14, "lineHeight": 20, "letterSpacing": 0, "weight": 400 },
+    "navigationLabel": { "family": "kaiti", "size": 13, "lineHeight": 19.5, "letterSpacing": 1.95, "weight": 400 },
+    "sectionEyebrow": { "family": "sans", "size": 10, "lineHeight": 15, "letterSpacing": 3.4, "weight": 400 },
+    "body": { "family": "sans", "size": 14, "lineHeight": 24, "letterSpacing": 0, "weight": 400 },
+    "caption": { "family": "sans", "size": 12, "lineHeight": 18, "letterSpacing": 0, "weight": 400 },
+    "button": { "family": "sans", "size": 12, "lineHeight": 18, "letterSpacing": 0, "weight": 400 }
+  },
+  "spacing": {
+    "xxs": 4,
+    "xs": 8,
+    "sm": 12,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "xxl": 40,
+    "section": 64,
+    "pageHorizontal": 24,
+    "contentBottom": 128
+  },
+  "radii": {
+    "small": 8,
+    "medium": 13,
+    "large": 24,
+    "pill": 999
+  },
+  "shadows": {
+    "card": { "x": 0, "y": 2, "blur": 8, "spread": 0, "color": "#000000", "opacity": 0.035 }
+  },
+  "motion": {
+    "fast": 0.20,
+    "standard": 0.30,
+    "slow": 0.45,
+    "springStiffness": 300,
+    "springDamping": 30,
+    "bezier": [0.32, 0.72, 0, 1]
+  },
+  "header": {
+    "webTop": 64,
+    "webBottom": 64,
+    "embedTop": 64,
+    "nativeSafeOffset": 5,
+    "glyphSize": 32,
+    "glyphLineHeight": 6.4,
+    "glyphToTitle": 16,
+    "titleToSubtitle": 16,
+    "bottom": 61.5
+  },
+  "navigation": {
+    "iconSize": 30,
+    "iconLabelGap": 6,
+    "itemVerticalPadding": 8,
+    "barHorizontalPadding": 16,
+    "barVerticalPadding": 8,
+    "safeAreaMinimum": 8,
+    "indicatorWidth": 20,
+    "indicatorHeight": 3,
+    "minimumTapWidth": 68,
+    "minimumTapHeight": 56
+  },
+  "symbols": {
+    "header": { "canvas": 100, "fullX": 0, "halfLeftX": 0, "halfRightX": 56, "fullWidth": 100, "halfWidth": 44, "topY": 20, "bottomY": 60, "lineHeight": 20 },
+    "navigation": { "canvas": 100, "fullX": 10, "halfLeftX": 10, "halfRightX": 58, "fullWidth": 80, "halfWidth": 32, "topY": 30, "bottomY": 58, "lineHeight": 12 }
+  },
+  "screens": {
+    "guanshi": { "title": "见天地", "subtitle": "世界会越来越好，你也是", "symbol": "broken-broken" },
+    "wendao": { "title": "见众生", "subtitle": "观点广场，待续", "symbol": "broken-solid" },
+    "guanxin": { "title": "见自己", "subtitle": "知己即知天，请成为自己的答案", "symbol": "solid-broken" },
+    "bazi": { "title": "八字命理", "subtitle": "知己即知天，请成为自己的答案", "symbol": "solid-broken" },
+    "mbti": { "title": "荣格八维", "subtitle": "知己即知天，请成为自己的答案", "symbol": "solid-broken" },
+    "juexingcang": { "title": "决行藏", "subtitle": "用之则行，舍之则藏", "symbol": "solid-solid" }
+  }
+}

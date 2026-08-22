@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ import { SITE_INFO } from '@/config/siteInfo';
 
 export function AuthButton() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [nickname, setNickname] = useState<string | null>(null);
   const [coins, setCoins] = useState<number | null>(null);
@@ -150,6 +151,8 @@ export function AuthButton() {
       router.refresh();
     }
   };
+
+  if (pathname === '/login') return null;
 
   // 不阻塞首屏：登录态在后台拉取，先展示按钮/登录入口，避免等 getUser 导致整页“卡住”
   return (

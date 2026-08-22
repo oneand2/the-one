@@ -7,6 +7,11 @@ export async function middleware(request: NextRequest) {
     return new NextResponse(null, { status: 410 });
   }
 
+  // iOS 嵌入页由原生壳负责登录态；这里跳过 getUser，避免代理超时把首页拖成空白。
+  if (request.nextUrl.searchParams.get('embed') === 'ios') {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   });

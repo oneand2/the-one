@@ -8,6 +8,9 @@ export default function InstallPrompt() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    // 已经运行在 SwiftUI App 内，不再展示浏览器的 PWA 安装引导。
+    if (new URLSearchParams(window.location.search).get("embed") === "ios") return;
+
     // 1. 检查是否已经是 APP 模式 (Standalone)
     setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
     if (window.matchMedia("(display-mode: standalone)").matches) return;

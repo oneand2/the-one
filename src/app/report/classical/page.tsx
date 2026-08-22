@@ -746,7 +746,7 @@ const ClassicalReportContent: React.FC = () => {
       >
         <button
           type="button"
-          onClick={() => router.push('/?tab=bazi')}
+          onClick={() => router.push('/?tab=guanxin')}
           className="px-8 py-2.5 text-[11px] font-sans tracking-[0.18em] text-stone-400 hover:text-stone-600 transition-colors duration-300"
         >
           ← 返回

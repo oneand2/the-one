@@ -1,0 +1,72 @@
+{
+  "identifier" : "B57BF2CF-539D-4327-9C21-A8B21CEB849A",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "9.90",
+      "familyShareable" : false,
+      "internalID" : "34081001",
+      "localizations" : [
+        {
+          "description" : "适合轻量体验 AI 对话与解读服务",
+          "displayName" : "初见 · 100 枚铜币",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.theone.er.coins.100",
+      "referenceName" : "初见 100 铜币",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "29.90",
+      "familyShareable" : false,
+      "internalID" : "34081002",
+      "localizations" : [
+        {
+          "description" : "适合持续使用与多轮深入交流",
+          "displayName" : "深观 · 360 枚铜币",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.theone.er.coins.360",
+      "referenceName" : "深观 360 铜币",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "59.90",
+      "familyShareable" : false,
+      "internalID" : "34081003",
+      "localizations" : [
+        {
+          "description" : "适合长期使用数字内容服务",
+          "displayName" : "长明 · 800 枚铜币",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.theone.er.coins.800",
+      "referenceName" : "长明 800 铜币",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "zh_CN",
+    "_storefront" : "CHN",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
+

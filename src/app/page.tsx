@@ -6,13 +6,17 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
 import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
+import { mobileUI } from '@/generated/mobile-ui';
 import type { TabType } from '@/types/tabs';
 
 const VALID_TABS: TabType[] = ['guanshi', 'guanxin', 'bazi', 'mbti', 'wendao', 'juexingcang'];
+const LEGACY_TAB_ALIASES: Partial<Record<string, TabType>> = { bazi: 'guanxin' };
 
 function getTabFromUrl(): TabType {
   if (typeof window === 'undefined') return 'guanshi';
   const tabParam = new URLSearchParams(window.location.search).get('tab');
+  const aliased = tabParam ? LEGACY_TAB_ALIASES[tabParam] : undefined;
+  if (aliased) return aliased;
   return tabParam && VALID_TABS.includes(tabParam as TabType) ? (tabParam as TabType) : 'guanshi';
 }
 
@@ -53,6 +57,7 @@ function TabLoading() {
 
 const HomeContent: React.FC = () => {
   const searchParams = useSearchParams();
+  const isIOSEmbed = searchParams.get('embed') === 'ios';
   const [activeTab, setActiveTab] = useState<TabType>('guanshi');
   const [isCollapsed, setIsCollapsed] = useState(true);
   // 已访问过的 tab 保持挂载，切换回来时不再重新加载、不卡顿
@@ -71,11 +76,47 @@ const HomeContent: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  // 顶部渗墨只在内容开始上滑后出现，静止时 logo 保持清晰。
+  useEffect(() => {
+    if (!isIOSEmbed) return;
+    const root = document.querySelector<HTMLElement>('[data-ios-embed="true"]');
+    if (!root) return;
+    const syncInkFade = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      root.style.setProperty('--ios-ink-top', String(Math.min(1, y / 48)));
+    };
+    syncInkFade();
+    window.addEventListener('scroll', syncInkFade, { passive: true });
+    return () => window.removeEventListener('scroll', syncInkFade);
+  }, [isIOSEmbed]);
+
+  // SwiftUI 原生底栏切换时不重载 WebView，保留页面、滚动与输入状态。
+  useEffect(() => {
+    if (!isIOSEmbed) return;
+    const onNativeNavigate = (event: Event) => {
+      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
+      if (!tab || !VALID_TABS.includes(tab as TabType)) return;
+      setActiveTab(tab as TabType);
+      setVisitedTabs((prev) => new Set([...prev, tab as TabType]));
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+    };
+    window.addEventListener('theone:navigate', onNativeNavigate);
+    return () => window.removeEventListener('theone:navigate', onNativeNavigate);
+  }, [isIOSEmbed]);
+
   // 当 URL 被 router.push 更新时（如见天地「占问今日休咎」跳转决行藏），立即同步 tab，保证马上切到对应界面
   useEffect(() => {
     const tab = getTabFromUrl();
     setActiveTab(tab);
     setVisitedTabs((prev) => new Set([...prev, tab]));
+    const rawTab = searchParams.get('tab');
+    if (rawTab && LEGACY_TAB_ALIASES[rawTab] && rawTab !== tab) {
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+    }
   }, [searchParams]);
 
   const handleTabChange = useCallback(
@@ -86,14 +127,21 @@ const HomeContent: React.FC = () => {
       const url = new URL(window.location.href);
       url.searchParams.set('tab', tab);
       window.history.replaceState(null, '', url.toString());
+      if (isIOSEmbed) {
+        window.webkit?.messageHandlers?.theone?.postMessage({ type: 'tabChanged', tab });
+      }
     },
-    [activeTab]
+    [activeTab, isIOSEmbed]
   );
 
   return (
-    <div className="min-h-screen bg-[#fbf9f4] relative">
+    <div
+      className="min-h-screen relative"
+      data-ios-embed={isIOSEmbed ? 'true' : undefined}
+      style={{ background: mobileUI.colors.background }}
+    >
       {/* 左侧侧边栏 */}
-      <div className="hidden md:block">
+      {!isIOSEmbed && <div className="hidden md:block">
         <Sidebar 
           activeTab={activeTab} 
           onTabChange={handleTabChange}
@@ -102,7 +150,7 @@ const HomeContent: React.FC = () => {
           onMouseEnter={() => setIsCollapsed(false)}
           onMouseLeave={() => setIsCollapsed(true)}
         />
-      </div>
+      </div>}
 
       {/* 主内容区 - 占据全屏，内容居中 */}
       <main className="min-h-screen flex items-start justify-center">
@@ -112,7 +160,11 @@ const HomeContent: React.FC = () => {
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="py-16 px-6"
+            className="px-6"
+            style={{
+              paddingTop: isIOSEmbed ? 16 : mobileUI.header.webTop,
+              paddingBottom: isIOSEmbed ? mobileUI.header.bottom : mobileUI.header.webBottom,
+            }}
           >
             <div className="max-w-md mx-auto text-center space-y-4">
               <motion.div
@@ -170,7 +222,7 @@ const HomeContent: React.FC = () => {
           </motion.header>
 
           {/* 内容区域：已访问的 tab 保持挂载仅隐藏，切换回来秒开不卡顿 */}
-          <div className="px-6 mobile-content-bottom">
+          <div className={isIOSEmbed ? 'px-6 pb-8' : 'px-6 mobile-content-bottom'}>
             <TabContentErrorBoundary>
               <div className="max-w-md mx-auto relative">
                 {visitedTabs.has('guanshi') && (
@@ -223,7 +275,7 @@ const HomeContent: React.FC = () => {
         </div>
       </main>
 
-      <MobileNav activeTab={activeTab} onTabChange={handleTabChange} />
+      {!isIOSEmbed && <MobileNav activeTab={activeTab} onTabChange={handleTabChange} />}
     </div>
   );
 };

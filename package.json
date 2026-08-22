@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:poll": "WATCHPACK_POLLING=true WATCHPACK_POLLING_INTERVAL=1000 next dev --webpack",
+    "ui:generate": "node scripts/generate-ui-contract.mjs",
+    "ui:check": "node scripts/generate-ui-contract.mjs --check",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -12,6 +14,7 @@
     "insights:publish": "tsx scripts/publish-daily-insights.ts"
   },
   "dependencies": {
+    "@apple/app-store-server-library": "^3.1.0",
     "@capacitor/android": "^8.0.2",
     "@capacitor/cli": "^8.0.2",
     "@capacitor/core": "^8.0.2",

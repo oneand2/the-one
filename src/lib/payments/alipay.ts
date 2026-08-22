@@ -69,12 +69,15 @@ function createSdk() {
 
 export function createAlipayPagePayUrl(
   outTradeNo: string,
-  coinPackage: CoinPackage
+  coinPackage: CoinPackage,
+  displayMode: 'embedded' | 'redirect' = 'redirect'
 ) {
   const { sdk, env } = createSdk();
   return sdk.pageExecute('alipay.trade.page.pay', 'GET', {
     notifyUrl: `${env.siteUrl}/api/payments/alipay/notify`,
-    returnUrl: `${env.siteUrl}/shop?payment=return&order=${encodeURIComponent(outTradeNo)}`,
+    ...(displayMode === 'redirect'
+      ? { returnUrl: `${env.siteUrl}/shop?payment=return&order=${encodeURIComponent(outTradeNo)}` }
+      : {}),
     bizContent: {
       out_trade_no: outTradeNo,
       product_code: 'FAST_INSTANT_TRADE_PAY',
@@ -82,6 +85,9 @@ export function createAlipayPagePayUrl(
       body: `${coinPackage.coins}枚站内铜币，用于本平台AI对话与解读服务`,
       total_amount: (coinPackage.amountCents / 100).toFixed(2),
       timeout_express: '30m',
+      ...(displayMode === 'embedded'
+        ? { qr_pay_mode: '4', qrcode_width: '240' }
+        : {}),
     },
   });
 }

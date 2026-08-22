@@ -59,6 +59,17 @@ cp .env.production.example .env.production
 - `NEXT_PUBLIC_ICP_NUMBER`
 - `NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER`
 
+微信网站扫码登录需要额外配置：
+
+- `WECHAT_LOGIN_APP_ID`：微信开放平台中审核通过的“网站应用” AppID
+- `WECHAT_LOGIN_APP_SECRET`：对应网站应用的 AppSecret，仅放在服务器环境变量中
+
+微信登录授权回调地址固定为：
+
+- `https://www.the-one-and-the-two.com/api/auth/wechat/callback`
+
+在微信开放平台填写授权回调域时只填写域名 `www.the-one-and-the-two.com`，不要填写协议或路径。微信支付使用的商户密钥不能代替上述登录参数。
+
 支付宝电脑网站支付需要额外配置：
 
 - `ALIPAY_APP_ID`

@@ -24,9 +24,11 @@ export async function POST(request: Request) {
   }
 
   let packageId = '';
+  let displayMode: 'embedded' | 'redirect' = 'redirect';
   try {
-    const body = (await request.json()) as { packageId?: unknown };
+    const body = (await request.json()) as { packageId?: unknown; displayMode?: unknown };
     packageId = typeof body.packageId === 'string' ? body.packageId : '';
+    displayMode = body.displayMode === 'embedded' ? 'embedded' : 'redirect';
   } catch {
     return NextResponse.json({ error: '无效请求' }, { status: 400 });
   }
@@ -55,7 +57,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const paymentUrl = createAlipayPagePayUrl(outTradeNo, coinPackage);
+    const paymentUrl = createAlipayPagePayUrl(outTradeNo, coinPackage, displayMode);
     return NextResponse.json({ paymentUrl, outTradeNo });
   } catch (error) {
     console.error('create alipay page url error:', error);

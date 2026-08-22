@@ -71,7 +71,7 @@ export default function RootLayout({
           <PreconnectSupabase />
           {/* 登录入口：定位在页面右上角，随页面滚动 */}
           <div
-            className="absolute top-0 right-0 z-50 md:top-6 md:right-6"
+            className="web-auth-entry fixed top-0 right-0 z-50 md:top-6 md:right-6"
             style={{
               paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
               paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',

@@ -6,8 +6,6 @@ import {
   type ReactNode,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { createClient } from '@/utils/supabase/client';
-import { fetchWithRetry } from '@/utils/fetchWithRetry';
 import { login, signup, verifySignupOtp } from './actions';
 import styles from './login.module.css';
 
@@ -23,7 +21,6 @@ type AuthFieldProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'className'> &
   inputClassName?: string;
 };
 
-const NO_EMAIL_SUFFIX = '@no-email.app';
 const AUTH_ACTION_TIMEOUT_MS = 25000;
 const AUTH_EASE = [0.32, 0.72, 0, 1] as const;
 
@@ -92,7 +89,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [signupChoice, setSignupChoice] = useState<'email' | 'ip' | null>(null);
+  const [signupChoice, setSignupChoice] = useState<'email' | null>(null);
   const [otpPending, setOtpPending] = useState<{
     email: string;
     nickname: string;
@@ -152,68 +149,6 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
     }
   }
 
-  async function handleIpSignup(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    setPending(true);
-    const form = e.currentTarget;
-    const username = (form.username as HTMLInputElement).value.trim();
-    const nickname = (form.nickname as HTMLInputElement | undefined)?.value?.trim() ?? '';
-    const password = (form.password as HTMLInputElement).value;
-    const confirmPassword = (form.confirmPassword as HTMLInputElement).value;
-
-    if (password !== confirmPassword) {
-      setError('两次输入的密码不一致');
-      setPending(false);
-      return;
-    }
-    if (password.length < 6) {
-      setError('密码至少 6 位');
-      setPending(false);
-      return;
-    }
-
-    try {
-      await withTimeout(
-        (async () => {
-          const fingerprint = await import('@fingerprintjs/fingerprintjs').then((module) => module.load());
-          const result = await fingerprint.get();
-          const response = await fetchWithRetry('/api/auth/ip-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, nickname, password, visitorId: result.visitorId }),
-            timeoutMs: 15000,
-            retries: 1,
-          });
-          const data = await response.json().catch(() => ({}));
-
-          if (!response.ok) {
-            setError(data.error || '注册失败，请重试');
-            return;
-          }
-
-          const supabase = createClient();
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email: `${username}${NO_EMAIL_SUFFIX}`,
-            password,
-          });
-          if (signInError) {
-            setError('注册成功，但自动登录失败，请使用用户名和密码登录');
-            return;
-          }
-          window.location.href = next || '/';
-        })(),
-        AUTH_ACTION_TIMEOUT_MS,
-        '注册请求超时，请检查网络后重试或切换网络（如改用流量）',
-      );
-    } catch (err) {
-      console.error('IP signup error', err);
-      setError(err instanceof Error ? err.message : '获取设备标识失败或网络异常，请重试');
-    } finally {
-      setPending(false);
-    }
-  }
-
   async function handleOtpSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -249,7 +184,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
 
   const showSignupChoice = mode === 'signup' && signupChoice === null && !otpPending;
   const showEmailSignupForm = mode === 'signup' && signupChoice === 'email' && !otpPending;
-  const showIpSignupForm = mode === 'signup' && signupChoice === 'ip' && !otpPending;
+  const wechatStartHref = `/api/auth/wechat/start?mode=login&next=${encodeURIComponent(next)}`;
   const stateKey = otpPending ? 'otp' : mode === 'login' ? 'login' : signupChoice ?? 'signup-choice';
   const title = otpPending ? '验证' : mode === 'login' ? '归来' : '初见';
   const subtitle = otpPending
@@ -373,7 +308,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
             {showSignupChoice && (
               <StateFrame stateKey={stateKey}>
                 <div className={styles.form}>
-                  <p className={styles.choiceIntro}>选择一种适合你的方式，邮箱账户可随时找回密码</p>
+                  <p className={styles.choiceIntro}>选择一种适合你的方式。已有用户名账户仍可在登录页进入</p>
                   <div className={styles.choiceGrid}>
                     <button type="button" className={styles.choiceButton} onClick={() => { setSignupChoice('email'); setError(null); }}>
                       <span className={styles.choiceSeal}>邮</span>
@@ -382,13 +317,27 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                         <span className={styles.choiceDetail}>可验证 · 可找回</span>
                       </span>
                     </button>
-                    <button type="button" className={styles.choiceButton} onClick={() => { setSignupChoice('ip'); setError(null); }}>
-                      <span className={styles.choiceSeal}>名</span>
-                      <span>
-                        <span className={styles.choiceTitle}>用户名注册</span>
-                        <span className={styles.choiceDetail}>免邮箱 · 不可找回</span>
-                      </span>
-                    </button>
+                    {wechatEnabled ? (
+                      <a href={wechatStartHref} className={styles.choiceButton}>
+                        <span className={`${styles.choiceSeal} ${styles.wechatSeal}`}>微</span>
+                        <span>
+                          <span className={styles.choiceTitle}>微信注册</span>
+                          <span className={styles.choiceDetail}>扫码即可建立账户</span>
+                        </span>
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`${styles.choiceButton} ${styles.choiceButtonDisabled}`}
+                        onClick={() => setError('微信注册尚未开通，请改用邮箱')}
+                      >
+                        <span className={`${styles.choiceSeal} ${styles.wechatSeal}`}>微</span>
+                        <span>
+                          <span className={styles.choiceTitle}>微信注册</span>
+                          <span className={styles.choiceDetail}>即将开放</span>
+                        </span>
+                      </button>
+                    )}
                   </div>
                   <button type="button" className={styles.secondaryAction} onClick={() => selectMode('login')}>已有账号，返回登录</button>
                 </div>
@@ -425,7 +374,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                   {wechatEnabled && (
                     <>
                       <div className={styles.divider}>或使用</div>
-                      <a href={`/api/auth/wechat/start?mode=login&next=${encodeURIComponent(next)}`} className={styles.providerButton}>
+                      <a href={wechatStartHref} className={styles.providerButton}>
                         <span className={styles.providerIdentity}>
                           <span className={styles.wechatSeal}>微</span>
                           <span>微信扫码登录</span>
@@ -457,21 +406,6 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
               </StateFrame>
             )}
 
-            {showIpSignupForm && (
-              <StateFrame stateKey={stateKey}>
-                <form className={styles.form} onSubmit={handleIpSignup}>
-                  <FieldStack>
-                    <AuthField id="ip-username" name="username" label="用户名" type="text" required autoComplete="username" placeholder="2～32 位字母、数字、下划线或中文" />
-                    <AuthField id="ip-nickname" name="nickname" label="称呼" type="text" autoComplete="nickname" placeholder="选填，用于展示" />
-                    <AuthField id="ip-password" name="password" label="设置密码" type="password" required minLength={6} autoComplete="new-password" placeholder="至少 6 位" />
-                    <AuthField id="ip-confirmPassword" name="confirmPassword" label="确认密码" type="password" required minLength={6} autoComplete="new-password" placeholder="再次输入密码" />
-                  </FieldStack>
-                  <PrimaryButton pending={pending} label="创建账户" />
-                  <button type="button" className={styles.secondaryAction} onClick={() => { setSignupChoice(null); setError(null); }}>返回选择注册方式</button>
-                  <p className={styles.formHint}>用户名账户不绑定邮箱，遗忘密码后将无法找回</p>
-                </form>
-              </StateFrame>
-            )}
           </AnimatePresence>
         </div>
       </div>

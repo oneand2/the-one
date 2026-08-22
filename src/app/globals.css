@@ -1,7 +1,8 @@
 @import "tailwindcss";
+@import "../generated/mobile-ui.css";
 
 :root {
-  --background: #fbf9f4;
+  --background: var(--ui-color-background);
   --foreground: #171717;
   /* 移动端底部导航总高度（主栏 + 安全区），内容区 pb 用此值避免被挡住 */
   --mobile-nav-height: calc(60px + env(safe-area-inset-bottom, 0px));
@@ -27,7 +28,52 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--ui-font-sans);
+}
+
+/* iOS 原生壳内由 SwiftUI 提供账户入口，嵌入页不重复显示网页入口。 */
+body:has([data-ios-embed="true"]) .web-auth-entry {
+  display: none;
+}
+
+/* iOS 嵌入页：上下缘做成宣纸渗墨。顶部仅在上滑后出现，避免静止时把 logo 溶掉。 */
+[data-ios-embed="true"] {
+  --ios-ink-top: 0;
+}
+
+[data-ios-embed="true"]::before,
+[data-ios-embed="true"]::after {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+[data-ios-embed="true"]::before {
+  top: 0;
+  height: 4.25rem;
+  opacity: var(--ios-ink-top);
+  background: linear-gradient(
+    to bottom,
+    var(--ui-color-background) 0%,
+    color-mix(in srgb, var(--ui-color-background) 86%, transparent) 28%,
+    color-mix(in srgb, var(--ui-color-background) 42%, transparent) 62%,
+    transparent 100%
+  );
+}
+
+[data-ios-embed="true"]::after {
+  bottom: 0;
+  height: 5rem;
+  background: linear-gradient(
+    to top,
+    var(--ui-color-background) 0%,
+    color-mix(in srgb, var(--ui-color-background) 86%, transparent) 28%,
+    color-mix(in srgb, var(--ui-color-background) 42%, transparent) 62%,
+    transparent 100%
+  );
 }
 
 /* 全局隐藏滚动条但保留滚动能力 */

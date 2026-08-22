@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AlertCircle, Check, Coins, QrCode, ShieldCheck, X } from 'lucide-react';
@@ -16,6 +16,20 @@ type WechatPayment = {
   coins: number;
   status: 'pending' | 'paid' | 'expired';
 };
+type AlipayPayment = {
+  outTradeNo: string;
+  paymentUrl: string;
+  expiresAt: number;
+  packageName: string;
+  coins: number;
+  status: 'pending' | 'paid' | 'expired';
+};
+
+function isMobilePaymentDevice() {
+  const userAgent = window.navigator.userAgent;
+  const isTouchMac = /Macintosh/i.test(userAgent) && window.navigator.maxTouchPoints > 1;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent) || isTouchMac || !window.matchMedia('(min-width: 768px)').matches;
+}
 
 export default function ShopPage() {
   const [loadingPayment, setLoadingPayment] = useState<string | null>(null);
@@ -23,6 +37,9 @@ export default function ShopPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [message, setMessage] = useState<PaymentMessage>(null);
   const [wechatPayment, setWechatPayment] = useState<WechatPayment | null>(null);
+  const [alipayPayment, setAlipayPayment] = useState<AlipayPayment | null>(null);
+  const [agreementAttention, setAgreementAttention] = useState(false);
+  const agreementRef = useRef<HTMLLabelElement>(null);
 
   useEffect(() => {
     fetch('/api/user/profile', { credentials: 'include' })
@@ -122,14 +139,74 @@ export default function ShopPage() {
     };
   }, [wechatPayment]);
 
+  useEffect(() => {
+    if (!alipayPayment || alipayPayment.status !== 'pending') return;
+
+    let cancelled = false;
+    let attempts = 0;
+    let timer: number | undefined;
+
+    const checkOrder = async () => {
+      if (cancelled) return;
+      if (Date.now() >= alipayPayment.expiresAt) {
+        setAlipayPayment((current) => current ? { ...current, status: 'expired' } : null);
+        return;
+      }
+
+      attempts += 1;
+      try {
+        const reconcile = attempts === 5 || attempts % 15 === 0 ? '&reconcile=1' : '';
+        const response = await fetch(
+          `/api/payments/alipay/status?order=${encodeURIComponent(alipayPayment.outTradeNo)}${reconcile}`,
+          { credentials: 'include', cache: 'no-store' }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (cancelled) return;
+
+        if (response.ok && data.status === 'paid' && data.credited_at) {
+          setAlipayPayment((current) => current ? { ...current, status: 'paid' } : null);
+          setMessage({ type: 'success', text: `${alipayPayment.coins} 枚铜币已到账。感谢你的支持。` });
+          window.dispatchEvent(new CustomEvent('coins-should-refresh'));
+          fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
+            .then((profileResponse) => (profileResponse.ok ? profileResponse.json() : null))
+            .then((profile) => {
+              if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+            })
+            .catch(() => undefined);
+          return;
+        }
+      } catch {
+        // 网络波动时继续轮询；服务器回调仍会独立完成入账。
+      }
+
+      if (!cancelled) timer = window.setTimeout(checkOrder, 2000);
+    };
+
+    void checkOrder();
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
+  }, [alipayPayment]);
+
+  const focusAgreement = () => {
+    setAgreementAttention(true);
+    setMessage({ type: 'error', text: '请先阅读并同意服务与退款规则。' });
+    agreementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    window.setTimeout(() => {
+      agreementRef.current?.querySelector('input')?.focus({ preventScroll: true });
+    }, 450);
+  };
+
   const handlePurchase = async (provider: PaymentProvider, packageId: string) => {
     if (!accepted) {
-      setMessage({ type: 'error', text: '请先阅读并同意服务与退款规则。' });
+      focusAgreement();
       return;
     }
 
     const coinPackage = COIN_PACKAGES.find((item) => item.id === packageId);
     if (!coinPackage) return;
+    const alipayDisplayMode = provider === 'alipay' && !isMobilePaymentDevice() ? 'embedded' : 'redirect';
 
     setLoadingPayment(`${provider}:${packageId}`);
     setMessage(null);
@@ -138,7 +215,12 @@ export default function ShopPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ packageId }),
+        body: JSON.stringify({
+          packageId,
+          ...(provider === 'alipay'
+            ? { displayMode: alipayDisplayMode }
+            : {}),
+        }),
       });
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) {
@@ -151,11 +233,22 @@ export default function ShopPage() {
       }
 
       if (provider === 'alipay') {
-        if (typeof data.paymentUrl !== 'string') {
+        if (typeof data.paymentUrl !== 'string' || typeof data.outTradeNo !== 'string') {
           setMessage({ type: 'error', text: '支付宝收银台创建失败，请稍后再试。' });
           return;
         }
-        window.location.assign(data.paymentUrl);
+        if (alipayDisplayMode === 'redirect') {
+          window.location.assign(data.paymentUrl);
+          return;
+        }
+        setAlipayPayment({
+          outTradeNo: data.outTradeNo,
+          paymentUrl: data.paymentUrl,
+          expiresAt: Date.now() + 30 * 60 * 1000,
+          packageName: coinPackage.name,
+          coins: coinPackage.coins,
+          status: 'pending',
+        });
         return;
       }
 
@@ -263,16 +356,34 @@ export default function ShopPage() {
           </div>
         </section>
 
-        <label className="mt-6 flex cursor-pointer items-start gap-3 text-sm leading-6 text-stone-600">
+        <label
+          ref={agreementRef}
+          className={`mt-6 flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-4 text-sm leading-6 transition ${
+            agreementAttention
+              ? 'border-red-300 bg-red-50 text-red-800 ring-4 ring-red-100'
+              : 'border-transparent text-stone-600'
+          }`}
+        >
           <input
             type="checkbox"
             checked={accepted}
-            onChange={(event) => setAccepted(event.target.checked)}
+            onChange={(event) => {
+              setAccepted(event.target.checked);
+              if (event.target.checked) {
+                setAgreementAttention(false);
+                setMessage(null);
+              }
+            }}
             className="mt-1 h-4 w-4 accent-stone-800"
           />
-          <span>
-            我已阅读并同意<Link href="/terms" className="mx-1 underline underline-offset-4">用户服务协议</Link>
-            与<Link href="/refund" className="mx-1 underline underline-offset-4">退款与售后规则</Link>，并知晓铜币的用途和消耗方式。
+          <span className="min-w-0">
+            <span className="block">
+              我已阅读并同意<Link href="/terms" className="mx-1 underline underline-offset-4">用户服务协议</Link>
+              与<Link href="/refund" className="mx-1 underline underline-offset-4">退款与售后规则</Link>，并知晓铜币的用途和消耗方式。
+            </span>
+            {agreementAttention && (
+              <span className="mt-1 block font-medium text-red-700">请勾选这里，再选择支付方式。</span>
+            )}
           </span>
         </label>
 
@@ -341,6 +452,73 @@ export default function ShopPage() {
                 </div>
                 <p className="mt-5 text-sm leading-6 text-stone-600">二维码将在15分钟后失效，付款完成后本页会自动确认到账。</p>
                 <p className="mt-2 text-xs leading-5 text-stone-400">请直接打开微信“扫一扫”，不要从相册识别二维码。</p>
+              </>
+            )}
+          </section>
+        </div>
+      )}
+
+      {alipayPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/45 px-4 py-8 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="alipay-payment-title"
+            className="relative w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setAlipayPayment(null)}
+              aria-label="关闭支付宝支付窗口"
+              className="absolute right-4 top-4 z-10 rounded-full p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            {alipayPayment.status === 'paid' ? (
+              <div className="py-10">
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Check className="h-8 w-8" />
+                </span>
+                <h2 id="alipay-payment-title" className="mt-5 text-2xl font-serif text-stone-900">支付成功</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-600">{alipayPayment.coins} 枚铜币已经到账。</p>
+                <button
+                  type="button"
+                  onClick={() => setAlipayPayment(null)}
+                  className="mt-7 rounded-xl bg-stone-800 px-8 py-3 text-sm text-white hover:bg-stone-700"
+                >
+                  完成
+                </button>
+              </div>
+            ) : alipayPayment.status === 'expired' ? (
+              <div className="py-10">
+                <AlertCircle className="mx-auto h-12 w-12 text-amber-600" />
+                <h2 id="alipay-payment-title" className="mt-5 text-2xl font-serif text-stone-900">二维码已失效</h2>
+                <p className="mt-3 text-sm leading-6 text-stone-600">请关闭窗口后重新选择支付宝支付。</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-xs tracking-[0.22em] text-[#1677FF]">支付宝</p>
+                <h2 id="alipay-payment-title" className="mt-3 text-2xl font-serif text-stone-900">
+                  请使用支付宝扫一扫
+                </h2>
+                <p className="mt-2 text-sm text-stone-500">{alipayPayment.packageName} · {alipayPayment.coins} 枚铜币</p>
+                <div className="mx-auto mt-5 h-[330px] w-full max-w-[360px] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                  <iframe
+                    src={alipayPayment.paymentUrl}
+                    title="支付宝扫码支付"
+                    className="h-full w-full border-0 bg-white"
+                  />
+                </div>
+                <p className="mt-4 text-sm leading-6 text-stone-600">付款完成后，本页会自动确认到账。</p>
+                <a
+                  href={alipayPayment.paymentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block text-xs text-stone-400 underline underline-offset-4 hover:text-stone-600"
+                >
+                  二维码未显示？在新窗口打开
+                </a>
               </>
             )}
           </section>

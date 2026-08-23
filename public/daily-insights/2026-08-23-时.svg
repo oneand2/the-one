@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">八十间：庞贝街边的热食柜台</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M24 105H238V57H43L24 69V105Z" fill="#D7DDD4" fill-opacity=".48" stroke="#56645A" stroke-opacity=".52" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M43 57H238M24 69H214" stroke="#56645A" stroke-opacity=".4" stroke-width="1" stroke-linecap="round"/>
+  <g fill="#B79D80" fill-opacity=".6" stroke="#776956" stroke-opacity=".5" stroke-width="1">
+    <path d="M55 58H92L88 91C87 97 81 100 74 100C67 100 61 97 60 91L55 58Z"/>
+    <path d="M105 58H145L141 94C140 99 133 102 125 102C117 102 110 99 109 94L105 58Z"/>
+    <path d="M160 58H199L195 91C194 97 188 100 180 100C172 100 166 97 165 91L160 58Z"/>
+  </g>
+  <g fill="#F3F1E9" stroke="#56645A" stroke-opacity=".48" stroke-width="1">
+    <ellipse cx="74" cy="58" rx="19" ry="5"/>
+    <ellipse cx="125" cy="58" rx="20" ry="5"/>
+    <ellipse cx="180" cy="58" rx="19.5" ry="5"/>
+  </g>
+  <path d="M51 110C105 106 174 108 239 112" stroke="#71857E" stroke-opacity=".2" stroke-linecap="round"/>
+  <g transform="translate(262 62)" stroke="#776956" stroke-opacity=".54" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8H45L42 47H21L18 8Z" fill="#E4D7C8" fill-opacity=".7"/>
+    <path d="M15 8H48M25 8V1H40V8M25 30C30 25 35 25 41 30"/>
+    <path d="M8 47H55" stroke-opacity=".34"/>
+  </g>
+  <g fill="#A86456" fill-opacity=".68"><circle cx="262" cy="42" r="3"/><circle cx="274" cy="36" r="1.4"/></g>
+  <g stroke="#71857E" stroke-opacity=".28" stroke-width=".9" stroke-linecap="round"><path d="M282 113C293 108 307 108 322 112"/><path d="M292 25C305 22 318 24 326 29"/></g>
+</svg>

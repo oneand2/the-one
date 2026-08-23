@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">同一栋楼：惠蒂尔的贝吉奇塔与学校通道</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 58C36 42 75 40 112 55C146 69 177 62 208 46C245 27 296 28 360 51V80H0V58Z" fill="#CDD6CC" fill-opacity=".28"/>
+  <path d="M24 109H207V28H74V109" fill="#D5DDD5" fill-opacity=".64" stroke="#56645A" stroke-opacity=".55" stroke-width="1.15" stroke-linejoin="round"/>
+  <path d="M74 28L24 43V109M74 28V109" stroke="#56645A" stroke-opacity=".45" stroke-width="1.05" stroke-linejoin="round"/>
+  <g fill="#F3F1E9" stroke="#71857E" stroke-opacity=".38" stroke-width=".8">
+    <path d="M41 50H61V61H41ZM41 69H61V80H41ZM41 88H61V99H41Z"/>
+    <path d="M90 42H109V51H90ZM119 42H138V51H119ZM148 42H167V51H148ZM177 42H195V51H177Z"/>
+    <path d="M90 59H109V68H90ZM119 59H138V68H119ZM148 59H167V68H148ZM177 59H195V68H177Z"/>
+    <path d="M90 76H109V85H90ZM119 76H138V85H119ZM148 76H167V85H148ZM177 76H195V85H177Z"/>
+  </g>
+  <path d="M127 109V93H154V109" fill="#B66D5C" fill-opacity=".5" stroke="#8A665B" stroke-opacity=".52"/>
+  <path d="M239 109V77H320V109M233 77L278 59L326 77" fill="#E5D8CA" fill-opacity=".62" stroke="#776956" stroke-opacity=".48" stroke-width="1.05" stroke-linejoin="round"/>
+  <path d="M260 109V94H282V109" stroke="#776956" stroke-opacity=".42"/>
+  <path d="M151 116C184 126 215 126 258 115" stroke="#71857E" stroke-opacity=".38" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M154 109C184 118 219 118 258 108" stroke="#B79D80" stroke-opacity=".68" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="214" cy="117" r="2.4" fill="#A86456" fill-opacity=".75"/>
+  <path d="M15 116C87 111 271 114 338 117" stroke="#71857E" stroke-opacity=".18" stroke-linecap="round"/>
+</svg>

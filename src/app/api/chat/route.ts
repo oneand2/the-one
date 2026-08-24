@@ -331,16 +331,19 @@ export async function POST(req: Request) {
 
     // 流式调用 AI 接口
     // 宗师模式：部分代理（如转发到 Anthropic）要求使用顶级 system 参数而非 messages 中的 system 消息
-    const createParams = {
+    const createParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming & {
+      // 宗师线路的兼容代理接受顶级 system 字段，OpenAI 官方类型未声明它。
+      system?: string;
+    } = {
       model: modelName,
-      messages: fullMessages as any,
+      messages: fullMessages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
       temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
       max_tokens: maxTokens,
       stream: true,
       ...(useMeditation && { system: systemPrompt }),
     };
 
-    const stream = await client.chat.completions.create(createParams as any);
+    const stream = await client.chat.completions.create(createParams);
 
     const encoder = new TextEncoder();
 

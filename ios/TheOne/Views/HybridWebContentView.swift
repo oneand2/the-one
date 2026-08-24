@@ -337,6 +337,9 @@ struct HybridWebContentView: UIViewRepresentable {
               if (typeof window.__THEONE_NAVIGATE__ === 'function') {
                 window.__THEONE_NAVIGATE__(tab);
               }
+              // 兼容生产站点的上一代桥接。网页与 TestFlight 发布节奏不一致时，
+              // 原生底栏仍可驱动已上线页面，避免按钮有反馈却不切换内容。
+              window.dispatchEvent(new CustomEvent('theone:navigate', { detail: { tab: tab } }));
               var root = document.querySelector('[data-ios-embed="true"]');
               if (root) {
                 root.setAttribute('data-active-tab', tab);

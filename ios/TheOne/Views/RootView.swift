@@ -211,6 +211,7 @@ private struct MainTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
             .id("theone-hybrid-web")
 
             LegacyTabBar(selection: Binding(
@@ -219,10 +220,8 @@ private struct MainTabView: View {
                     flow.selectNavigation($0)
                 }
             ))
+            .zIndex(1)
         }
-        // 与网页 MobileNav（fixed bottom + padding-bottom: max(8px, safe-area)）对齐：
-        // 底栏贴屏幕底，安全区留白放在栏内，避免系统先托起一整块再叠 8pt。
-        .ignoresSafeArea(.container, edges: .bottom)
         .background(AmbientBackground())
         .overlay {
             if showGetCoins {
@@ -537,7 +536,7 @@ private struct LegacyTabBar: View {
         }
         .padding(.horizontal, UIContract.Navigation.barHorizontalPadding)
         .padding(.vertical, UIContract.Navigation.barVerticalPadding)
-        .padding(.bottom, UIContract.Navigation.safeAreaMinimum)
+        .contentShape(Rectangle())
         .background(AppTheme.background)
         .animation(
             .interpolatingSpring(

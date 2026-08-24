@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">铁鳞：深海热泉附近富含硫化铁鳞片的腹足动物</title>
+  <rect width="360" height="136" fill="#F4F1E8"/>
+  <path d="M0 102C58 95 99 104 151 99C208 94 248 102 296 96C321 93 342 94 360 91V136H0V102Z" fill="#CDD6CC" fill-opacity=".25"/>
+  <g transform="translate(53 34)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M35 57C35 30 57 11 86 11C116 11 135 30 135 57C135 65 132 71 127 76H48C39 72 35 66 35 57Z" fill="#9AAB9B" fill-opacity=".72" stroke="#56645A" stroke-opacity=".62" stroke-width="1.35"/>
+    <path d="M58 57C58 40 70 28 87 28C103 28 114 39 114 54C114 65 106 71 96 71C86 71 78 64 78 55C78 47 83 42 90 42C96 42 100 46 100 52" stroke="#F3F1E9" stroke-opacity=".72" stroke-width="1.3"/>
+    <path d="M42 74C69 66 119 67 153 76C145 89 124 94 91 93C63 92 47 86 42 74Z" fill="#B79D80" fill-opacity=".42" stroke="#776956" stroke-opacity=".5" stroke-width="1.1"/>
+    <g fill="#56645A" fill-opacity=".72" stroke="#56645A" stroke-opacity=".55" stroke-width=".7">
+      <path d="M45 74L52 65L59 75L52 83Z"/><path d="M57 72L65 63L72 74L65 83Z"/><path d="M70 71L78 62L85 73L78 84Z"/><path d="M84 70L92 62L99 73L92 85Z"/><path d="M98 71L106 63L113 74L106 85Z"/><path d="M112 72L120 65L127 76L120 86Z"/><path d="M126 74L134 68L141 79L133 88Z"/>
+    </g>
+    <path d="M151 76C162 70 171 71 178 77M165 74L169 68M173 75L178 70" stroke="#56645A" stroke-opacity=".56" stroke-width="1.3"/>
+    <circle cx="165" cy="76" r="1.5" fill="#A86456" stroke="none"/>
+  </g>
+  <g transform="translate(273 43)" fill="#9C866B" fill-opacity=".48" stroke="#776956" stroke-opacity=".42" stroke-width="1"><path d="M11 58L18 18L30 28L38 7L47 58H11Z"/><path d="M21 58L27 35L34 44L40 26L45 58"/></g>
+  <g stroke="#71857E" stroke-opacity=".34" stroke-width=".9" stroke-linecap="round"><path d="M296 35C290 27 293 20 299 15"/><path d="M312 39C321 31 321 23 316 18"/></g>
+  <g fill="#71857E" fill-opacity=".32"><circle cx="300" cy="12" r="1.8"/><circle cx="316" cy="14" r="1.2"/><circle cx="328" cy="31" r="1"/></g>
+  <path d="M24 112C102 107 236 112 336 105" stroke="#71857E" stroke-opacity=".2" stroke-linecap="round"/>
+</svg>

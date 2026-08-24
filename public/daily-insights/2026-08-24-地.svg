@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">周六糖：瑞典商店里按重量自选的散装糖果</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M29 101V35H225V101" fill="#CDD6CC" fill-opacity=".32" stroke="#56645A" stroke-opacity=".5" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M29 62H225M94 35V101M159 35V101" stroke="#56645A" stroke-opacity=".38" stroke-width="1"/>
+  <g fill="#F4F1E8" stroke="#71857E" stroke-opacity=".36" stroke-width=".9">
+    <path d="M40 48H83L79 58H44L40 48Z"/><path d="M105 48H148L144 58H109L105 48Z"/><path d="M170 48H213L209 58H174L170 48Z"/>
+    <path d="M40 75H83L79 91H44L40 75Z"/><path d="M105 75H148L144 91H109L105 75Z"/><path d="M170 75H213L209 91H174L170 75Z"/>
+  </g>
+  <g fill="#B79D80" fill-opacity=".72"><circle cx="50" cy="53" r="2.4"/><circle cx="59" cy="51" r="2"/><circle cx="70" cy="53" r="2.6"/><circle cx="78" cy="51" r="1.8"/><circle cx="115" cy="52" r="2.5"/><circle cx="125" cy="54" r="2"/><circle cx="136" cy="51" r="2.3"/></g>
+  <g fill="#9AAB9B" fill-opacity=".76"><circle cx="181" cy="52" r="2.3"/><circle cx="191" cy="54" r="2.5"/><circle cx="202" cy="51" r="2"/><circle cx="51" cy="81" r="2.2"/><circle cx="62" cy="84" r="2.5"/><circle cx="74" cy="81" r="2"/></g>
+  <g fill="#B66D5C" fill-opacity=".62"><circle cx="115" cy="81" r="2.3"/><circle cx="126" cy="84" r="2.6"/><circle cx="137" cy="81" r="2"/><circle cx="181" cy="82" r="2.2"/><circle cx="191" cy="84" r="2"/><circle cx="202" cy="81" r="2.5"/></g>
+  <g transform="translate(257 45)" stroke="#776956" stroke-opacity=".52" stroke-width="1.05" stroke-linejoin="round"><path d="M6 14H57L50 63H13L6 14Z" fill="#E5D8CA" fill-opacity=".72"/><path d="M6 14C18 21 46 21 57 14M21 14V6H43V14"/><path d="M19 43C27 38 36 38 45 43" stroke="#A86456" stroke-opacity=".5"/></g>
+  <g fill="#A86456" fill-opacity=".7"><circle cx="277" cy="34" r="3"/><circle cx="293" cy="29" r="2"/><circle cx="309" cy="37" r="2.4"/></g>
+  <path d="M22 111C93 107 221 110 333 106" stroke="#71857E" stroke-opacity=".2" stroke-linecap="round"/>
+</svg>

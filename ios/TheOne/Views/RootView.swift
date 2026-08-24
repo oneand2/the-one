@@ -189,39 +189,44 @@ private struct MainTabView: View {
     @StateObject private var webLoad = HybridLoadState()
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Spacer(minLength: 0)
-                AccountMenu(showGetCoins: $showGetCoins)
-            }
-            .background(AppTheme.background)
-
-            ZStack {
-                HybridWebContentView(
-                    flow: flow,
-                    sessionIdentity: auth.user?.id ?? "guest",
-                    scenePhase: scenePhase,
-                    loadState: webLoad,
-                    onTabChanged: { flow.screen = $0 },
-                    onLoginRequested: { auth.showsLogin = true },
-                    onStoreRequested: { showStore = true }
-                )
-                if !webLoad.isReady {
-                    HybridLoadOverlay(state: webLoad)
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                HStack {
+                    Spacer(minLength: 0)
+                    AccountMenu(showGetCoins: $showGetCoins)
                 }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-            .id("theone-hybrid-web")
+                .background(AppTheme.background)
 
-            LegacyTabBar(selection: Binding(
-                get: { flow.screen.navigationSymbol },
-                set: {
-                    flow.selectNavigation($0)
+                ZStack {
+                    HybridWebContentView(
+                        flow: flow,
+                        sessionIdentity: auth.user?.id ?? "guest",
+                        scenePhase: scenePhase,
+                        loadState: webLoad,
+                        onTabChanged: { flow.screen = $0 },
+                        onLoginRequested: { auth.showsLogin = true },
+                        onStoreRequested: { showStore = true }
+                    )
+                    if !webLoad.isReady {
+                        HybridLoadOverlay(state: webLoad)
+                    }
                 }
-            ))
-            .zIndex(1)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+                .id("theone-hybrid-web")
+
+                LegacyTabBar(selection: Binding(
+                    get: { flow.screen.navigationSymbol },
+                    set: {
+                        flow.selectNavigation($0)
+                    }
+                ))
+                .frame(height: LegacyTabBar.barHeight)
+            }
+            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
         }
+        // 只把底栏推进屏幕底边，网页高度由上面 VStack 扣死，避免 WKWebView 盖住按钮。
+        .ignoresSafeArea(.container, edges: .bottom)
         .background(AmbientBackground())
         .overlay {
             if showGetCoins {
@@ -496,10 +501,21 @@ private struct LegacyTabBar: View {
     @Binding var selection: FourSymbol
     @Namespace private var indicatorNamespace
 
+    /// 与网页 MobileNav 对齐：图标区 + 栏内 py-2 + padding-bottom: 8px。
+    static var barHeight: CGFloat {
+        UIContract.Navigation.barVerticalPadding * 2
+            + UIContract.Navigation.itemVerticalPadding * 2
+            + UIContract.Navigation.iconSize
+            + UIContract.Navigation.iconLabelGap
+            + UIContract.Typography.navigationLabel.lineHeight
+            + UIContract.Navigation.safeAreaMinimum
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             ForEach(FourSymbol.allCases, id: \.self) { item in
                 Button {
+                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     selection = item
                 } label: {
                     ZStack(alignment: .top) {
@@ -531,11 +547,12 @@ private struct LegacyTabBar: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .sensoryTap()
             }
         }
         .padding(.horizontal, UIContract.Navigation.barHorizontalPadding)
         .padding(.vertical, UIContract.Navigation.barVerticalPadding)
+        .padding(.bottom, UIContract.Navigation.safeAreaMinimum)
+        .frame(height: Self.barHeight)
         .contentShape(Rectangle())
         .background(AppTheme.background)
         .animation(

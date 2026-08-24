@@ -541,6 +541,7 @@ final class HybridWebViewContainer: UIView {
         super.init(frame: .zero)
         backgroundColor = UIColor(AppTheme.background)
         clipsToBounds = true
+        isMultipleTouchEnabled = true
         webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         addSubview(webView)
         addSubview(topFade)
@@ -569,6 +570,15 @@ final class HybridWebViewContainer: UIView {
         modalTopFade.frame = CGRect(x: 0, y: 0, width: bounds.width, height: 148)
         bottomFade.frame = CGRect(x: 0, y: max(0, bounds.height - 80), width: bounds.width, height: 80)
         updateEdgeFades()
+    }
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        bounds.contains(point)
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard bounds.contains(point) else { return nil }
+        return super.hitTest(point, with: event)
     }
 
     func setModalBackdropActive(_ active: Bool, animated: Bool = true) {

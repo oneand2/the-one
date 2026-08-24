@@ -95,6 +95,10 @@ jobs:
           ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "sudo docker image prune --all --force; \
+             sudo docker builder prune --all --force"
+
+          ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" \
             "set -eu; \
              sudo mkdir -p '$DEPLOY_PATH/backups'; \
              BACKUP_DIR='$DEPLOY_PATH/backups/auto-before-deploy-'\$(date +%Y%m%d-%H%M%S); \

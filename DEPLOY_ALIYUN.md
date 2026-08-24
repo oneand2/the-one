@@ -79,12 +79,11 @@ cp .env.production.example .env.production
 - `ALIPAY_KEY_TYPE`（支付宝密钥工具默认通常为 `PKCS8`）
 - 沙箱测试时可选 `ALIPAY_GATEWAY`，生产环境留空
 
-宗师模式需要额外配置：
+宗师模式只使用原备用通道，需要配置：
 
-- `AI_MEDITATION_API_KEY`
-- `AI_MEDITATION_BASE_URL`
-- `AI_MEDITATION_MODEL_NAME`
-- 或备用通道 `AI_MEDITATION_FALLBACK_*`
+- `AI_MEDITATION_FALLBACK_API_KEY`
+- `AI_MEDITATION_FALLBACK_BASE_URL`
+- `AI_MEDITATION_FALLBACK_MODEL_NAME`
 
 ## 4. Supabase 设置
 

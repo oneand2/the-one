@@ -91,41 +91,19 @@ export async function POST(req: Request) {
     // 根据模式初始化 OpenAI 客户端和选择模型
     let client: OpenAI;
     let modelName: string;
-    let fallbackClient: OpenAI | null = null;
-    let fallbackModelName: string | null = null;
 
     if (useMeditation) {
-      const hasPrimaryMeditation =
-        Boolean(process.env.AI_MEDITATION_API_KEY) && Boolean(process.env.AI_MEDITATION_BASE_URL);
-      const hasFallbackMeditation =
-        Boolean(process.env.AI_MEDITATION_FALLBACK_API_KEY) && Boolean(process.env.AI_MEDITATION_FALLBACK_BASE_URL);
-
-      if (hasPrimaryMeditation) {
-        // 宗师模式：使用 Claude 模型（主API）
-        client = new OpenAI({
-          apiKey: process.env.AI_MEDITATION_API_KEY,
-          baseURL: process.env.AI_MEDITATION_BASE_URL,
-        });
-        modelName = process.env.AI_MEDITATION_MODEL_NAME || 'claude-sonnet-4-5';
-      } else if (hasFallbackMeditation) {
-        // 主API未配置时，直接使用备用API作为主通道
-        client = new OpenAI({
-          apiKey: process.env.AI_MEDITATION_FALLBACK_API_KEY,
-          baseURL: process.env.AI_MEDITATION_FALLBACK_BASE_URL,
-        });
-        modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
-      } else {
-        throw new Error('宗师模式未配置可用的API，请检查环境变量');
+      // 宗师模式只走原备用通道，不再尝试已弃用的主线路
+      const meditationKey = process.env.AI_MEDITATION_FALLBACK_API_KEY;
+      const meditationBaseURL = process.env.AI_MEDITATION_FALLBACK_BASE_URL;
+      if (!meditationKey || !meditationBaseURL) {
+        throw new Error('宗师模式未配置可用的API，请检查环境变量 AI_MEDITATION_FALLBACK_*');
       }
-      
-      // 配置备用API（用于故障转移）
-      if (hasPrimaryMeditation && hasFallbackMeditation) {
-        fallbackClient = new OpenAI({
-          apiKey: process.env.AI_MEDITATION_FALLBACK_API_KEY,
-          baseURL: process.env.AI_MEDITATION_FALLBACK_BASE_URL,
-        });
-        fallbackModelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
-      }
+      client = new OpenAI({
+        apiKey: meditationKey,
+        baseURL: meditationBaseURL,
+      });
+      modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
     } else {
       // 默认模式：使用 DeepSeek 模型
       client = new OpenAI({
@@ -351,10 +329,7 @@ export async function POST(req: Request) {
             ? 4096
             : 3072;
 
-    // 流式调用 AI 接口（支持故障转移）
-    let stream: any;
-    let usedFallback = false;
-    
+    // 流式调用 AI 接口
     // 宗师模式：部分代理（如转发到 Anthropic）要求使用顶级 system 参数而非 messages 中的 system 消息
     const createParams = {
       model: modelName,
@@ -365,31 +340,7 @@ export async function POST(req: Request) {
       ...(useMeditation && { system: systemPrompt }),
     };
 
-    try {
-      // 尝试使用主API
-      stream = await client.chat.completions.create(createParams as any);
-    } catch (primaryError: any) {
-      // 如果主API失败且有备用API，自动切换
-      if (useMeditation && fallbackClient && fallbackModelName) {
-        console.warn('主宗师API连接失败，自动切换到备用API:', primaryError.message);
-        try {
-          stream = await fallbackClient.chat.completions.create({
-            model: fallbackModelName,
-            messages: fullMessages as any,
-            temperature: 1.0,
-            max_tokens: maxTokens,
-            stream: true,
-            ...(useMeditation && { system: systemPrompt }),
-          } as any);
-          usedFallback = true;
-        } catch (fallbackError: any) {
-          console.error('备用API也失败:', fallbackError.message);
-          throw primaryError; // 如果备用API也失败，抛出原始错误
-        }
-      } else {
-        throw primaryError; // 非宗师模式或无备用API，直接抛出错误
-      }
-    }
+    const stream = await client.chat.completions.create(createParams as any);
 
     const encoder = new TextEncoder();
 

@@ -220,6 +220,9 @@ private struct MainTabView: View {
                 }
             ))
         }
+        // 与网页 MobileNav（fixed bottom + padding-bottom: max(8px, safe-area)）对齐：
+        // 底栏贴屏幕底，安全区留白放在栏内，避免系统先托起一整块再叠 8pt。
+        .ignoresSafeArea(.container, edges: .bottom)
         .background(AmbientBackground())
         .overlay {
             if showGetCoins {

@@ -12,7 +12,7 @@ import { LiuYaoView } from './LiuYaoView';
 import type { BaziInput } from '@/utils/baziLogic';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
-import { requestAppLogin } from '@/utils/iosEmbed';
+import { requestAppLogin, homeHref } from '@/utils/iosEmbed';
 
 interface Message {
   id: string;
@@ -114,6 +114,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const inputPresetKey = 'juexingcang-input-preset';
   const autoSendPendingKey = 'juexingcang-auto-send-pending';
   const tipModalDontShowKey = 'juexingcang-tip-dont-show';
+  const liuyaoPendingQuestionKey = 'juexingcang-liuyao-pending-question';
 
   // 会话管理相关状态
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -562,20 +563,75 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   // 从见天地「占问今日休咎」跳转过来时，URL 含 liuyao_question，自动进入六爻流程
   useEffect(() => {
     const liuyaoQ = searchParams?.get('liuyao_question');
-    if (liuyaoQ) {
+    if (!liuyaoQ) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('liuyao_question');
+    window.history.replaceState(null, '', url.toString());
+
+    void (async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        rememberPendingLiuYaoQuestion(liuyaoQ);
+        goToLogin();
+        return;
+      }
       setLiuyaoMode(true);
       setLiuyaoQuestion(liuyaoQ);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('liuyao_question');
-      window.history.replaceState(null, '', url.toString());
-    }
+    })();
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    void resumePendingLiuYao();
+  }, [isActive]);
+
+  useEffect(() => {
+    const onAuthChanged = () => {
+      void resumePendingLiuYao();
+    };
+    window.addEventListener('theone:auth-changed', onAuthChanged);
+    return () => window.removeEventListener('theone:auth-changed', onAuthChanged);
+  }, []);
 
   const handleDontShowTipAgain = () => {
     try {
       localStorage.setItem(tipModalDontShowKey, 'true');
     } catch (error) {
       console.warn('保存提示设置失败:', error);
+    }
+  };
+
+  const goToLogin = () => {
+    if (!requestAppLogin()) {
+      router.push(`/login?next=${encodeURIComponent(homeHref('juexingcang'))}`);
+    }
+  };
+
+  const rememberPendingLiuYaoQuestion = (question: string) => {
+    try {
+      localStorage.setItem(liuyaoPendingQuestionKey, question);
+    } catch {
+      // 忽略本地缓存失败，登录后用户可重新输入
+    }
+  };
+
+  const resumePendingLiuYao = async () => {
+    try {
+      const pending = localStorage.getItem(liuyaoPendingQuestionKey)?.trim();
+      if (!pending) return;
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setInput((prev) => (prev.trim() ? prev : pending));
+        return;
+      }
+      localStorage.removeItem(liuyaoPendingQuestionKey);
+      setLiuyaoMode(true);
+      setLiuyaoQuestion(pending);
+      setInput('');
+    } catch {
+      // 忽略恢复失败
     }
   };
 
@@ -616,8 +672,15 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     const content = (overrideContent ?? input).trim();
     if (!content || isLoading || sendingRef.current) return;
 
-    // 六爻模式：拦截用户输入，进入起卦流程
+    // 六爻模式：拦截用户输入，进入起卦流程（摇卦前必须已登录）
     if (liuyaoMode && !liuyaoQuestion && !overrideContent) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        rememberPendingLiuYaoQuestion(content);
+        goToLogin();
+        return;
+      }
       setLiuyaoQuestion(content);
       setInput('');
       return;
@@ -672,9 +735,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         // 未登录时还原 loading 状态并跳转登录
         setIsLoading(false);
         sendingRef.current = false;
-        if (!requestAppLogin()) {
-          router.push('/login?next=/');
-        }
+        goToLogin();
         return;
       }
 
@@ -864,7 +925,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   };
 
   // 六爻解卦完成后的回调：导入卦象数据并自动发送解卦请求
-  const handleLiuyaoInterpret = (liuyaoImportData: ImportData, _question: string) => {
+  const handleLiuyaoInterpret = async (liuyaoImportData: ImportData, _question: string) => {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      goToLogin();
+      return;
+    }
     setLiuyaoQuestion(null);
     const newImportData = mergeImportData(importData, liuyaoImportData);
     setImportData(newImportData);

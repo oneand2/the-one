@@ -31,6 +31,7 @@ struct ParityChatView: View {
     @State private var showConsent = false
     @State private var showUsageTip = false
     @State private var pendingSolve = false
+    @State private var pendingLiuYaoStart = false
     @State private var pendingBypassesLiuYao = false
     @State private var showMeditationWarning = false
     @State private var errorMessage: String?
@@ -137,8 +138,12 @@ struct ParityChatView: View {
             else { resetConversation(resetModes: true) }
         }
         .onChange(of: auth.isAuthenticated) { _, loggedIn in
-            if loggedIn { Task { await loadSessions() } }
-            else { sessions = []; currentSessionID = nil }
+            if loggedIn {
+                Task { await loadSessions() }
+                resumePendingLiuYaoIfNeeded()
+            } else {
+                sessions = []; currentSessionID = nil
+            }
         }
     }
 
@@ -281,7 +286,7 @@ struct ParityChatView: View {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         if liuyaoMode && liuyaoQuestion == nil {
-            liuyaoQuestion = text; input = ""; yaos = []; liuyaoAnalysis = nil
+            beginLiuYao(with: text)
             return
         }
         pendingBypassesLiuYao = true
@@ -293,9 +298,34 @@ struct ParityChatView: View {
         let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
         if liuyaoMode && liuyaoQuestion == nil && !bypassLiuYao {
-            liuyaoQuestion = text; input = ""; return
+            beginLiuYao(with: text)
+            return
         }
         await performSend(text, suppliedImport: importData)
+    }
+
+    private func beginLiuYao(with text: String) {
+        let question = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !question.isEmpty else { return }
+        if !auth.requireAuthentication() {
+            pendingLiuYaoStart = true
+            return
+        }
+        pendingLiuYaoStart = false
+        liuyaoQuestion = question
+        input = ""
+        yaos = []
+        liuyaoAnalysis = nil
+    }
+
+    private func resumePendingLiuYaoIfNeeded() {
+        guard pendingLiuYaoStart, liuyaoMode, liuyaoQuestion == nil else { return }
+        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else {
+            pendingLiuYaoStart = false
+            return
+        }
+        beginLiuYao(with: text)
     }
 
     private func performSend(_ text: String, suppliedImport: [String: Any]) async {
@@ -393,13 +423,14 @@ struct ParityChatView: View {
     }
 
     private func resetConversation(resetModes: Bool) {
-        messages = []; input = ""; currentSessionID = nil; importData = [:]; errorMessage = nil; resetLiuYao(); liuyaoMode = true
+        messages = []; input = ""; currentSessionID = nil; importData = [:]; errorMessage = nil; resetLiuYao(); liuyaoMode = true; pendingLiuYaoStart = false
         if resetModes { useSearch = false; useReasoning = false; meditationMode = true }
     }
 
-    private func resetLiuYao() { liuyaoQuestion = nil; yaos = []; liuyaoAnalysis = nil; isCasting = false; tossCoins = nil }
+    private func resetLiuYao() { liuyaoQuestion = nil; yaos = []; liuyaoAnalysis = nil; isCasting = false; tossCoins = nil; pendingLiuYaoStart = false }
 
     private func castNext() {
+        guard auth.requireAuthentication() else { return }
         guard yaos.count < 6, !isCasting else { return }
         let coins = (0..<3).map { _ in Bool.random() ? 2 : 3 }
         let value = coins.reduce(0, +)
@@ -419,11 +450,13 @@ struct ParityChatView: View {
 
     private func requestSolve() {
         guard yaos.count == 6, liuyaoAnalysis != nil else { return }
+        guard auth.requireAuthentication() else { return }
         if hasAIConsent { Task { await solveHexagram() } }
         else { pendingSolve = true; showConsent = true }
     }
 
     private func solveHexagram() async {
+        guard auth.requireAuthentication() else { return }
         guard let question = liuyaoQuestion, let analysis = liuyaoAnalysis else { return }
         var liuyao: [String: Any] = [
             "type": "liuyao", "question": question,

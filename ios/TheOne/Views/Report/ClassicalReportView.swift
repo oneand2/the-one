@@ -7,15 +7,22 @@ struct ClassicalReportView: View {
     @Environment(\.dismiss) private var dismiss
 
     let params: [String: String]
+    let isSavedRecord: Bool
 
     @State private var report: ReportPayload?
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var saveStatus = SaveStatus.idle
+    @State private var saveStatus: SaveStatus
     @State private var isAnalyzing = false
     @State private var selectedLuckIndex = 0
 
     private enum SaveStatus { case idle, saving, saved, error }
+
+    init(params: [String: String], isSavedRecord: Bool = false) {
+        self.params = params
+        self.isSavedRecord = isSavedRecord
+        _saveStatus = State(initialValue: isSavedRecord ? .saved : .idle)
+    }
 
     var body: some View {
         Group {
@@ -518,11 +525,12 @@ struct ClassicalReportView: View {
     private func analyze() async {
         guard !isAnalyzing else { return }
         isAnalyzing = true
-        await save()
+        if !isSavedRecord, saveStatus != .saved {
+            await save()
+        }
         guard saveStatus == .saved, let report else { isAnalyzing = false; return }
-        flow.openChat(preset: "请帮我解析该八字", importData: ["bazi": [report.importData.mapValues(\.anyValue)]], autoSend: false)
+        flow.openChat(preset: "请帮我解析该八字", importData: ["bazi": [report.importData.mapValues(\.anyValue)]], autoSend: true)
         isAnalyzing = false
-        dismiss()
     }
 }
 

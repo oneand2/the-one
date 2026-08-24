@@ -6,18 +6,83 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
 import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
+import { GuanShiView } from '@/components/GuanShiView';
+import { GuanXinView } from '@/components/GuanXinView';
+import { JueXingCangView } from '@/components/JueXingCangView';
 import { mobileUI } from '@/generated/mobile-ui';
 import type { TabType } from '@/types/tabs';
 
 const VALID_TABS: TabType[] = ['guanshi', 'guanxin', 'bazi', 'mbti', 'wendao', 'juexingcang'];
 const LEGACY_TAB_ALIASES: Partial<Record<string, TabType>> = { bazi: 'guanxin' };
 
+function tabTitle(tab: TabType): string {
+  if (tab === 'guanshi') return '见天地';
+  if (tab === 'wendao') return '见众生';
+  if (tab === 'guanxin') return '见自己';
+  if (tab === 'bazi') return '八字命理';
+  if (tab === 'mbti') return '荣格八维';
+  return '决行藏';
+}
+
+function tabSubtitle(tab: TabType): string {
+  if (tab === 'guanshi') return '世间即道场，人生是修行';
+  if (tab === 'wendao') return '观点广场，待续';
+  if (tab === 'juexingcang') return '用之则行，舍之则藏';
+  return '知己即知天，请成为自己的答案';
+}
+
+function TabGlyph({ tab }: { tab: TabType }) {
+  const common = 'w-8 h-8 mx-auto text-[#2c2c2c] mb-4';
+  if (tab === 'guanshi') {
+    return (
+      <svg viewBox="0 0 100 100" fill="currentColor" className={common}>
+        <rect x="0" y="20" width="44" height="20" /><rect x="56" y="20" width="44" height="20" />
+        <rect x="0" y="60" width="44" height="20" /><rect x="56" y="60" width="44" height="20" />
+      </svg>
+    );
+  }
+  if (tab === 'wendao') {
+    return (
+      <svg viewBox="0 0 100 100" fill="currentColor" className={common}>
+        <rect x="0" y="20" width="44" height="20" /><rect x="56" y="20" width="44" height="20" />
+        <rect x="0" y="60" width="100" height="20" />
+      </svg>
+    );
+  }
+  if (tab === 'juexingcang') {
+    return (
+      <svg viewBox="0 0 100 100" fill="currentColor" className={common}>
+        <rect x="0" y="20" width="100" height="20" /><rect x="0" y="60" width="100" height="20" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 100 100" fill="currentColor" className={common}>
+      <rect x="0" y="20" width="100" height="20" />
+      <rect x="0" y="60" width="44" height="20" /><rect x="56" y="60" width="44" height="20" />
+    </svg>
+  );
+}
+
+function TabHeaderContent({ tab }: { tab: TabType }) {
+  return (
+    <>
+      <div><TabGlyph tab={tab} /></div>
+      <h1 className="text-3xl font-serif text-[#333333] leading-tight">{tabTitle(tab)}</h1>
+      <p className="text-sm text-stone-600 font-sans text-center">{tabSubtitle(tab)}</p>
+    </>
+  );
+}
+
+function resolveTab(raw?: string | null): TabType {
+  const aliased = raw ? LEGACY_TAB_ALIASES[raw] : undefined;
+  if (aliased) return aliased;
+  return raw && VALID_TABS.includes(raw as TabType) ? (raw as TabType) : 'guanshi';
+}
+
 function getTabFromUrl(): TabType {
   if (typeof window === 'undefined') return 'guanshi';
-  const tabParam = new URLSearchParams(window.location.search).get('tab');
-  const aliased = tabParam ? LEGACY_TAB_ALIASES[tabParam] : undefined;
-  if (aliased) return aliased;
-  return tabParam && VALID_TABS.includes(tabParam as TabType) ? (tabParam as TabType) : 'guanshi';
+  return resolveTab(new URLSearchParams(window.location.search).get('tab'));
 }
 
 const Sidebar = dynamic(
@@ -25,26 +90,13 @@ const Sidebar = dynamic(
   { ssr: false }
 );
 
-// 大组件按需加载，首屏只加载当前 tab，第二次进入或切换回来时从缓存/内存秒开
-// 见天地：黄历 + 子午流注 + 今日见闻（新闻板块已下线，见 WorldNewsView.tsx）
-const GuanShiView = dynamic(
-  () => import('@/components/GuanShiView').then((mod) => mod.GuanShiView),
-  { ssr: false, loading: () => <TabLoading /> }
-);
-const GuanXinView = dynamic(
-  () => import('@/components/GuanXinView').then((mod) => mod.GuanXinView),
-  { ssr: false, loading: () => <TabLoading /> }
-);
+// 见天地 / 见自己是主 tab，同步导入避免 iOS WebView 里动态分包一直停在「加载中」。
 const BaZiView = dynamic(
   () => import('@/components/BaZiView').then((mod) => mod.BaZiView),
   { ssr: false, loading: () => <TabLoading /> }
 );
 const MbtiTestView = dynamic(
   () => import('@/components/MbtiTestView').then((mod) => mod.MbtiTestView),
-  { ssr: false, loading: () => <TabLoading /> }
-);
-const JueXingCangView = dynamic(
-  () => import('@/components/JueXingCangView').then((mod) => mod.JueXingCangView),
   { ssr: false, loading: () => <TabLoading /> }
 );
 function TabLoading() {
@@ -57,18 +109,29 @@ function TabLoading() {
 
 const HomeContent: React.FC = () => {
   const searchParams = useSearchParams();
-  const isIOSEmbed = searchParams.get('embed') === 'ios';
-  const [activeTab, setActiveTab] = useState<TabType>('guanshi');
+  const [embedFromNative, setEmbedFromNative] = useState(false);
+  const isIOSEmbed = searchParams.get('embed') === 'ios' || embedFromNative;
+  const urlTab = resolveTab(searchParams.get('tab'));
+  const [activeTab, setActiveTab] = useState<TabType>(urlTab);
   const [isCollapsed, setIsCollapsed] = useState(true);
   // 已访问过的 tab 保持挂载，切换回来时不再重新加载、不卡顿
-  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(() => new Set(['guanshi']));
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabType>>(() => new Set([urlTab]));
 
   useEffect(() => {
-    const tab = getTabFromUrl();
+    if (window.__THEONE_IOS_EMBED__) setEmbedFromNative(true);
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-active-tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    const tab = resolveTab(window.__THEONE_TAB__ || getTabFromUrl());
     setActiveTab(tab);
     setVisitedTabs((prev) => new Set([...prev, tab]));
     const onPopState = () => {
-      const t = getTabFromUrl();
+      const t = resolveTab(window.__THEONE_TAB__ || getTabFromUrl());
       setActiveTab(t);
       setVisitedTabs((prev) => new Set([...prev, t]));
     };
@@ -90,27 +153,20 @@ const HomeContent: React.FC = () => {
     return () => window.removeEventListener('scroll', syncInkFade);
   }, [isIOSEmbed]);
 
-  // SwiftUI 原生底栏切换时不重载 WebView，保留页面、滚动与输入状态。
+  // 当 URL 被 router.push 更新时（如见天地「占问今日休咎」跳转决行藏），立即同步 tab。
+  // 原生底栏写入的 __THEONE_TAB__ 优先，避免 Next 水合把 tab 打回见天地。
   useEffect(() => {
-    if (!isIOSEmbed) return;
-    const onNativeNavigate = (event: Event) => {
-      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
-      if (!tab || !VALID_TABS.includes(tab as TabType)) return;
-      setActiveTab(tab as TabType);
-      setVisitedTabs((prev) => new Set([...prev, tab as TabType]));
-      const url = new URL(window.location.href);
-      url.searchParams.set('tab', tab);
-      window.history.replaceState(null, '', url.toString());
-    };
-    window.addEventListener('theone:navigate', onNativeNavigate);
-    return () => window.removeEventListener('theone:navigate', onNativeNavigate);
-  }, [isIOSEmbed]);
-
-  // 当 URL 被 router.push 更新时（如见天地「占问今日休咎」跳转决行藏），立即同步 tab，保证马上切到对应界面
-  useEffect(() => {
-    const tab = getTabFromUrl();
+    const native = window.__THEONE_TAB__;
+    if (native && VALID_TABS.includes(native as TabType)) {
+      setActiveTab(native as TabType);
+      setVisitedTabs((prev) => new Set([...prev, native as TabType]));
+      document.documentElement.setAttribute('data-active-tab', native);
+      return;
+    }
+    const tab = resolveTab(searchParams.get('tab'));
     setActiveTab(tab);
     setVisitedTabs((prev) => new Set([...prev, tab]));
+    document.documentElement.setAttribute('data-active-tab', tab);
     const rawTab = searchParams.get('tab');
     if (rawTab && LEGACY_TAB_ALIASES[rawTab] && rawTab !== tab) {
       const url = new URL(window.location.href);
@@ -134,10 +190,34 @@ const HomeContent: React.FC = () => {
     [activeTab, isIOSEmbed]
   );
 
+  // 原生底栏直接调用闭包，比向 WKWebView 注入合成点击/事件更可靠。
+  // 首次进入时才挂载目标页，之后保留实例，因此不会冻结隐藏页的初始化任务。
+  useEffect(() => {
+    if (!isIOSEmbed) return;
+    const navigate = (rawTab: string) => {
+      const tab = resolveTab(rawTab);
+      window.__THEONE_TAB__ = tab;
+      setActiveTab(tab);
+      setVisitedTabs((prev) => new Set([...prev, tab]));
+      document.documentElement.setAttribute('data-active-tab', tab);
+      const root = document.querySelector<HTMLElement>('[data-ios-embed="true"]');
+      root?.setAttribute('data-active-tab', tab);
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', tab);
+      window.history.replaceState(null, '', url.toString());
+      window.scrollTo(0, 0);
+    };
+    window.__THEONE_NAVIGATE__ = navigate;
+    return () => {
+      if (window.__THEONE_NAVIGATE__ === navigate) delete window.__THEONE_NAVIGATE__;
+    };
+  }, [isIOSEmbed]);
+
   return (
     <div
       className="min-h-screen relative"
       data-ios-embed={isIOSEmbed ? 'true' : undefined}
+      data-active-tab={activeTab}
       style={{ background: mobileUI.colors.background }}
     >
       {/* 左侧侧边栏 */}
@@ -157,7 +237,7 @@ const HomeContent: React.FC = () => {
         <div className="w-full max-w-4xl">
           {/* Header - 所有 tab 共用，logo 标题瞬间切换，与其它 tab 一致 */}
           <motion.header
-            initial={{ opacity: 0, y: -12 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
             className="px-6"
@@ -166,59 +246,24 @@ const HomeContent: React.FC = () => {
               paddingBottom: isIOSEmbed ? mobileUI.header.bottom : mobileUI.header.webBottom,
             }}
           >
-            <div className="max-w-md mx-auto text-center space-y-4">
+            {isIOSEmbed ? (
+              <div className="max-w-md mx-auto text-center">
+                {VALID_TABS.map((tab) => (
+                  <div key={tab} data-ios-tab-header={tab} className="space-y-4">
+                    <TabHeaderContent tab={tab} />
+                  </div>
+                ))}
+              </div>
+            ) : (
               <motion.div
                 initial={{ scale: 0.98 }}
                 animate={{ scale: 1 }}
                 transition={{ duration: 0.2 }}
+                className="max-w-md mx-auto text-center space-y-4"
               >
-                {activeTab === 'guanshi' ? (
-                  // 老阴 - 四象（粗细与少阴一致，rect 44x20）
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="44" height="20" />
-                    <rect x="56" y="20" width="44" height="20" />
-                    <rect x="0" y="60" width="44" height="20" />
-                    <rect x="56" y="60" width="44" height="20" />
-                  </svg>
-                ) : activeTab === 'wendao' ? (
-                  // 少阴 - 上虚下实
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="44" height="20" />
-                    <rect x="56" y="20" width="44" height="20" />
-                    <rect x="0" y="60" width="100" height="20" />
-                  </svg>
-                ) : activeTab === 'juexingcang' ? (
-                  // 老阳 - 两条实心横杠（粗细行距与少阴一致）
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="100" height="20" />
-                    <rect x="0" y="60" width="100" height="20" />
-                  </svg>
-                ) : (
-                  // 少阳 - 上实下虚
-                  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" preserveAspectRatio="xMidYMid meet" className="w-8 h-8 mx-auto text-[#2c2c2c] mb-4">
-                    <rect x="0" y="20" width="100" height="20" />
-                    <rect x="0" y="60" width="44" height="20" />
-                    <rect x="56" y="60" width="44" height="20" />
-                  </svg>
-                )}
+                <TabHeaderContent tab={activeTab} />
               </motion.div>
-              <h1 className="text-3xl font-serif text-[#333333] leading-tight">
-                {activeTab === 'guanshi' ? '见天地' : activeTab === 'wendao' ? '见众生' : activeTab === 'guanxin' ? '见自己' : activeTab === 'bazi' ? '八字命理' : activeTab === 'mbti' ? '荣格八维' : '决行藏'}
-              </h1>
-              <p className="text-sm text-stone-600 font-sans text-center">
-                {activeTab === 'guanshi'
-                  ? '世界会越来越好，你也是'
-                  : activeTab === 'wendao'
-                  ? '观点广场，待续'
-                  : activeTab === 'guanxin'
-                  ? '知己即知天，请成为自己的答案'
-                  : activeTab === 'bazi'
-                  ? '知己即知天，请成为自己的答案'
-                  : activeTab === 'mbti'
-                  ? '知己即知天，请成为自己的答案'
-                  : '用之则行，舍之则藏'}
-              </p>
-            </div>
+            )}
           </motion.header>
 
           {/* 内容区域：已访问的 tab 保持挂载仅隐藏，切换回来秒开不卡顿 */}
@@ -226,12 +271,13 @@ const HomeContent: React.FC = () => {
             <TabContentErrorBoundary>
               <div className="max-w-md mx-auto relative">
                 {visitedTabs.has('guanshi') && (
-                <div className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
+                <div data-ios-tab-pane="guanshi" className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
                   <GuanShiView />
                 </div>
               )}
               {visitedTabs.has('wendao') && (
                 <div
+                  data-ios-tab-pane="wendao"
                   className={
                     activeTab === 'wendao'
                       ? 'min-h-[320px] flex flex-col items-center justify-center py-16'
@@ -250,22 +296,22 @@ const HomeContent: React.FC = () => {
                 </div>
               )}
               {visitedTabs.has('guanxin') && (
-                <div className={activeTab === 'guanxin' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanxin'}>
+                <div data-ios-tab-pane="guanxin" className={activeTab === 'guanxin' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanxin'}>
                   <GuanXinView onNavigate={handleTabChange} />
                 </div>
               )}
               {visitedTabs.has('bazi') && (
-                <div className={activeTab === 'bazi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'bazi'}>
+                <div data-ios-tab-pane="bazi" className={activeTab === 'bazi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'bazi'}>
                   <BaZiView />
                 </div>
               )}
               {visitedTabs.has('mbti') && (
-                <div className={activeTab === 'mbti' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'mbti'}>
+                <div data-ios-tab-pane="mbti" className={activeTab === 'mbti' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'mbti'}>
                   <MbtiTestView autoStart />
                 </div>
               )}
               {visitedTabs.has('juexingcang') && (
-                <div className={activeTab === 'juexingcang' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'juexingcang'}>
+                <div data-ios-tab-pane="juexingcang" className={activeTab === 'juexingcang' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'juexingcang'}>
                   <JueXingCangView hideHeader isActive={activeTab === 'juexingcang'} />
                 </div>
               )}

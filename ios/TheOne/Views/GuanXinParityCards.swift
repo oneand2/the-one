@@ -564,7 +564,7 @@ struct BaziSheetNativeCard: View {
         isWorking = true; defer { isWorking = false }
         do {
             let response: NativeBaziAnalysisResponse = try await APIClient.shared.request("/api/mobile/bazi", method: .POST, json: body)
-            flow.openChat(preset: "请帮我解析该八字", importData: ["bazi": [response.importData.mapValues(\.anyValue)]], autoSend: false)
+            flow.openChat(preset: "请帮我解析该八字", importData: ["bazi": [response.importData.mapValues(\.anyValue)]], autoSend: true)
         } catch { errorMessage = error.localizedDescription }
     }
 
@@ -644,4 +644,3 @@ private struct ParityGenderButton: View {
         }.buttonStyle(.plain)
     }
 }
-

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AlertCircle, Check, Coins, QrCode, ShieldCheck, X } from 'lucide-react';
 import { COIN_PACKAGES, formatCny } from '@/lib/payments/coinPackages';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 type PaymentMessage = { type: 'success' | 'error' | 'info'; text: string } | null;
 type PaymentProvider = 'alipay' | 'wechat';
@@ -224,7 +225,9 @@ export default function ShopPage() {
       });
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) {
-        window.location.href = `/login?next=${encodeURIComponent('/shop')}`;
+        if (!requestAppLogin()) {
+          window.location.href = `/login?next=${encodeURIComponent('/shop')}`;
+        }
         return;
       }
       if (!response.ok) {

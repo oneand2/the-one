@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,7 +59,9 @@ export default function MyMbtiPage() {
       })
       .catch((e) => {
         if (e.message === '请先登录') {
-          router.replace(`/login?next=${encodeURIComponent(pathname || '/my/mbti')}`);
+          if (!requestAppLogin()) {
+            router.replace(`/login?next=${encodeURIComponent(pathname || '/my/mbti')}`);
+          }
           return;
         }
         setError(e.message);

@@ -38,7 +38,10 @@ function hourToZhiIdx(h: number): number {
 
 function polar(deg: number, r: number, cx: number, cy: number) {
   const rad = (deg - 90) * (Math.PI / 180);
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  return {
+    x: Number((cx + r * Math.cos(rad)).toFixed(2)),
+    y: Number((cy + r * Math.sin(rad)).toFixed(2)),
+  };
 }
 
 /** 顺时针弧路径，startDeg + spanDeg < 360 均可 */
@@ -51,9 +54,11 @@ function arc(cx: number, cy: number, r: number, startDeg: number, spanDeg: numbe
 
 // ─── 主组件 ───────────────────────────────────────────────────────────────────
 export const ZiwuLiuzhuClock: React.FC = () => {
-  const [now, setNow] = useState(() => new Date());
+  // 首屏用固定正午，避免 SSR / 客户端 Date 与浮点三角函数对不齐触发水合报错。
+  const [now, setNow] = useState(() => new Date(2026, 0, 1, 12, 0, 0));
 
   useEffect(() => {
+    setNow(new Date());
     const id = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(id);
   }, []);
@@ -79,7 +84,7 @@ export const ZiwuLiuzhuClock: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
       className="mb-6"
@@ -153,8 +158,8 @@ export const ZiwuLiuzhuClock: React.FC = () => {
             return (
               <line
                 key={i}
-                x1={outer.x} y1={outer.y}
-                x2={inner.x} y2={inner.y}
+                x1={outer.x.toFixed(2)} y1={outer.y.toFixed(2)}
+                x2={inner.x.toFixed(2)} y2={inner.y.toFixed(2)}
                 stroke={isCardinal ? 'rgba(0,0,0,0.22)' : 'rgba(0,0,0,0.10)'}
                 strokeWidth={isCardinal ? 1.1 : 0.75}
               />
@@ -166,8 +171,8 @@ export const ZiwuLiuzhuClock: React.FC = () => {
             const p = polar(needleDeg, R, CX, CY);
             return (
               <>
-                <circle cx={p.x} cy={p.y} r={6.5} fill={accent} opacity="0.12" />
-                <circle cx={p.x} cy={p.y} r={3.5} fill={accent} opacity="0.82" />
+                <circle cx={p.x.toFixed(2)} cy={p.y.toFixed(2)} r={6.5} fill={accent} opacity="0.12" />
+                <circle cx={p.x.toFixed(2)} cy={p.y.toFixed(2)} r={3.5} fill={accent} opacity="0.82" />
               </>
             );
           })()}
@@ -180,7 +185,7 @@ export const ZiwuLiuzhuClock: React.FC = () => {
             return (
               <text
                 key={z.name}
-                x={p.x} y={p.y}
+                x={p.x.toFixed(2)} y={p.y.toFixed(2)}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize={isActive ? 14 : isCardinal ? 11 : 9.5}

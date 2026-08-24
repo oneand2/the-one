@@ -128,7 +128,7 @@ enum UIContract {
     }
 
     static let screens: [String: Screen] = [
-        "guanshi": Screen(title: "见天地", subtitle: "世界会越来越好，你也是", symbol: "broken-broken"),
+        "guanshi": Screen(title: "见天地", subtitle: "世间即道场，人生是修行", symbol: "broken-broken"),
         "wendao": Screen(title: "见众生", subtitle: "观点广场，待续", symbol: "broken-solid"),
         "guanxin": Screen(title: "见自己", subtitle: "知己即知天，请成为自己的答案", symbol: "solid-broken"),
         "bazi": Screen(title: "八字命理", subtitle: "知己即知天，请成为自己的答案", symbol: "solid-broken"),

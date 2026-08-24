@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { requestAppStore } from '@/utils/iosEmbed';
 
 export function GetCoinsModalLayer() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const handler = () => setOpen(true);
+    const handler = () => {
+      if (requestAppStore()) return;
+      setOpen(true);
+    };
     window.addEventListener('open-get-coins', handler);
     return () => window.removeEventListener('open-get-coins', handler);
   }, []);
@@ -30,7 +34,11 @@ export function GetCoinsModalLayer() {
           </button>
           <button
             type="button"
-            onClick={() => { setOpen(false); router.push('/shop'); }}
+            onClick={() => {
+              setOpen(false);
+              if (requestAppStore()) return;
+              router.push('/shop');
+            }}
             className="flex-1 rounded-lg bg-stone-800 py-2.5 text-sm text-white hover:bg-stone-700"
           >
             查看服务包

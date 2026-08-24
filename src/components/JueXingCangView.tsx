@@ -12,6 +12,7 @@ import { LiuYaoView } from './LiuYaoView';
 import type { BaziInput } from '@/utils/baziLogic';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 interface Message {
   id: string;
@@ -93,6 +94,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sendingRef = useRef(false);
   const lastSendRef = useRef<{ content: string; at: number }>({ content: '', at: 0 });
+  const skipTipModalRef = useRef(false);
   const idRef = useRef(0);
   const prefillAppliedRef = useRef(false);
   /** 用户是否在"跟读底部"（在底部附近未主动上滑），仅在为 true 时自动滚到底 */
@@ -110,6 +112,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [showTipModal, setShowTipModal] = useState(false);
   const pendingImportKey = 'juexingcang-import-pending';
   const inputPresetKey = 'juexingcang-input-preset';
+  const autoSendPendingKey = 'juexingcang-auto-send-pending';
   const tipModalDontShowKey = 'juexingcang-tip-dont-show';
 
   // 会话管理相关状态
@@ -463,8 +466,12 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     const initializeWithImportData = async () => {
       try {
         const cached = localStorage.getItem(pendingImportKey);
-        if (!cached) return;
+        if (!cached) {
+          localStorage.removeItem(autoSendPendingKey);
+          return;
+        }
         const preset = localStorage.getItem(inputPresetKey);
+        const shouldAutoSend = localStorage.getItem(autoSendPendingKey) === 'true';
         
         // 检测到新的导入数据时，清空当前会话和消息，以便创建新会话
         setCurrentSessionId(null);
@@ -472,6 +479,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         
         // Remove immediately to avoid duplicate imports on double-run effects.
         localStorage.removeItem(pendingImportKey);
+        localStorage.removeItem(autoSendPendingKey);
         const normalized = normalizeImportData(JSON.parse(cached) as ImportData);
         if (getImportCount(normalized) > 0) {
           // 从八字界面「解析该八字」进入时，默认关闭六爻
@@ -503,6 +511,16 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
             // 限制标题长度，最多20个字符
             sessionTitle = question.length > 20 ? question.slice(0, 20) + '...' : question;
           }
+
+          // 「解析该八字」表示用户已经确认提问：导入后直接发送，省去再次点击箭头。
+          // 三个 pending 值在发送前同步消费，React Strict Mode 重跑也不会重复扣币/提问。
+          if (shouldAutoSend && preset?.trim()) {
+            localStorage.removeItem(inputPresetKey);
+            skipTipModalRef.current = true;
+            setShowTipModal(false);
+            void handleSend(preset, normalized);
+            return;
+          }
           
           const newSession = await createNewSession(sessionTitle);
           if (!newSession) {
@@ -518,7 +536,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     return () => {
       cleanupTimers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [pendingImportKey, isActive]);
+  }, [pendingImportKey, inputPresetKey, autoSendPendingKey, isActive]);
 
   // 初始化时加载会话列表
   useEffect(() => {
@@ -532,7 +550,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       if (!dontShow) {
         // 延迟一下显示，让页面先渲染完成
         const timer = setTimeout(() => {
-          setShowTipModal(true);
+          if (!skipTipModalRef.current) setShowTipModal(true);
         }, 300);
         return () => clearTimeout(timer);
       }
@@ -654,7 +672,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         // 未登录时还原 loading 状态并跳转登录
         setIsLoading(false);
         sendingRef.current = false;
-        router.push('/login?next=/');
+        if (!requestAppLogin()) {
+          router.push('/login?next=/');
+        }
         return;
       }
 
@@ -1265,7 +1285,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         
         {/* 顶部标题区 - hideHeader 时由 page 统一渲染 logo/标题，此处仅保留工具栏 */}
         <motion.div
-          initial={{ opacity: 0, y: -30 }}
+          initial={hideHeader ? false : { opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: hideHeader ? 0.3 : 1.2, ease: [0.16, 1, 0.3, 1] }}
           className={hideHeader ? 'pt-2 pb-4 sm:pb-5' : 'pt-16 pb-4 sm:pb-5'}
@@ -1524,7 +1544,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
             {messages.length === 0 ? (
               // 空状态 - 禅意插画
               <motion.div
-                initial={{ opacity: 0 }}
+                initial={hideHeader ? false : { opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
@@ -1587,7 +1607,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
                   {/* 中心点 */}
                   <motion.div 
-                    initial={{ scale: 0 }}
+                    initial={hideHeader ? false : { scale: 0 }}
                     animate={{ 
                       scale: 1,
                       boxShadow: isMeditation 
@@ -1636,7 +1656,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
                 {/* 标题文字 */}
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={hideHeader ? false : { opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6, duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="text-center space-y-5"
@@ -1667,7 +1687,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
                 {/* 装饰线 */}
                 <motion.div
-                  initial={{ scaleX: 0 }}
+                  initial={hideHeader ? false : { scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ delay: 1, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                   className="mt-12 w-24 h-px bg-gradient-to-r from-transparent via-stone-300 to-transparent"
@@ -1842,7 +1862,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
         {/* 输入区域 - 极简设计；移动端加大底部留白，避免被底部导航挡住 */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={hideHeader ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="pt-6 border-t border-stone-200 juexingcang-input-bottom md:!pb-8"

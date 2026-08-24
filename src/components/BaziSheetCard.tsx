@@ -11,6 +11,7 @@ import {
   provinceData,
 } from '@/utils/baziLocation';
 import { AnchorDropdownSelect, type DropdownOption } from '@/components/AnchorDropdownSelect';
+import { homeHref, syncAppTab, withEmbed } from '@/utils/iosEmbed';
 
 const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
 const CACHE_KEY = 'bazi-input-cache-v1';
@@ -433,7 +434,7 @@ export const BaziSheetCard: React.FC = () => {
         params.set('longitude', String(loc.longitude));
       }
     }
-    router.push(`/report/classical?${params.toString()}`);
+    router.push(withEmbed(`/report/classical?${params.toString()}`));
   };
 
   const handleAI = async () => {
@@ -448,7 +449,9 @@ export const BaziSheetCard: React.FC = () => {
       localStorage.removeItem('juexingcang-import-pending');
       localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
       localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
-      router.push('/?tab=juexingcang');
+      localStorage.setItem('juexingcang-auto-send-pending', 'true');
+      syncAppTab('juexingcang');
+      router.push(homeHref('juexingcang'));
     } catch (e) {
       console.error('AI分析失败:', e);
       setIsAnalyzing(false);

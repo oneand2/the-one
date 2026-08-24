@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
+import { setAppModalBackdropActive } from '@/utils/iosEmbed';
 
 type Props = {
   open: boolean;
@@ -38,6 +39,13 @@ export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
     };
   }, [open]);
 
+  useEffect(() => {
+    setAppModalBackdropActive(open);
+    return () => {
+      if (open) setAppModalBackdropActive(false);
+    };
+  }, [open]);
+
   const handleConfirm = () => {
     // 还在等待期间，不允许关闭
     if (remainingSeconds > 0) return;
@@ -55,6 +63,7 @@ export function JueXingCangTipModal({ open, onClose, onDontShowAgain }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.34, ease: [0.32, 0.72, 0, 1] }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
           onClick={onClose}
         >

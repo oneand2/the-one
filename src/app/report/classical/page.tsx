@@ -8,6 +8,7 @@ import CircuitGraph from '@/components/CircuitGraph';
 import EnergySection from '@/components/EnergySection';
 import LuckTimeline from '@/components/LuckTimeline';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
+import { homeHref, syncAppTab } from '@/utils/iosEmbed';
 
 export const dynamic = 'force-dynamic';
 
@@ -354,9 +355,11 @@ const ClassicalReportContent: React.FC = () => {
         localStorage.removeItem('juexingcang-import-pending');
         localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
         localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
+        localStorage.setItem('juexingcang-auto-send-pending', 'true');
 
         // 4. 跳转到决行藏界面（使用主页 tab 切换，保持丝滑体验）
-        router.push('/?tab=juexingcang');
+        syncAppTab('juexingcang');
+        router.push(homeHref('juexingcang'));
       }
     } catch (e) {
       setSaveStatus('error');
@@ -746,7 +749,10 @@ const ClassicalReportContent: React.FC = () => {
       >
         <button
           type="button"
-          onClick={() => router.push('/?tab=guanxin')}
+          onClick={() => {
+            syncAppTab('guanxin');
+            router.push(homeHref('guanxin'));
+          }}
           className="px-8 py-2.5 text-[11px] font-sans tracking-[0.18em] text-stone-400 hover:text-stone-600 transition-colors duration-300"
         >
           ← 返回

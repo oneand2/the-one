@@ -13,7 +13,8 @@ final class AuthStore: ObservableObject {
     var isAuthenticated: Bool { user != nil }
 
     func restoreSession() async {
-        defer { isRestoring = false }
+        // 先进入主界面，避免登录探测卡住时一直停在启动页。
+        isRestoring = false
         do {
             let response: AuthResponse = try await APIClient.shared.request("/api/mobile/auth")
             user = response.user

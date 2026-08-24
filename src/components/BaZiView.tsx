@@ -6,6 +6,7 @@ import { Calendar, Clock, Sparkles } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { BaziInput } from '@/utils/baziLogic';
 import { buildBaziImportData } from '@/utils/baziImport';
+import { homeHref, syncAppTab, withEmbed } from '@/utils/iosEmbed';
 import {
   getCityLongitude,
   domesticProvinces,
@@ -379,8 +380,10 @@ export const BaZiView: React.FC = () => {
       localStorage.removeItem('juexingcang-import-pending');
       localStorage.setItem('juexingcang-import-pending', JSON.stringify(importData));
       localStorage.setItem('juexingcang-input-preset', '请帮我解析该八字');
+      localStorage.setItem('juexingcang-auto-send-pending', 'true');
 
-      router.push('/?tab=juexingcang');
+      syncAppTab('juexingcang');
+      router.push(homeHref('juexingcang'));
     } catch (error) {
       console.error('AI分析失败:', error);
       setIsAnalyzing(false);
@@ -433,7 +436,7 @@ export const BaZiView: React.FC = () => {
       params.set('zhis', baziInput.zhis.join(','));
     }
 
-    router.push(`/report/classical?${params.toString()}`);
+    router.push(withEmbed(`/report/classical?${params.toString()}`));
   };
 
   const CustomSelect = ({

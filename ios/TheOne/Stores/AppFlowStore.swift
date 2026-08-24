@@ -19,6 +19,7 @@ enum AppScreen: String, CaseIterable {
 }
 
 struct PendingChatRequest {
+    let id = UUID()
     let preset: String
     let importData: [String: Any]
     let autoSend: Bool
@@ -27,6 +28,8 @@ struct PendingChatRequest {
 @MainActor
 final class AppFlowStore: ObservableObject {
     @Published var screen: AppScreen
+    /// 每次点底栏都加一，即使还在同一 tab，WebView 也会再同步一次。
+    @Published private(set) var tabSelectionTick = 0
     @Published private(set) var pendingChat: PendingChatRequest?
 
     init() {
@@ -39,6 +42,7 @@ final class AppFlowStore: ObservableObject {
 
     func selectNavigation(_ symbol: FourSymbol) {
         screen = AppScreen(rawValue: symbol.rawValue) ?? .guanshi
+        tabSelectionTick += 1
     }
 
     func openMBTI() { screen = .mbti }

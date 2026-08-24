@@ -190,7 +190,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
   const subtitle = otpPending
     ? '一封信，确认此刻是你'
     : mode === 'login'
-      ? '世界即道场，此心即归处'
+      ? '世间即道场，人生是修行'
       : '从此刻起，与自己同行';
 
   return (

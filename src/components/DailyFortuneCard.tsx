@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Solar as SolarLib } from 'lunar-javascript';
 import { useRouter } from 'next/navigation';
 import { analyzeBazi } from '@/utils/baziLogic';
 import { buildBaziImportData } from '@/utils/baziImport';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import { homeHref, syncAppTab } from '@/utils/iosEmbed';
 import type { QianchengImportData, BaziImportData } from '@/types/import-data';
 
 type Pillars = QianchengImportData['pillars'];
@@ -202,6 +203,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
   // 八字排盘记录
   const [records,      setRecords]      = useState<ClassicalRecord[]|null>(null); // null=loading
   const [recordsFailed,setRecordsFailed]= useState(false);
+  const recordsRequestRef = useRef(0);
 
   const [showBreakdown,    setShowBreakdown]    = useState(false);
   const [showRecordPicker, setShowRecordPicker] = useState(false);
@@ -224,25 +226,50 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
     setShowSetup(true); setHydrated(true);
   },[]);
 
-  // ── 加载八字排盘记录（仅 setup 时）──────────────────────────────────────────
-  useEffect(()=>{
-    if (!showSetup) return;
-    // sessionStorage 缓存
-    const cached = getCached<ClassicalRecord[]>(CACHE_KEYS.RECORDS_CLASSICAL);
-    if (cached && Array.isArray(cached) && cached.length>0) {
+  // ── 加载八字排盘记录 ─────────────────────────────────────────────────────────
+  const loadRecords = useCallback((preferCache = true) => {
+    const requestId = ++recordsRequestRef.current;
+    const cached = preferCache
+      ? getCached<ClassicalRecord[]>(CACHE_KEYS.RECORDS_CLASSICAL)
+      : null;
+
+    setRecordsFailed(false);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
       setRecords(cached.map(r=>'params' in r ? r as ClassicalRecord : normalizeRecord(r as Parameters<typeof normalizeRecord>[0])));
+    } else {
+      setRecords(null);
     }
-    // API 实时拉取
-    fetch('/api/records/classical', {credentials:'include'})
+
+    fetch('/api/records/classical', {credentials:'include', cache:'no-store'})
       .then(r=>{ if(r.ok) return r.json(); if(r.status===401) return []; throw r.status; })
       .then(data=>{
+        if (requestId !== recordsRequestRef.current) return;
         if (!Array.isArray(data)) { setRecords(cached?.length?cached:[]);return; }
         const list = data.map(normalizeRecord);
         setRecords(list);
         if (list.length>0) setCached(CACHE_KEYS.RECORDS_CLASSICAL, list, RECORDS_TTL_MS);
       })
-      .catch(()=>{ if (!cached) { setRecords([]); setRecordsFailed(true); } });
-  },[showSetup]);
+      .catch(()=>{
+        if (requestId !== recordsRequestRef.current) return;
+        if (!cached) setRecords([]);
+        setRecordsFailed(true);
+      });
+  },[]);
+
+  useEffect(()=>{
+    if (!showSetup) return;
+    loadRecords(true);
+  },[showSetup,loadRecords]);
+
+  // 网页登录与 iOS 原生登录都会通知当前页面。登录完成后强制绕过游客态缓存，
+  // 让“创建排盘”立即切换为“挑选命盘”，无需重载整个今日能量页面。
+  useEffect(()=>{
+    const refreshAfterAuth = () => {
+      if (showSetup) loadRecords(false);
+    };
+    window.addEventListener('theone:auth-changed', refreshAfterAuth);
+    return ()=>window.removeEventListener('theone:auth-changed', refreshAfterAuth);
+  },[showSetup,loadRecords]);
 
   // ── 计算日柱 ─────────────────────────────────────────────────────────────────
   useEffect(()=>{
@@ -361,7 +388,8 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
       name: storedData.name,
     };
     try { localStorage.setItem(QIANCHENG_PENDING_KEY, JSON.stringify(payload)); } catch {}
-    router.push('/?tab=juexingcang&qiancheng=1');
+    syncAppTab('juexingcang');
+    router.push(homeHref('juexingcang', { qiancheng: '1' }));
   },[qianchengQ,storedData,router]);
 
   const yongshen   = storedData?.yongshen??'';
@@ -392,59 +420,87 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
 
     return (
       <>
-        {/* ── 主卡片（紧凑） ── */}
+        {/* ── 主卡片 ── */}
         <motion.div key="setup"
           initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-8}} transition={{duration:.26}}
-          className="w-full mb-8 rounded-2xl"
-          style={{background:'#fbf9f4',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 1px 3px rgba(0,0,0,0.04)'}}
+          className="mb-8 w-full rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]"
+          style={{boxShadow:'0 10px 30px rgba(66,57,45,0.035)'}}
         >
-          <div className="px-5 pt-5 pb-5">
+          <div className="relative overflow-hidden rounded-[17px] bg-[#fbf9f4] px-5 pb-5 pt-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+            <span className="absolute inset-x-5 top-0 h-px bg-stone-300/65" aria-hidden />
             {/* 标题栏 */}
             {storedData&&(
-              <div className="flex items-center justify-end mb-3">
+              <div className="mb-3 flex items-center justify-end">
                 <button onClick={()=>setShowSetup(false)} className="text-[10px] font-sans" style={{color:'#c4bdb0'}}>取消</button>
               </div>
             )}
 
-            {/* 说明：有排盘时沿用原界面，空状态使用独立引导。 */}
-            {(hasRecords || recordsLoading) && (
-              <p className="text-[11.5px] leading-relaxed mb-4"
-                style={{color:'#8a8175',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-                选取一份八字排盘，以日柱与用神推演今日能量。
-              </p>
-            )}
-
             {(hasRecords || recordsLoading) ? (
-              /* ── 从排盘选择按钮 ── */
-              <button
-                onClick={()=>setShowRecordPicker(true)}
-                disabled={recordsLoading || isCalculating}
-                className="w-full rounded-xl px-4 py-3.5 flex items-center justify-between transition-all duration-200 hover:bg-stone-50 active:bg-stone-100"
-                style={{background:'rgba(0,0,0,0.025)',border:'1px solid rgba(0,0,0,0.08)'}}
-              >
-                <div className="flex items-center gap-2.5">
-                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#a39888" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                  </svg>
-                  <span className="text-[12.5px]"
-                    style={{color:'#4a4642',fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
-                    从我的八字排盘中选择
-                  </span>
-                  {hasRecords && (
-                    <span className="text-[9.5px] font-sans px-1.5 py-0.5 rounded-full"
-                      style={{background:'rgba(0,0,0,0.06)',color:'#9e9588'}}>
-                      {records!.length}条
-                    </span>
-                  )}
+              /* ── 已有排盘：完整选择引导 ── */
+              <div>
+                <div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-4 sm:grid-cols-[72px_minmax(0,1fr)] sm:gap-5">
+                  <div className="grid grid-cols-4 gap-1.5 border-r border-stone-200/80 pr-4 sm:pr-5" aria-hidden>
+                    {['年','月','日','时'].map((pillar,index)=>(
+                      <div key={pillar} className="flex flex-col items-center gap-1.5">
+                        <span className="font-sans text-[8px] text-stone-300">{pillar}</span>
+                        <span
+                          className="h-4 w-1 rounded-[1px]"
+                          style={{background:['#8fa287','#b69883','#8799af','#a58f67'][index]}}
+                        />
+                        <span className="h-2.5 w-1 rounded-[1px] bg-stone-400/65" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-[17px] tracking-[0.08em] text-stone-700"
+                        style={{fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                        选择今日命盘
+                      </h3>
+                      {hasRecords && (
+                        <span className="rounded-full bg-stone-900/[0.045] px-2 py-0.5 font-sans text-[9px] tracking-[0.08em] text-stone-400">
+                          已存 {records!.length} 份
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-[11.5px] leading-[1.8] text-stone-500"
+                      style={{fontFamily:'"Kaiti SC",KaiTi,STKaiti,"华文楷体","楷体",Georgia,serif'}}>
+                      {recordsLoading
+                        ? '正在整理你保存的命盘，请稍候。'
+                        : '挑选一份已保存的命盘，为你推演今天的能量。'}
+                    </p>
+                  </div>
                 </div>
-                {recordsLoading || isCalculating
-                  ? <span className="w-3.5 h-3.5 border-2 border-stone-200 border-t-stone-400 rounded-full animate-spin flex-shrink-0"/>
-                  : <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="#c4bdb0" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M9 5l7 7-7 7"/>
-                    </svg>
-                }
-              </button>
+
+                <div className="mt-4 flex items-center gap-2 font-sans text-[9px] tracking-[0.12em] text-stone-300" aria-hidden>
+                  <span>挑选命盘</span>
+                  <span className="h-px flex-1 bg-stone-200/80" />
+                  <span>推演用神</span>
+                  <span className="h-px flex-1 bg-stone-200/80" />
+                  <span>查看今日能量</span>
+                </div>
+
+                <button
+                  type="button"
+                  aria-haspopup="dialog"
+                  onClick={()=>setShowRecordPicker(true)}
+                  disabled={recordsLoading || isCalculating}
+                  className="group mt-4 flex min-h-11 w-full items-center gap-4 py-1 font-sans text-[11px] tracking-[0.16em] text-stone-600 transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.99] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <span className="h-px flex-1 bg-stone-200/90 transition-colors duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:bg-stone-300" aria-hidden />
+                  <span className="transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:text-stone-800">
+                    {recordsLoading ? '正在读取命盘' : '挑选一份命盘'}
+                  </span>
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ebe3d8] text-[#7f6b59] ring-1 ring-inset ring-[#dfd3c5] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-y-0.5 group-hover:scale-105 group-hover:bg-[#dfd3c5]">
+                    {recordsLoading || isCalculating
+                      ? <span className="h-3.5 w-3.5 rounded-full border border-stone-300 border-t-stone-600 animate-spin" />
+                      : <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 5v14m0 0l-5-5m5 5l5-5"/>
+                        </svg>
+                    }
+                  </span>
+                </button>
+              </div>
             ) : (
               /* ── 暂无排盘：引导至下方八字卡片 ── */
               <div className="border-t border-stone-200/70 pt-4">
@@ -528,7 +584,7 @@ export const DailyFortuneCard: React.FC<Props> = ({year,month,day}) => {
                 {/* 顶栏 */}
                 <div className="flex-shrink-0 flex items-center justify-between px-6 py-2.5">
                   <span className="text-[10px] font-sans tracking-[0.34em]" style={{color:'#a39888'}}>
-                    选 择 八 字
+                    挑 选 命 盘
                   </span>
                   <button onClick={()=>setShowRecordPicker(false)}
                     className="w-7 h-7 flex items-center justify-center rounded-full transition-colors hover:bg-stone-100"

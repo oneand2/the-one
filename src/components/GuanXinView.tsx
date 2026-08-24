@@ -12,6 +12,7 @@ import {
   getHexagramByIndex,
   type DailyHexagramEntry,
 } from '@/utils/dailyHexagram';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
 
@@ -135,6 +136,8 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
         credentials: 'include',
       });
       if (response.status === 401) {
+        setDrawState('ready');
+        if (requestAppLogin()) return;
         router.replace(DAILY_HEXAGRAM_LOGIN_URL);
         return;
       }
@@ -296,7 +299,7 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.3 }}
@@ -310,7 +313,7 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
       <SectionLabel>命 盘 排 演</SectionLabel>
       <motion.div
         id="bazi-sheet"
-        initial={{ opacity: 0, y: 14 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.08 }}
         className="scroll-mt-6"
@@ -320,7 +323,7 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
 
       <SectionLabel>心 智 图 谱</SectionLabel>
       <motion.section
-        initial={{ opacity: 0, y: 14 }}
+        initial={false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, delay: 0.15 }}
         className="relative overflow-hidden rounded-lg border border-stone-200/80 bg-[#fbf9f4] p-5 shadow-sm"

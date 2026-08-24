@@ -312,9 +312,8 @@ struct GetCoinsInfoOverlay: View {
                         Text("铜币与数字内容服务")
                             .font(.webSerif(21))
                             .foregroundStyle(AppTheme.stone800)
-                        Text("APPLE IN-APP PURCHASE")
-                            .font(.system(size: 9, weight: .medium))
-                            .tracking(1.8)
+                        Text("通过 App 内购买获取铜币")
+                            .font(.system(size: 11))
                             .foregroundStyle(AppTheme.stone400)
                     }
                     Spacer()

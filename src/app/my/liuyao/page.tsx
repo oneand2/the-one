@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS, recordsLiuyaoDetailKey } from '@/utils/cache';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
 
@@ -149,6 +150,7 @@ function MyLiuyaoContent() {
   const [error, setError] = useState<string | null>(null);
 
   const redirectToLogin = () => {
+    if (requestAppLogin()) return;
     const base = pathname || '/my/liuyao';
     const next = base + (typeof window !== 'undefined' && window.location.search ? window.location.search : '');
     router.replace(`/login?next=${encodeURIComponent(next)}`);

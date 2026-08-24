@@ -2,13 +2,25 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var auth: AuthStore
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showLaunch = true
 
     var body: some View {
         Group {
-            if auth.isRestoring {
+            if showLaunch {
                 LaunchView()
             } else {
                 MainTabView()
+            }
+        }
+        .task {
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            if reduceMotion {
+                showLaunch = false
+            } else {
+                withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42)) {
+                    showLaunch = false
+                }
             }
         }
         .sheet(isPresented: $auth.showsLogin) {
@@ -21,21 +33,134 @@ struct RootView: View {
 }
 
 private struct LaunchView: View {
-    @State private var appeared = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var fieldVisible = false
+    @State private var markVisible = false
+    @State private var wordsVisible = false
 
     var body: some View {
-        ZStack {
-            AmbientBackground()
-            VStack(spacing: 16) {
-                FourSymbolGlyph(symbol: .juexingcang, width: 42, lineHeight: 8)
-                Text("二")
-                    .font(.kaiti(31))
-                    .tracking(8)
-                    .foregroundStyle(AppTheme.ink)
+        GeometryReader { proxy in
+            ZStack {
+                AppTheme.background
+                    .ignoresSafeArea()
+
+                LaunchField()
+                    .opacity(fieldVisible ? 1 : 0)
+                    .scaleEffect(fieldVisible ? 1 : 0.94)
+
+                VStack(spacing: 0) {
+                    ZStack {
+                        Circle()
+                            .fill(AppTheme.warmWhite.opacity(0.76))
+                            .frame(width: 142, height: 142)
+
+                        Circle()
+                            .stroke(AppTheme.gold.opacity(0.13), lineWidth: 0.7)
+                            .frame(width: 142, height: 142)
+
+                        Circle()
+                            .stroke(AppTheme.gold.opacity(0.07), lineWidth: 0.7)
+                            .frame(width: 124, height: 124)
+
+                        FourSymbolGlyph(
+                            symbol: .juexingcang,
+                            width: 58,
+                            lineHeight: 10.5,
+                            color: AppTheme.ink
+                        )
+
+                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                            .fill(AppTheme.cinnabar.opacity(0.88))
+                            .frame(width: 5, height: 18)
+                            .offset(x: 49, y: 45)
+                    }
+                    .scaleEffect(markVisible ? 1 : 0.82)
+                    .opacity(markVisible ? 1 : 0)
+
+                    Rectangle()
+                        .fill(AppTheme.gold.opacity(0.42))
+                        .frame(width: 34, height: 0.7)
+                        .padding(.top, 31)
+                        .padding(.bottom, 19)
+                        .scaleEffect(x: wordsVisible ? 1 : 0.15, y: 1)
+
+                    Text("世间即道场，人生是修行")
+                        .font(.kaiti(17))
+                        .tracking(2.6)
+                        .foregroundStyle(AppTheme.stone700)
+                        .multilineTextAlignment(.center)
+                        .opacity(wordsVisible ? 1 : 0)
+                        .offset(y: wordsVisible ? 0 : 9)
+                }
+                .position(x: proxy.size.width / 2, y: proxy.size.height * 0.46)
             }
-            .opacity(appeared ? 1 : 0)
+            .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .onAppear { withAnimation(.easeOut(duration: 0.45)) { appeared = true } }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("二，世间即道场，人生是修行")
+        .onAppear {
+            guard !reduceMotion else {
+                fieldVisible = true
+                markVisible = true
+                wordsVisible = true
+                return
+            }
+
+            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.90)) {
+                fieldVisible = true
+            }
+            withAnimation(.spring(response: 0.72, dampingFraction: 0.86).delay(0.08)) {
+                markVisible = true
+            }
+            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.68).delay(0.28)) {
+                wordsVisible = true
+            }
+        }
+    }
+}
+
+/// 像宣纸上极淡的圆规痕：暗示「道场」与循环，但不与品牌符号争夺视觉中心。
+private struct LaunchField: View {
+    var body: some View {
+        Canvas { context, size in
+            let center = CGPoint(x: size.width / 2, y: size.height * 0.46)
+            let radii: [(CGFloat, Double)] = [
+                (118, 0.10),
+                (190, 0.065),
+                (278, 0.035)
+            ]
+
+            for (radius, opacity) in radii {
+                let rect = CGRect(
+                    x: center.x - radius,
+                    y: center.y - radius,
+                    width: radius * 2,
+                    height: radius * 2
+                )
+                context.stroke(
+                    Path(ellipseIn: rect),
+                    with: .color(AppTheme.gold.opacity(opacity)),
+                    lineWidth: 0.7
+                )
+            }
+
+            var axisMarks = Path()
+            axisMarks.move(to: CGPoint(x: center.x, y: center.y - 199))
+            axisMarks.addLine(to: CGPoint(x: center.x, y: center.y - 181))
+            axisMarks.move(to: CGPoint(x: center.x, y: center.y + 181))
+            axisMarks.addLine(to: CGPoint(x: center.x, y: center.y + 199))
+            axisMarks.move(to: CGPoint(x: center.x - 199, y: center.y))
+            axisMarks.addLine(to: CGPoint(x: center.x - 181, y: center.y))
+            axisMarks.move(to: CGPoint(x: center.x + 181, y: center.y))
+            axisMarks.addLine(to: CGPoint(x: center.x + 199, y: center.y))
+            context.stroke(
+                axisMarks,
+                with: .color(AppTheme.gold.opacity(0.10)),
+                lineWidth: 0.7
+            )
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
     }
 }
 
@@ -58,34 +183,44 @@ private struct MainTabView: View {
     @EnvironmentObject private var auth: AuthStore
     @EnvironmentObject private var profile: ProfileStore
     @EnvironmentObject private var flow: AppFlowStore
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showStore = false
     @State private var showGetCoins = false
+    @StateObject private var webLoad = HybridLoadState()
 
     var body: some View {
-        ZStack {
-            AmbientBackground()
-            HybridWebContentView(
-                screen: flow.screen,
-                sessionIdentity: auth.user?.id ?? "guest",
-                onTabChanged: { flow.screen = $0 },
-                onLoginRequested: { auth.showsLogin = true },
-                onStoreRequested: { showStore = true }
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .safeAreaInset(edge: .top, spacing: 0) {
+        VStack(spacing: 0) {
             HStack {
                 Spacer(minLength: 0)
                 AccountMenu(showGetCoins: $showGetCoins)
             }
             .background(AppTheme.background)
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+
+            ZStack {
+                HybridWebContentView(
+                    flow: flow,
+                    sessionIdentity: auth.user?.id ?? "guest",
+                    scenePhase: scenePhase,
+                    loadState: webLoad,
+                    onTabChanged: { flow.screen = $0 },
+                    onLoginRequested: { auth.showsLogin = true },
+                    onStoreRequested: { showStore = true }
+                )
+                if !webLoad.isReady {
+                    HybridLoadOverlay(state: webLoad)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .id("theone-hybrid-web")
+
             LegacyTabBar(selection: Binding(
                 get: { flow.screen.navigationSymbol },
-                set: { flow.selectNavigation($0) }
+                set: {
+                    flow.selectNavigation($0)
+                }
             ))
         }
+        .background(AmbientBackground())
         .overlay {
             if showGetCoins {
                 GetCoinsInfoOverlay(showStore: $showStore, isPresented: $showGetCoins)
@@ -94,9 +229,39 @@ private struct MainTabView: View {
         .sheet(isPresented: $showStore) { StoreView() }
     }
 
+    private struct HybridLoadOverlay: View {
+        @ObservedObject var state: HybridLoadState
+
+        var body: some View {
+            VStack(spacing: 16) {
+                if !state.canRetry {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .tint(AppTheme.muted)
+                }
+                Text(state.message)
+                    .font(.kaiti(14))
+                    .tracking(0.4)
+                    .foregroundStyle(AppTheme.stone500)
+                    .multilineTextAlignment(.center)
+                if state.canRetry {
+                    Button("重新载入", action: state.retry)
+                        .font(.system(size: 13))
+                        .foregroundStyle(AppTheme.stone600)
+                        .underline(true, color: AppTheme.stone300)
+                }
+            }
+            .padding(32)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AppTheme.background)
+            .allowsHitTesting(state.canRetry)
+        }
+    }
+
     private struct AccountMenu: View {
         @EnvironmentObject private var auth: AuthStore
         @EnvironmentObject private var profile: ProfileStore
+        @EnvironmentObject private var flow: AppFlowStore
         @State private var showProfile = false
         @State private var recordsKind: RecordsKind?
         @State private var showLegal = false
@@ -132,6 +297,13 @@ private struct MainTabView: View {
                     }
                 }
                 .sheet(isPresented: $showLegal) { NavigationStack { LegalCenterView() } }
+                .onChange(of: flow.pendingChat?.id) { _, requestID in
+                    guard requestID != nil else { return }
+                    recordsKind = nil
+                    showProfile = false
+                    showLegal = false
+                    setMenuOpen(false)
+                }
         }
 
         private var displayName: String {

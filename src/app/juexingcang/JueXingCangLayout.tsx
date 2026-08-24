@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { JueXingCangView } from '@/components/JueXingCangView';
 import { MobileNav } from '@/components/MobileNav';
 import type { TabType } from '@/types/tabs';
+import { homeHref, syncAppTab } from '@/utils/iosEmbed';
 
 const Sidebar = dynamic(
   () => import('@/components/Sidebar').then((mod) => mod.Sidebar),
@@ -23,7 +24,11 @@ export function JueXingCangLayout() {
       <div className="hidden md:block">
         <Sidebar
           activeTab={activeTab}
-          onTabChange={(tab) => router.push(`/?tab=${tab}`)}
+          onTabChange={(tabOrUpdater) => {
+            const tab = typeof tabOrUpdater === 'function' ? tabOrUpdater(activeTab) : tabOrUpdater;
+            syncAppTab(tab);
+            router.push(homeHref(tab));
+          }}
           isJuexingcangActive
           isCollapsed={isCollapsed}
           onMouseEnter={() => setIsCollapsed(false)}
@@ -40,7 +45,10 @@ export function JueXingCangLayout() {
 
       <MobileNav
         activeTab={activeTab}
-        onTabChange={(tab) => router.push(`/?tab=${tab}`)}
+        onTabChange={(tab) => {
+          syncAppTab(tab);
+          router.push(homeHref(tab));
+        }}
       />
     </div>
   );

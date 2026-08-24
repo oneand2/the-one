@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCached, setCached, clearCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,7 +188,9 @@ export default function MyClassicalPage() {
       })
       .catch((e: Error) => {
         if (e.message === '请先登录') {
-          router.replace(`/login?next=${encodeURIComponent(pathname || '/my/classical')}`);
+          if (!requestAppLogin()) {
+            router.replace(`/login?next=${encodeURIComponent(pathname || '/my/classical')}`);
+          }
           return;
         }
         setError(e.message);

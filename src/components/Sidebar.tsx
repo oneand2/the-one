@@ -121,12 +121,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, isJuex
             paddingBottom: '48px',
           }}
         >
-          {/* Top Section: 上联 - 世界即道场 人生是修行 */}
+          {/* Top Section: 上联 - 世间即道场 人生是修行 */}
           <div className="hidden md:flex w-full justify-center flex-shrink-0" style={{ marginBottom: '40px' }}>
             <div className="flex items-center justify-center gap-3">
-              {/* 第一行：世界即道场 */}
+              {/* 第一行：世间即道场 */}
               <div className="flex flex-col items-center" style={{ gap: '8px' }}>
-                {['世', '界', '即', '道', '场'].map((char, i) => (
+                {['世', '间', '即', '道', '场'].map((char, i) => (
                   <span
                     key={i}
                     className="text-stone-400"

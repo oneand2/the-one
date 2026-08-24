@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { isIOSEmbed } from "@/utils/iosEmbed";
 
 export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
@@ -9,7 +10,7 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // 已经运行在 SwiftUI App 内，不再展示浏览器的 PWA 安装引导。
-    if (new URLSearchParams(window.location.search).get("embed") === "ios") return;
+    if (isIOSEmbed()) return;
 
     // 1. 检查是否已经是 APP 模式 (Standalone)
     setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
@@ -64,7 +65,7 @@ export default function InstallPrompt() {
   if (!isVisible || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-black/5 md:left-auto md:right-4 md:w-96 animate-in slide-in-from-bottom-10 fade-in duration-500">
+    <div className="theone-install-prompt fixed bottom-4 left-4 right-4 z-50 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-black/5 md:left-auto md:right-4 md:w-96 animate-in slide-in-from-bottom-10 fade-in duration-500">
       <div className="flex items-start justify-between">
         <div className="flex gap-4">
           {/* 这里显示的 App 图标，自动用你 public 里的图 */}

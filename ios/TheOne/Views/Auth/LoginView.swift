@@ -33,7 +33,7 @@ struct LoginView: View {
 
     private var subtitle: String {
         if verificationEmail != nil { return "一封信，确认此刻是你" }
-        return mode == .login ? "世界即道场，此心即归处" : "从此刻起，与自己同行"
+        return mode == .login ? "世间即道场，人生是修行" : "从此刻起，与自己同行"
     }
 
     private var submitDisabled: Bool {

@@ -11,6 +11,7 @@ import { CopperCoinIcon } from './CopperCoinIcon';
 import { isLifetimeVip } from '@/utils/vip';
 import { clearRecordsCaches } from '@/utils/cache';
 import { SITE_INFO } from '@/config/siteInfo';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 export function AuthButton() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export function AuthButton() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | undefined;
@@ -111,6 +113,18 @@ export function AuthButton() {
       return;
     }
     fetchProfile();
+  }, [user]);
+
+  useEffect(() => {
+    const nextUserId = user?.id ?? null;
+    if (previousUserIdRef.current === undefined) {
+      previousUserIdRef.current = nextUserId;
+      return;
+    }
+    if (previousUserIdRef.current === nextUserId) return;
+    previousUserIdRef.current = nextUserId;
+    clearRecordsCaches();
+    window.dispatchEvent(new CustomEvent('theone:auth-changed'));
   }, [user]);
 
   useEffect(() => {
@@ -346,7 +360,9 @@ export function AuthButton() {
           exit={{ opacity: 0, y: -10 }}
         >
           <button
-            onClick={() => router.push('/login')}
+            onClick={() => {
+              if (!requestAppLogin()) router.push('/login');
+            }}
             className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
           >
             登录

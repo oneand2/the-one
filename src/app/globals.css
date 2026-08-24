@@ -41,6 +41,36 @@ body:has([data-ios-embed="true"]) .web-auth-entry {
   --ios-ink-top: 0;
 }
 
+/* 原生先切标题；React 同步挂载目标页并缓存已访问页面。 */
+[data-ios-embed="true"] [data-ios-tab-header] {
+  display: none !important;
+}
+
+[data-ios-embed="true"] [data-ios-tab-pane] {
+  display: none !important;
+}
+
+[data-ios-embed="true"][data-active-tab="guanshi"] [data-ios-tab-header="guanshi"],
+[data-ios-embed="true"][data-active-tab="wendao"] [data-ios-tab-header="wendao"],
+[data-ios-embed="true"][data-active-tab="guanxin"] [data-ios-tab-header="guanxin"],
+[data-ios-embed="true"][data-active-tab="bazi"] [data-ios-tab-header="bazi"],
+[data-ios-embed="true"][data-active-tab="mbti"] [data-ios-tab-header="mbti"],
+[data-ios-embed="true"][data-active-tab="juexingcang"] [data-ios-tab-header="juexingcang"] {
+  display: block !important;
+}
+
+[data-ios-embed="true"][data-active-tab="guanshi"] [data-ios-tab-pane="guanshi"],
+[data-ios-embed="true"][data-active-tab="guanxin"] [data-ios-tab-pane="guanxin"],
+[data-ios-embed="true"][data-active-tab="bazi"] [data-ios-tab-pane="bazi"],
+[data-ios-embed="true"][data-active-tab="mbti"] [data-ios-tab-pane="mbti"],
+[data-ios-embed="true"][data-active-tab="juexingcang"] [data-ios-tab-pane="juexingcang"] {
+  display: block !important;
+}
+
+[data-ios-embed="true"][data-active-tab="wendao"] [data-ios-tab-pane="wendao"] {
+  display: flex !important;
+}
+
 [data-ios-embed="true"]::before,
 [data-ios-embed="true"]::after {
   content: "";

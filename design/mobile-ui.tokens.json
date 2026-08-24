@@ -117,7 +117,7 @@
     "navigation": { "canvas": 100, "fullX": 10, "halfLeftX": 10, "halfRightX": 58, "fullWidth": 80, "halfWidth": 32, "topY": 30, "bottomY": 58, "lineHeight": 12 }
   },
   "screens": {
-    "guanshi": { "title": "见天地", "subtitle": "世界会越来越好，你也是", "symbol": "broken-broken" },
+    "guanshi": { "title": "见天地", "subtitle": "世间即道场，人生是修行", "symbol": "broken-broken" },
     "wendao": { "title": "见众生", "subtitle": "观点广场，待续", "symbol": "broken-solid" },
     "guanxin": { "title": "见自己", "subtitle": "知己即知天，请成为自己的答案", "symbol": "solid-broken" },
     "bazi": { "title": "八字命理", "subtitle": "知己即知天，请成为自己的答案", "symbol": "solid-broken" },

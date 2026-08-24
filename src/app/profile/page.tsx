@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { ADMIN_EMAIL, isLifetimeVip } from '@/utils/vip';
+import { requestAppLogin } from '@/utils/iosEmbed';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function ProfilePage() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) {
-        router.replace('/login?next=/profile');
+        if (!requestAppLogin()) router.replace('/login?next=/profile');
         return;
       }
       // 检查是否是管理员
@@ -43,7 +44,7 @@ export default function ProfilePage() {
         .then((r) => {
           if (!r.ok) {
             if (r.status === 401) {
-              router.replace('/login?next=/profile');
+              if (!requestAppLogin()) router.replace('/login?next=/profile');
               return null;
             }
             return Promise.reject(new Error(r.status === 404 ? '服务暂不可用，请稍后重试' : '无法加载档案，请检查网络或重新登录'));

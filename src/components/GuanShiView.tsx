@@ -14,15 +14,22 @@ const getDaysInMonth = (year: number, month: number) => new Date(year, month, 0)
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+function shanghaiYmd(date = new Date()) {
+  const [year, month, day] = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date).split('-').map(Number);
+  return { year, month, day };
+}
+
 /**
  * 见天地：日期 → 黄历 → 子午流注 → 今日见闻
  * 新闻板块已下线，代码保留在 WorldNewsView.tsx，取得资质后可恢复。
  */
 export const GuanShiView: React.FC = () => {
-  const today = useMemo(() => {
-    const t = new Date();
-    return { year: t.getFullYear(), month: t.getMonth() + 1, day: t.getDate() };
-  }, []);
+  const today = useMemo(() => shanghaiYmd(), []);
 
   const [selectedDate, setSelectedDate] = useState<string>(
     () => `${today.year}-${pad(today.month)}-${pad(today.day)}`
@@ -54,7 +61,7 @@ export const GuanShiView: React.FC = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={false}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.3 }}
@@ -121,7 +128,7 @@ export const GuanShiView: React.FC = () => {
 
       {/* 声明 */}
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
         className="mt-8 mb-2"

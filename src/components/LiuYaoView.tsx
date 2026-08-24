@@ -9,6 +9,7 @@ import { CoinAnimation } from './CoinAnimation';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
+import { homeHref, syncAppTab } from '@/utils/iosEmbed';
 
 export interface LiuYaoViewProps {
   onNavigateToJuexingcang?: () => void;
@@ -207,7 +208,8 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
     if (onNavigateToJuexingcang) {
       onNavigateToJuexingcang();
     } else {
-      router.push('/?tab=juexingcang');
+      syncAppTab('juexingcang');
+      router.push(homeHref('juexingcang'));
     }
   };
 

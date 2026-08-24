@@ -1,4 +1,3 @@
-import StoreKit
 import SwiftUI
 
 struct StoreView: View {
@@ -21,26 +20,13 @@ struct StoreView: View {
                         balanceSummary
 
                         VStack(alignment: .leading, spacing: UIContract.Spacing.sm) {
-                            NativeSectionHeading(title: "服务包", detail: "APPLE IN-APP PURCHASE")
-                            if purchases.isLoading {
-                                NativeSurface {
-                                    HStack(spacing: 12) {
-                                        ProgressView().tint(AppTheme.stone500)
-                                        Text("正在连接 App Store…")
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(AppTheme.stone500)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: 56)
-                                }
-                            } else {
-                                VStack(spacing: UIContract.Spacing.sm) {
-                                    ForEach(purchases.products, id: \.id) { product in
-                                        ProductCard(product: product) {
-                                            Task {
-                                                if await purchases.purchase(product) {
-                                                    await profile.load()
-                                                }
+                            NativeSectionHeading(title: "服务包")
+                            VStack(spacing: UIContract.Spacing.sm) {
+                                ForEach(purchases.packages) { package in
+                                    ProductCard(package: package) {
+                                        Task {
+                                            if await purchases.purchase(package: package) {
+                                                await profile.load()
                                             }
                                         }
                                     }
@@ -111,32 +97,25 @@ struct StoreView: View {
                     }
                 }
                 Spacer()
-                FourSymbolGlyph(symbol: .juexingcang, width: 28, lineHeight: 5, color: AppTheme.stone300)
             }
         }
     }
 }
 
 private struct ProductCard: View {
-    let product: Product
+    let package: CoinPackage
     let purchase: () -> Void
     @EnvironmentObject private var manager: StoreKitManager
-
-    private var coins: Int {
-        if product.id.hasSuffix(".100") { return 100 }
-        if product.id.hasSuffix(".360") { return 360 }
-        return 800
-    }
 
     var body: some View {
         NativeSurface(padding: 18) {
             HStack(spacing: 15) {
                 VStack(alignment: .leading, spacing: 7) {
-                    Text(product.displayName)
+                    Text(package.name)
                         .font(.system(size: 11))
                         .foregroundStyle(AppTheme.stone500)
                     HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text("\(coins)")
+                        Text("\(package.coins)")
                             .font(.webSerif(27))
                             .foregroundStyle(AppTheme.stone800)
                             .monospacedDigit()
@@ -144,7 +123,7 @@ private struct ProductCard: View {
                             .font(.system(size: 10))
                             .foregroundStyle(AppTheme.stone400)
                     }
-                    Text(product.description)
+                    Text(package.description)
                         .font(.system(size: 10))
                         .foregroundStyle(AppTheme.stone400)
                         .lineLimit(2)
@@ -152,10 +131,10 @@ private struct ProductCard: View {
                 Spacer(minLength: 8)
                 Button(action: purchase) {
                     Group {
-                        if manager.purchasingProductID == product.id {
+                        if manager.purchasingProductID == package.id {
                             ProgressView().tint(.white)
                         } else {
-                            Text(product.displayPrice)
+                            Text(package.displayPrice)
                                 .font(.system(size: 13, weight: .medium))
                         }
                     }

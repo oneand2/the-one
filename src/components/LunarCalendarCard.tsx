@@ -318,12 +318,79 @@ interface LunarDetail {
 // ─────────────────────────────────────────────
 interface Props { year: number; month: number; day: number }
 
+function buildLunarDetail(year: number, month: number, day: number): LunarDetail {
+  const noon = SolarLib.fromYmdHms(year, month, day, 12, 0, 0);
+  const lunar = noon.getLunar() as {
+    getMonthInChinese(): string; getDayInChinese(): string;
+    getYearInGanZhi(): string; getMonthInGanZhi(): string; getDayInGanZhi(): string;
+    getYearShengXiao(): string;
+    getDayYi(): string[]; getDayJi(): string[];
+    getDayNaYin(): string; getZhiXing(): string;
+    getXiu(): string; getGong(): string; getZheng(): string; getAnimal(): string;
+    getDayChongShengXiao(): string; getDaySha(): string;
+    getDayTianShen(): string; getDayTianShenType(): string;
+    getDayZhi(): string; getMonthZhi(): string;
+    getDayGanIndex(): number; getDayInGanZhi(): string;
+    getTimes(): Array<{
+      getGanZhi(): string; getGan(): string; getZhi(): string;
+      getGanIndex(): number; getZhiIndex(): number;
+      getChong(): string; getTianShenLuck(): string; getTianShenType(): string;
+    }>;
+  };
+
+  const dayXunKong = LunarUtil.getXunKong(lunar.getDayInGanZhi()) || '';
+  const shiChen: ShiChenInfo[] = lunar.getTimes().slice(0, 12).map((t, i) => {
+    const { luck, reason } = getComprehensiveTimeLuck(lunar, dayXunKong, t);
+    return { ganZhi: t.getGanZhi(), zhi: ZHI_NAMES[i], luck, reason, range: ZHI_RANGES[i] };
+  });
+
+  return {
+    lunarMonthChinese: lunar.getMonthInChinese() + '月',
+    lunarDayChinese:   lunar.getDayInChinese(),
+    yearGanZhi:  lunar.getYearInGanZhi()  + '年',
+    monthGanZhi: lunar.getMonthInGanZhi() + '月',
+    dayGanZhi:   lunar.getDayInGanZhi()   + '日',
+    shengXiao:   lunar.getYearShengXiao(),
+    weekDay:     WEEK_DAYS[new Date(year, month - 1, day).getDay()],
+    yi: formatAlmanacItems(lunar.getDayYi() ?? []),
+    ji: formatAlmanacItems(lunar.getDayJi() ?? []),
+    dayNaYin:  lunar.getDayNaYin(),
+    zhiXing:   lunar.getZhiXing(),
+    xiu:       lunar.getXiu(), xiuGong: lunar.getGong(),
+    xiuZheng:  lunar.getZheng(), xiuAnimal: lunar.getAnimal(),
+    chongShengXiao: lunar.getDayChongShengXiao(),
+    sha:        lunar.getDaySha(),
+    tianShen:   lunar.getDayTianShen(),
+    tianShenType: lunar.getDayTianShenType(),
+    shiChen,
+    yearPillar:  lunar.getYearInGanZhi(),
+    monthPillar: lunar.getMonthInGanZhi(),
+    dayPillar:   lunar.getDayInGanZhi(),
+  };
+}
+
 export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
-  const [detail,  setDetail]  = useState<LunarDetail | null>(null);
   const [open,    setOpen]    = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [nowHour, setNowHour] = useState(() => new Date().getHours());
+  const [nowHour, setNowHour] = useState(12);
   const [isDesktop, setIsDesktop] = useState(false);
+
+  const { detail, loadError } = useMemo(() => {
+    try {
+      return { detail: buildLunarDetail(year, month, day), loadError: null as string | null };
+    } catch (error) {
+      console.error('[LunarCalendarCard] Failed to build lunar detail:', error);
+      return { detail: null, loadError: 'detail' as string | null };
+    }
+  }, [year, month, day]);
+
+  const timePillar = useMemo(() => {
+    try {
+      return SolarLib.fromYmdHms(year, month, day, nowHour, 0, 0).getLunar().getTimeInGanZhi();
+    } catch (error) {
+      console.error('[LunarCalendarCard] Failed to load time pillar:', error);
+      return '';
+    }
+  }, [year, month, day, nowHour]);
 
   useEffect(() => {
     const media = window.matchMedia('(min-width: 768px)');
@@ -334,98 +401,12 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
   }, []);
 
   useEffect(() => {
+    setNowHour(new Date().getHours());
     const id = setInterval(() => setNowHour(new Date().getHours()), 60_000);
     return () => clearInterval(id);
   }, []);
 
   const currentZhiIdx = useMemo(() => hourToZhiIdx(nowHour), [nowHour]);
-
-  const [timePillar, setTimePillar] = useState('');
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const l = SolarLib.fromYmdHms(year, month, day, nowHour, 0, 0).getLunar() as {
-          getTimeInGanZhi(): string;
-        };
-        if (!cancelled) setTimePillar(l.getTimeInGanZhi());
-      } catch (error) {
-        if (!cancelled) {
-          setTimePillar('');
-          setLoadError('time');
-        }
-        console.error('[LunarCalendarCard] Failed to load time pillar:', error);
-      }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, [year, month, day, nowHour]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        const noon = SolarLib.fromYmdHms(year, month, day, 12, 0, 0);
-        const lunar = noon.getLunar() as {
-          getMonthInChinese(): string; getDayInChinese(): string;
-          getYearInGanZhi(): string; getMonthInGanZhi(): string; getDayInGanZhi(): string;
-          getYearShengXiao(): string;
-          getDayYi(): string[]; getDayJi(): string[];
-          getDayNaYin(): string; getZhiXing(): string;
-          getXiu(): string; getGong(): string; getZheng(): string; getAnimal(): string;
-          getDayChongShengXiao(): string; getDaySha(): string;
-          getDayTianShen(): string; getDayTianShenType(): string;
-          getDayZhi(): string; getMonthZhi(): string;
-          getDayGanIndex(): number; getDayInGanZhi(): string;
-          getTimes(): Array<{
-            getGanZhi(): string; getGan(): string; getZhi(): string;
-            getGanIndex(): number; getZhiIndex(): number;
-            getChong(): string; getTianShenLuck(): string; getTianShenType(): string;
-          }>;
-        };
-
-        const dayXunKong = LunarUtil.getXunKong(lunar.getDayInGanZhi()) || '';
-
-        const shiChen: ShiChenInfo[] = lunar.getTimes().slice(0, 12).map((t, i) => {
-          const { luck, reason } = getComprehensiveTimeLuck(lunar, dayXunKong, t);
-          return { ganZhi: t.getGanZhi(), zhi: ZHI_NAMES[i], luck, reason, range: ZHI_RANGES[i] };
-        });
-
-        if (!cancelled) setDetail({
-          lunarMonthChinese: lunar.getMonthInChinese() + '月',
-          lunarDayChinese:   lunar.getDayInChinese(),
-          yearGanZhi:  lunar.getYearInGanZhi()  + '年',
-          monthGanZhi: lunar.getMonthInGanZhi() + '月',
-          dayGanZhi:   lunar.getDayInGanZhi()   + '日',
-          shengXiao:   lunar.getYearShengXiao(),
-          weekDay:     WEEK_DAYS[new Date(year, month - 1, day).getDay()],
-          yi: formatAlmanacItems(lunar.getDayYi() ?? []),
-          ji: formatAlmanacItems(lunar.getDayJi() ?? []),
-          dayNaYin:  lunar.getDayNaYin(),
-          zhiXing:   lunar.getZhiXing(),
-          xiu:       lunar.getXiu(), xiuGong: lunar.getGong(),
-          xiuZheng:  lunar.getZheng(), xiuAnimal: lunar.getAnimal(),
-          chongShengXiao: lunar.getDayChongShengXiao(),
-          sha:        lunar.getDaySha(),
-          tianShen:   lunar.getDayTianShen(),
-          tianShenType: lunar.getDayTianShenType(),
-          shiChen,
-          yearPillar:  lunar.getYearInGanZhi(),
-          monthPillar: lunar.getMonthInGanZhi(),
-          dayPillar:   lunar.getDayInGanZhi(),
-        });
-        if (!cancelled) setLoadError(null);
-      } catch (error) {
-        if (!cancelled) {
-          setDetail(null);
-          setLoadError('detail');
-        }
-        console.error('[LunarCalendarCard] Failed to build lunar detail:', error);
-      }
-    };
-    run();
-    return () => { cancelled = true; };
-  }, [year, month, day]);
 
   const handleOpen  = useCallback(() => setOpen(true),  []);
   const handleClose = useCallback((e: React.MouseEvent) => { e.stopPropagation(); setOpen(false); }, []);
@@ -458,10 +439,13 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
   } = detail ?? {};
 
   const isHuangDao = tianShenType === '黄道';
-  const todayY = new Date().getFullYear();
-  const todayM = new Date().getMonth() + 1;
-  const todayD = new Date().getDate();
-  const isToday = year === todayY && month === todayM && day === todayD;
+  const todayStamp = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+  const isToday = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` === todayStamp;
   const currentZhiName = ZHI_NAMES[currentZhiIdx];
 
   return (
@@ -470,10 +454,7 @@ export const LunarCalendarCard: React.FC<Props> = ({ year, month, day }) => {
       <button
         type="button"
         onClick={handleOpen}
-        className="relative z-10 w-full mb-8 rounded-2xl cursor-pointer select-none text-left
-                   focus:outline-none focus-visible:ring-1 focus-visible:ring-stone-300/80
-                   focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4] pointer-events-auto
-                   transition-all duration-200 active:scale-[0.99]"
+        className="relative z-10 mb-8 w-full cursor-pointer select-none rounded-2xl text-left pointer-events-auto transition-all duration-200 active:scale-[0.99] focus:outline-none focus-visible:ring-1 focus-visible:ring-stone-300/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4]"
         style={{
           background: '#fdfcf9',
           border: '1px solid rgba(0,0,0,0.07)',

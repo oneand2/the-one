@@ -348,16 +348,14 @@ interface Props {
 }
 
 export const DailyInsightsView: React.FC<Props> = ({ date }) => {
-  const [list, setList] = useState<DailyInsight[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [list, setList] = useState<DailyInsight[]>(() => mergeLocalInsights([]));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 先读缓存，二次进入立即展示
     const cached = getCached<DailyInsight[]>(CACHE_KEYS.DAILY_INSIGHTS);
     if (cached && cached.length > 0) {
       setList(mergeLocalInsights(cached));
-      setLoading(false);
     }
 
     const fetchInsights = async () => {
@@ -370,11 +368,17 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
         return;
       }
       try {
-        const { data, error: fetchError } = await supabase
+        const query = supabase
           .from('daily_insights')
           .select('id, insight_date, category, title, body, created_at')
           .order('insight_date', { ascending: false })
           .limit(FETCH_LIMIT);
+        const { data, error: fetchError } = await Promise.race([
+          query,
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 8000)
+          ),
+        ]);
 
         if (fetchError) throw fetchError;
 
@@ -383,7 +387,7 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
         setCached(CACHE_KEYS.DAILY_INSIGHTS, rows);
       } catch (e) {
         setError(e instanceof Error ? e.message : '加载失败');
-        if (!cached) setList([]);
+        if (!cached) setList(mergeLocalInsights([]));
       } finally {
         setLoading(false);
       }
@@ -447,7 +451,7 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
       {/* 回落提示：所选日期没有内容时，展示最近一期 */}
       {fallbackDate && (
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
+          initial={false}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="mb-6 flex items-center gap-4"
@@ -467,7 +471,7 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
         {ordered.map((item, idx) => (
           <motion.article
             key={item.id}
-            initial={{ opacity: 0, y: 16 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: idx * 0.08, ease: [0.32, 0.72, 0, 1] }}
           >

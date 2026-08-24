@@ -194,7 +194,7 @@ export const mobileUI = {
   "screens": {
     "guanshi": {
       "title": "见天地",
-      "subtitle": "世界会越来越好，你也是",
+      "subtitle": "世间即道场，人生是修行",
       "symbol": "broken-broken"
     },
     "wendao": {

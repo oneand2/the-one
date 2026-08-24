@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">长竹竿：工业城镇里逐窗叫醒轮班工人的敲窗人</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M25 108V34H199V108" fill="#CDD6CC" fill-opacity=".28" stroke="#56645A" stroke-opacity=".48" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M21 34H203L190 25H35L21 34Z" fill="#B79D80" fill-opacity=".32" stroke="#776956" stroke-opacity=".42" stroke-width="1" stroke-linejoin="round"/>
+  <g fill="#F4F1E8" stroke="#71857E" stroke-opacity=".42" stroke-width="1">
+    <path d="M43 48H78V78H43Z"/><path d="M94 48H129V78H94Z"/><path d="M145 48H180V78H145Z"/>
+  </g>
+  <path d="M60.5 48V78M43 63H78M111.5 48V78M94 63H129M162.5 48V78M145 63H180" stroke="#71857E" stroke-opacity=".28" stroke-width=".9"/>
+  <path d="M25 91H199M38 91V108M186 91V108" stroke="#56645A" stroke-opacity=".32" stroke-width="1"/>
+  <g transform="translate(260 67)" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="15" cy="9" r="5.5" fill="#B79D80" fill-opacity=".65" stroke-opacity=".58" stroke-width="1.15"/>
+    <path d="M15 15C9 22 8 33 10 45M15 20L25 31M10 45L3 58M10 45L18 58" stroke-opacity=".62" stroke-width="1.35"/>
+    <path d="M23 31L-95 -11" stroke="#776956" stroke-opacity=".72" stroke-width="2"/>
+    <path d="M24 31L-95 -11" stroke="#F3F1E9" stroke-opacity=".35" stroke-width=".7"/>
+  </g>
+  <circle cx="166" cy="52" r="3" fill="#B66D5C" fill-opacity=".62"/>
+  <path d="M22 114C102 109 228 113 336 108" stroke="#71857E" stroke-opacity=".2" stroke-linecap="round"/>
+  <g fill="#71857E" fill-opacity=".26"><circle cx="231" cy="33" r="1.2"/><circle cx="247" cy="25" r=".9"/></g>
+</svg>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">火体虫：由众多小个体组成并传递蓝绿色光的中空胶管</title>
+  <rect width="360" height="136" fill="#F4F1E8"/>
+  <g transform="translate(48 28) rotate(-6 112 40)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 20C58 6 153 6 213 27C227 32 231 49 218 56C166 81 70 83 20 61C4 54 2 26 17 20Z" fill="#CDD6CC" fill-opacity=".55" stroke="#56645A" stroke-opacity=".62" stroke-width="1.5"/>
+    <path d="M24 30C68 19 156 19 207 34C216 37 217 46 208 49C157 67 73 69 27 53C17 49 15 34 24 30Z" fill="#F3F1E9" fill-opacity=".78" stroke="#71857E" stroke-opacity=".36" stroke-width="1"/>
+    <ellipse cx="215" cy="41" rx="16" ry="14" fill="#9AAB9B" fill-opacity=".3" stroke="#56645A" stroke-opacity=".48" stroke-width="1.1"/>
+    <g fill="#71857E" fill-opacity=".55">
+      <circle cx="28" cy="23" r="1.8"/><circle cx="43" cy="19" r="1.6"/><circle cx="60" cy="16" r="1.9"/><circle cx="80" cy="15" r="1.5"/><circle cx="101" cy="14" r="1.8"/><circle cx="123" cy="15" r="1.5"/><circle cx="145" cy="17" r="1.9"/><circle cx="165" cy="20" r="1.6"/><circle cx="184" cy="24" r="1.8"/>
+      <circle cx="25" cy="61" r="1.7"/><circle cx="43" cy="66" r="1.5"/><circle cx="64" cy="70" r="1.8"/><circle cx="87" cy="72" r="1.5"/><circle cx="111" cy="72" r="1.9"/><circle cx="136" cy="70" r="1.6"/><circle cx="160" cy="66" r="1.8"/><circle cx="182" cy="61" r="1.5"/>
+    </g>
+    <g fill="#B66D5C" fill-opacity=".62"><circle cx="58" cy="25" r="2.2"/><circle cx="84" cy="22" r="1.8"/><circle cx="108" cy="21" r="2.1"/><circle cx="132" cy="23" r="1.8"/><circle cx="155" cy="26" r="2"/></g>
+    <path d="M53 26C81 17 128 18 158 28" stroke="#B66D5C" stroke-opacity=".35" stroke-width="1" stroke-dasharray="2 5"/>
+  </g>
+  <g stroke="#71857E" stroke-opacity=".32" stroke-width="1" stroke-linecap="round"><path d="M282 50C298 45 311 46 324 51"/><path d="M278 65C299 60 318 62 335 69"/><path d="M274 80C292 78 307 80 321 85"/></g>
+  <g fill="#71857E" fill-opacity=".28"><circle cx="31" cy="44" r="1.2"/><circle cx="25" cy="66" r=".9"/><circle cx="307" cy="29" r="1.1"/></g>
+  <path d="M20 112C101 107 234 112 339 106" stroke="#71857E" stroke-opacity=".18" stroke-linecap="round"/>
+</svg>

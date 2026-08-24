@@ -190,6 +190,7 @@ private struct MainTabView: View {
 
     var body: some View {
         GeometryReader { geo in
+            let fullHeight = geo.size.height + geo.safeAreaInsets.bottom
             VStack(spacing: 0) {
                 HStack {
                     Spacer(minLength: 0)
@@ -223,7 +224,7 @@ private struct MainTabView: View {
                 ))
                 .frame(height: LegacyTabBar.barHeight)
             }
-            .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+            .frame(width: geo.size.width, height: fullHeight, alignment: .top)
         }
         // 只把底栏推进屏幕底边，网页高度由上面 VStack 扣死，避免 WKWebView 盖住按钮。
         .ignoresSafeArea(.container, edges: .bottom)

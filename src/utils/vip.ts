@@ -9,14 +9,17 @@ export type VipDuration = '1m' | '3m' | '6m' | '1y' | 'lifetime';
 /** 判断当前用户是否为有效 VIP（仅当明确为终身哨兵或未过期的到期日时才是 VIP；null/undefined = 非 VIP） */
 export function isVip(vipExpiresAt: string | null | undefined): boolean {
   if (vipExpiresAt === null || vipExpiresAt === undefined) return false;
-  if (vipExpiresAt === VIP_LIFETIME_SENTINEL) return true;
+  if (isLifetimeVip(vipExpiresAt)) return true;
   const exp = new Date(vipExpiresAt).getTime();
   return exp > Date.now();
 }
 
-/** 是否为终身 VIP（仅哨兵值表示终身，null 不是） */
+/** 是否为终身 VIP。兼容数据库 timestamptz 序列化后与哨兵字符串不完全一致的情况。 */
 export function isLifetimeVip(vipExpiresAt: string | null | undefined): boolean {
-  return vipExpiresAt === VIP_LIFETIME_SENTINEL;
+  if (vipExpiresAt === null || vipExpiresAt === undefined) return false;
+  if (vipExpiresAt === VIP_LIFETIME_SENTINEL) return true;
+  const exp = new Date(vipExpiresAt).getTime();
+  return Number.isFinite(exp) && exp >= Date.UTC(2099, 0, 1);
 }
 
 /** 根据期限计算 VIP 到期时间；lifetime 返回哨兵字符串，其余返回 Date */

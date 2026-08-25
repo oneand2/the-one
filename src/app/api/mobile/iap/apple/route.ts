@@ -3,6 +3,7 @@ import { Environment, SignedDataVerifier } from '@apple/app-store-server-library
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createMobileAuthClient } from '@/lib/mobileAuth';
 import { APPLE_ROOT_CERTIFICATES } from '@/lib/payments/appleRootCertificates';
+import { APPLE_LIFETIME_VIP_PRODUCT_ID } from '@/lib/payments/coinPackages';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -67,9 +68,10 @@ export async function POST(request: NextRequest) {
     const productId = transaction.productId ?? '';
     const transactionId = transaction.transactionId ?? '';
     const quantity = Math.max(1, transaction.quantity ?? 1);
-    const unitCoins = PRODUCTS[productId];
+    const isLifetimeVipProduct = productId === APPLE_LIFETIME_VIP_PRODUCT_ID;
+    const unitCoins = isLifetimeVipProduct ? 0 : PRODUCTS[productId];
 
-    if (!transactionId || !unitCoins || transaction.revocationDate) {
+    if (!transactionId || transaction.revocationDate || (!isLifetimeVipProduct && !unitCoins)) {
       return json({ error: '交易商品无效或已退款' }, { status: 400 });
     }
 
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest) {
       coins: result?.coins ?? unitCoins * quantity,
       balance: result?.balance,
       transactionId,
+      lifetimeVip: isLifetimeVipProduct,
     });
   } catch (error) {
     console.error('Apple IAP verification failed:', error);

@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   const selectOrder = () => supabase
     .from('wechat_payment_orders')
-    .select('out_trade_no, status, coins, amount_cents, credited_at, created_at')
+    .select('out_trade_no, status, coins, amount_cents, credited_at, created_at, package_id')
     .eq('out_trade_no', outTradeNo)
     .eq('user_id', user.id)
     .single();

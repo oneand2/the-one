@@ -5,6 +5,21 @@
   ],
   "products" : [
     {
+      "displayPrice" : "399.00",
+      "familyShareable" : false,
+      "internalID" : "34081004",
+      "localizations" : [
+        {
+          "description" : "一次开通，之后使用全部功能不再消耗铜币",
+          "displayName" : "终身 VIP",
+          "locale" : "zh_CN"
+        }
+      ],
+      "productID" : "com.theone.er.vip.lifetime",
+      "referenceName" : "终身 VIP",
+      "type" : "NonConsumable"
+    },
+    {
       "displayPrice" : "9.90",
       "familyShareable" : false,
       "internalID" : "34081001",
@@ -69,4 +84,3 @@
     "minor" : 0
   }
 }
-

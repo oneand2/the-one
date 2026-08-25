@@ -24,7 +24,7 @@ export function InsufficientCoinsModal({ open, needCoins, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-stone-800 text-center mb-6">
-          铜币不足，本次需要 {needCoins} 铜币。请选择数字内容服务包后再试。
+          铜币不足，本次需要 {needCoins} 铜币。可选择铜币服务包，或开通终身 VIP 后不再消耗铜币。
         </p>
         <div className="flex gap-3">
           <button

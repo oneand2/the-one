@@ -195,6 +195,14 @@ struct ProfileView: View {
                         Text("VIP 使用任意功能不消耗铜币")
                             .font(.system(size: 11))
                             .foregroundStyle(AppTheme.stone400)
+                        if profile.profile?.isLifetimeVip != true {
+                            Button("开通终身 VIP") { showStore = true }
+                                .font(.system(size: 12))
+                                .foregroundStyle(AppTheme.stone600)
+                                .underline()
+                                .padding(.top, 4)
+                                .sensoryTap()
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
@@ -216,6 +224,11 @@ struct ProfileView: View {
                             .foregroundStyle(AppTheme.stone600)
                             .underline()
                             .padding(.top, 4)
+                            .sensoryTap()
+                        Button("开通终身 VIP") { showStore = true }
+                            .font(.system(size: 12))
+                            .foregroundStyle(AppTheme.stone600)
+                            .underline()
                             .sensoryTap()
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -312,7 +325,7 @@ struct GetCoinsInfoOverlay: View {
                         Text("铜币与数字内容服务")
                             .font(.webSerif(21))
                             .foregroundStyle(AppTheme.stone800)
-                        Text("通过 App 内购买获取铜币")
+                        Text("通过 App 内购买获取铜币或终身 VIP")
                             .font(.system(size: 11))
                             .foregroundStyle(AppTheme.stone400)
                     }
@@ -329,7 +342,8 @@ struct GetCoinsInfoOverlay: View {
 
                 VStack(alignment: .leading, spacing: 12) {
                     Text("铜币是本站数字内容服务的使用额度，可用于 AI 对话、深度思考、联网检索与 AI 解卦。")
-                    Text("iOS 端通过 Apple 内购入账；支付成功后铜币直接增加到当前账户。")
+                    Text("也可以一次开通终身 VIP，之后使用全部功能不再消耗铜币。")
+                    Text("iOS 端通过 Apple 内购入账；支付成功后权益直接增加到当前账户。")
                     Text("铜币不可转赠、交易、提现或兑换现金。")
                 }
                 .font(.system(size: 13))

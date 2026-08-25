@@ -40,6 +40,8 @@ struct ParityChatView: View {
     @State private var showCoinsModal = false
     @State private var showStore = false
 
+    private var skipCoins: Bool { profile.profile?.isActiveVip == true }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(showsIndicators: false) {
@@ -157,7 +159,7 @@ struct ParityChatView: View {
             .font(.system(size: 12)).foregroundStyle(AppTheme.stone500).padding(.horizontal, 16).frame(height: 28)
 
             HStack(spacing: 16) {
-                LegacyModeChip(title: "深思", cost: 2, isOn: Binding(
+                LegacyModeChip(title: "深思", cost: 2, showCost: !skipCoins, isOn: Binding(
                     get: { useReasoning },
                     set: { value in
                         if value && meditationMode {
@@ -169,7 +171,7 @@ struct ParityChatView: View {
                         } else { useReasoning = value }
                     }
                 ))
-                LegacyModeChip(title: "联网", cost: 2, isOn: $useSearch)
+                LegacyModeChip(title: "联网", cost: 2, showCost: !skipCoins, isOn: $useSearch)
             }.padding(.top, 16)
             .overlay(alignment: .top) {
                 if showMeditationWarning {
@@ -184,11 +186,18 @@ struct ParityChatView: View {
                 }
             }
             LinearGradient(colors: [.clear, AppTheme.stone200, .clear], startPoint: .leading, endPoint: .trailing).frame(height: 1).padding(.top, 16)
-            (Text("每问基础消耗 ").foregroundColor(AppTheme.stone500) + Text("2").foregroundColor(legacyAmber.opacity(0.8)) + Text(" 铜币").foregroundColor(AppTheme.stone500))
-                .font(.system(size: 10, weight: .light)).tracking(1.8).padding(.top, 16)
+            if !skipCoins {
+                (Text("每问基础消耗 ").foregroundColor(AppTheme.stone500) + Text("2").foregroundColor(legacyAmber.opacity(0.8)) + Text(" 铜币").foregroundColor(AppTheme.stone500))
+                    .font(.system(size: 10, weight: .light)).tracking(1.8).padding(.top, 16)
+            } else {
+                Text("VIP 使用全部功能不消耗铜币")
+                    .font(.system(size: 10, weight: .light)).tracking(1.8).foregroundStyle(AppTheme.stone500).padding(.top, 16)
+            }
             HStack(spacing: 6) {
                 Text("点击中心圆球可\(meditationMode ? " 关闭 " : " 开启 ")宗师模式")
-                HStack(spacing: 4) { Text("宗师模式"); CopperCoinMark(size: 10); Text("20") }.foregroundStyle(legacyAmber.opacity(0.70))
+                if !skipCoins {
+                    HStack(spacing: 4) { Text("宗师模式"); CopperCoinMark(size: 10); Text("20") }.foregroundStyle(legacyAmber.opacity(0.70))
+                }
             }.font(.system(size: 9, weight: .light)).tracking(1.35).foregroundStyle(AppTheme.stone400).padding(.top, 8)
         }.padding(.top, 8).padding(.bottom, 16)
     }
@@ -202,8 +211,10 @@ struct ParityChatView: View {
             .buttonStyle(.plain).padding(.bottom, 48)
             Text(meditationMode ? "天人合演" : "怀虚待问").font(.system(size: 16, weight: .light)).tracking(6.4).foregroundStyle(AppTheme.headerTitle)
             Text("知天之所为，知人之所为").font(.system(size: 12, weight: .light)).tracking(1.8).foregroundStyle(AppTheme.stone500).padding(.top, 20)
-            HStack(spacing: 4) { Text("宗师模式"); CopperCoinMark(size: 12); Text("20") }
-                .font(.system(size: 10, weight: .light)).foregroundStyle(legacyAmber.opacity(0.80)).padding(.top, 6)
+            if !skipCoins {
+                HStack(spacing: 4) { Text("宗师模式"); CopperCoinMark(size: 12); Text("20") }
+                    .font(.system(size: 10, weight: .light)).foregroundStyle(legacyAmber.opacity(0.80)).padding(.top, 6)
+            }
             Button("导入测算数据") { guard auth.requireAuthentication() else { return }; showImport = true }
                 .font(.system(size: 11)).tracking(1.5).foregroundStyle(AppTheme.stone600).padding(.top, 48)
             Text(importSummary).font(.system(size: 9)).tracking(1.4).foregroundStyle(AppTheme.stone300).padding(.top, 8)

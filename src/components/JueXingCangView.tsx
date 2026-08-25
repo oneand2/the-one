@@ -13,6 +13,7 @@ import type { BaziInput } from '@/utils/baziLogic';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
 import { requestAppLogin, homeHref } from '@/utils/iosEmbed';
+import { isVip } from '@/utils/vip';
 
 interface Message {
   id: string;
@@ -127,7 +128,22 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [editingTitle, setEditingTitle] = useState('');
   const [liuyaoMode, setLiuyaoMode] = useState(true);
   const [liuyaoQuestion, setLiuyaoQuestion] = useState<string | null>(null);
+  const [skipCoins, setSkipCoins] = useState(false);
   const wasActiveRef = useRef(isActive);
+
+  useEffect(() => {
+    const loadVip = () => {
+      fetch('/api/user/profile', { credentials: 'include' })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((profile) => {
+          setSkipCoins(isVip(profile?.vip_expires_at));
+        })
+        .catch(() => undefined);
+    };
+    loadVip();
+    window.addEventListener('coins-should-refresh', loadVip);
+    return () => window.removeEventListener('coins-should-refresh', loadVip);
+  }, []);
 
   const normalizeSession = (session: any): ChatSession => {
     const fallbackTime = new Date().toISOString();
@@ -1502,6 +1518,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                 <span className="text-[11px] tracking-[0.2em] font-light">
                   深思
                 </span>
+                {!skipCoins && (
                 <span className={`flex items-center gap-0.5 ml-1 ${
                   isDeep ? 'text-white/70' : 'text-amber-700/75'
                 }`}>
@@ -1510,6 +1527,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                   }`} />
                   <span className="text-[9px] tracking-wider font-light">2</span>
                 </span>
+                )}
               </div>
             </button>
 
@@ -1533,6 +1551,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                 <span className="text-[11px] tracking-[0.2em] font-light">
                   联网
                 </span>
+                {!skipCoins && (
                 <span className={`flex items-center gap-0.5 ml-1 ${
                   useSearch ? 'text-white/70' : 'text-amber-700/75'
                 }`}>
@@ -1541,6 +1560,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                   }`} />
                   <span className="text-[9px] tracking-wider font-light">2</span>
                 </span>
+                )}
               </div>
             </button>
           </div>
@@ -1551,7 +1571,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           {/* 底部提示区域 */}
           <div className="mt-4 sm:mt-5 flex flex-col items-center gap-2">
             <span className="text-[10px] sm:text-[10.5px] text-stone-500 tracking-[0.18em] font-light">
-              每问基础消耗 <span className="text-amber-700/80 font-normal">2</span> 铜币
+              {skipCoins ? 'VIP 使用全部功能不消耗铜币' : <>每问基础消耗 <span className="text-amber-700/80 font-normal">2</span> 铜币</>}
             </span>
             
             {/* 宗师模式提示 */}
@@ -1580,11 +1600,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                   </>
                 )}
               </span>
+              {!skipCoins && (
               <span className="flex items-center gap-1 text-[9px] text-amber-700/70 tracking-[0.15em] font-light">
                 宗师模式
                 <CopperCoinIcon className="w-2.5 h-2.5 text-amber-700/70" />
                 <span>20</span>
               </span>
+              )}
             </motion.div>
           </div>
         </motion.div>
@@ -1737,11 +1759,13 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                     {isMeditation ? (
                       <>
                         知天之所为，知人之所为<br/>
+                        {!skipCoins && (
                         <span className="flex items-center justify-center gap-1 text-[10px] text-amber-700/80">
                           宗师模式
                           <CopperCoinIcon className="w-3 h-3 text-amber-700/80" />
                           <span>20</span>
                         </span>
+                        )}
                       </>
                     ) : (
                       <>
@@ -2165,6 +2189,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         open={showTipModal}
         onClose={() => setShowTipModal(false)}
         onDontShowAgain={handleDontShowTipAgain}
+        skipCoins={skipCoins}
       />
       
       {/* 导入数据模态框 */}

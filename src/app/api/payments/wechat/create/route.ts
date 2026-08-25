@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 import QRCode from 'qrcode';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { getCoinPackage } from '@/lib/payments/coinPackages';
+import { getShopPackage, isLifetimeVipPackage } from '@/lib/payments/coinPackages';
 import { createWechatNativeOrder, getWechatPayReadiness } from '@/lib/payments/wechat';
+import { isLifetimeVip } from '@/utils/vip';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -28,12 +29,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '无效请求' }, { status: 400 });
   }
 
-  const coinPackage = getCoinPackage(packageId);
+  const coinPackage = getShopPackage(packageId);
   if (!coinPackage) {
     return NextResponse.json({ error: '服务包不存在' }, { status: 400 });
   }
 
   const admin = createAdminClient();
+  if (isLifetimeVipPackage(coinPackage)) {
+    const { data: profile } = await admin
+      .from('user_profiles')
+      .select('vip_expires_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    if (isLifetimeVip((profile as { vip_expires_at?: string | null } | null)?.vip_expires_at)) {
+      return NextResponse.json({ error: '你已是终身 VIP，无需重复购买' }, { status: 409 });
+    }
+  }
   const recentPending = await admin
     .from('wechat_payment_orders')
     .select('id', { count: 'exact', head: true })

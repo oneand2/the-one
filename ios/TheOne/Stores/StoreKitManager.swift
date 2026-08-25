@@ -4,9 +4,17 @@ import StoreKit
 struct AppleCreditResponse: Decodable {
     let ok: Bool
     let credited: Bool
-    let coins: Int
+    let coins: Int?
     let balance: Int?
     let transactionId: String
+    let lifetimeVip: Bool?
+
+    var grantedLifetimeVip: Bool { lifetimeVip == true }
+}
+
+enum StoreProductKind {
+    case coins
+    case lifetimeVip
 }
 
 struct CoinPackage: Identifiable {
@@ -15,22 +23,26 @@ struct CoinPackage: Identifiable {
     let description: String
     let coins: Int
     let displayPrice: String
+    let kind: StoreProductKind
     let storeProduct: Product?
 }
 
 @MainActor
 final class StoreKitManager: ObservableObject {
+    static let lifetimeVIPProductID = "com.theone.er.vip.lifetime"
     static let productIDs = [
+        lifetimeVIPProductID,
         "com.theone.er.coins.100",
         "com.theone.er.coins.360",
         "com.theone.er.coins.800"
     ]
 
-    /// 与网页 `COIN_PACKAGES` / Configuration.storekit 对齐，避免 StoreKit 未返回时整栏空白。
-    private static let catalog: [(id: String, name: String, description: String, coins: Int, price: String)] = [
-        ("com.theone.er.coins.100", "初见", "适合轻量体验 AI 对话与解读服务", 100, "¥9.90"),
-        ("com.theone.er.coins.360", "深观", "适合持续使用与多轮深入交流", 360, "¥29.90"),
-        ("com.theone.er.coins.800", "长明", "适合长期使用数字内容服务", 800, "¥59.90"),
+    /// 与网页 `SHOP_PACKAGES` / Configuration.storekit 对齐，避免 StoreKit 未返回时整栏空白。
+    private static let catalog: [(id: String, name: String, description: String, coins: Int, price: String, kind: StoreProductKind)] = [
+        (lifetimeVIPProductID, "终身 VIP", "一次开通，之后使用全部功能不再消耗铜币", 0, "¥399.00", .lifetimeVip),
+        ("com.theone.er.coins.100", "初见", "适合轻量体验 AI 对话与解读服务", 100, "¥9.90", .coins),
+        ("com.theone.er.coins.360", "深观", "适合持续使用与多轮深入交流", 360, "¥29.90", .coins),
+        ("com.theone.er.coins.800", "长明", "适合长期使用数字内容服务", 800, "¥59.90", .coins),
     ]
 
     @Published private(set) var products: [Product] = []
@@ -48,10 +60,14 @@ final class StoreKitManager: ObservableObject {
                 description: storeDescription.isEmpty ? item.description : storeDescription,
                 coins: item.coins,
                 displayPrice: product?.displayPrice ?? item.price,
+                kind: item.kind,
                 storeProduct: product
             )
         }
     }
+
+    var vipPackage: CoinPackage? { packages.first { $0.kind == .lifetimeVip } }
+    var coinPackages: [CoinPackage] { packages.filter { $0.kind == .coins } }
 
     private var transactionListener: Task<Void, Never>?
 
@@ -102,7 +118,7 @@ final class StoreKitManager: ObservableObject {
             case .success(let verification):
                 return try await deliver(verification)
             case .pending:
-                message = "购买正在等待确认，确认后铜币会自动到账。"
+                message = "购买正在等待确认，确认后权益会自动到账。"
                 return false
             case .userCancelled:
                 return false
@@ -119,14 +135,30 @@ final class StoreKitManager: ObservableObject {
     }
 
     func recoverUnfinishedTransactions() async {
-        let recovered = await withTaskGroup(of: Bool.self) { group in
+        await restorePurchases()
+    }
+
+    func restorePurchases() async {
+        do {
+            try await AppStore.sync()
+        } catch {
+            message = error.localizedDescription
+            return
+        }
+
+        var any = false
+        for await verification in Transaction.currentEntitlements {
+            any = ((try? await deliver(verification)) ?? false) || any
+        }
+
+        let recoveredUnfinished = await withTaskGroup(of: Bool.self) { group in
             group.addTask { [weak self] in
                 guard let self else { return false }
-                var any = false
+                var found = false
                 for await verification in Transaction.unfinished {
-                    any = ((try? await self.deliver(verification)) ?? false) || any
+                    found = ((try? await self.deliver(verification)) ?? false) || found
                 }
-                return any
+                return found
             }
             group.addTask {
                 try? await Task.sleep(for: .seconds(2))
@@ -136,8 +168,10 @@ final class StoreKitManager: ObservableObject {
             group.cancelAll()
             return first
         }
-        if !recovered, message == nil {
-            message = "没有待恢复的购买。"
+        any = recoveredUnfinished || any
+
+        if !any, message == nil {
+            message = "没有可恢复的购买。"
         }
     }
 
@@ -168,9 +202,16 @@ final class StoreKitManager: ObservableObject {
                 json: ["signedTransaction": verification.jwsRepresentation]
             )
             await transaction.finish()
-            message = response.credited
-                ? "购买成功，\(response.coins) 枚铜币已到账。"
-                : "这笔购买已经入账，无需重复处理。"
+            if response.grantedLifetimeVip {
+                message = response.credited
+                    ? "终身 VIP 已开通，之后使用全部功能不再消耗铜币。"
+                    : "这笔购买已经入账，终身 VIP 仍有效。"
+            } else {
+                let coins = response.coins ?? 0
+                message = response.credited
+                    ? "购买成功，\(coins) 枚铜币已到账。"
+                    : "这笔购买已经入账，无需重复处理。"
+            }
             return true
         }
     }

@@ -57,6 +57,7 @@ struct MasterOrbView: View {
 struct LegacyModeChip: View {
     let title: String
     let cost: Int
+    var showCost: Bool = true
     @Binding var isOn: Bool
 
     var body: some View {
@@ -69,14 +70,16 @@ struct LegacyModeChip: View {
                 Text(title)
                     .font(.system(size: 11, weight: .light))
                     .tracking(2.2)
-                HStack(spacing: 2) {
-                    CopperCoinMark(size: 10)
-                    Text("\(cost)")
-                        .font(.system(size: 9, weight: .light))
-                        .tracking(0.5)
+                if showCost {
+                    HStack(spacing: 2) {
+                        CopperCoinMark(size: 10)
+                        Text("\(cost)")
+                            .font(.system(size: 9, weight: .light))
+                            .tracking(0.5)
+                    }
+                    .foregroundStyle(isOn ? Color.white.opacity(0.70) : legacyAmber.opacity(0.75))
+                    .padding(.leading, 4)
                 }
-                .foregroundStyle(isOn ? Color.white.opacity(0.70) : legacyAmber.opacity(0.75))
-                .padding(.leading, 4)
             }
             .foregroundStyle(isOn ? .white : AppTheme.stone700)
             .frame(width: 122, height: 32.5)
@@ -112,6 +115,7 @@ struct CopperCoinMark: View {
 struct UsageTipOverlay: View {
     let close: () -> Void
     let dontShowAgain: () -> Void
+    @EnvironmentObject private var profile: ProfileStore
     @State private var neverShow = false
     @State private var seconds = 10
 
@@ -137,7 +141,11 @@ struct UsageTipOverlay: View {
                             Text("开启").font(.system(size: 14)) + Text("六爻").font(.system(size: 14, weight: .semibold)) + Text("（已默认开启）之后再提问，可获得更精准的解卦分析。").font(.system(size: 14))
                         }
                         TipBullet {
-                            Text("点击").font(.system(size: 14)) + Text("宗师模式").font(.system(size: 14, weight: .semibold)) + Text("可获得更深入、更准确的回答（消耗 20 铜币）。宗师模式已默认开启，关闭宗师模式可以帮你节省大量铜币。").font(.system(size: 14))
+                            if profile.profile?.isActiveVip == true {
+                                Text("点击").font(.system(size: 14)) + Text("宗师模式").font(.system(size: 14, weight: .semibold)) + Text("可获得更深入、更准确的回答。宗师模式已默认开启。").font(.system(size: 14))
+                            } else {
+                                Text("点击").font(.system(size: 14)) + Text("宗师模式").font(.system(size: 14, weight: .semibold)) + Text("可获得更深入、更准确的回答（消耗 20 铜币）。宗师模式已默认开启，关闭宗师模式可以帮你节省大量铜币。").font(.system(size: 14))
+                            }
                         }
                     }
                     .padding(.leading, 16)
@@ -314,7 +322,7 @@ struct InsufficientCoinsOverlay: View {
         ZStack {
             Color.black.opacity(0.40).ignoresSafeArea().onTapGesture(perform: onClose)
             VStack(spacing: 0) {
-                Text("铜币不足，本次需要 \(needCoins) 铜币。请选择数字内容服务包后再试。")
+                Text("铜币不足，本次需要 \(needCoins) 铜币。可选择铜币服务包，或开通终身 VIP 后不再消耗铜币。")
                     .font(.system(size: 15))
                     .foregroundStyle(AppTheme.stone800)
                     .multilineTextAlignment(.center)

@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { AlipaySdk } from 'alipay-sdk';
-import type { CoinPackage } from './coinPackages';
+import { isLifetimeVipPackage, type CoinPackage } from './coinPackages';
 
 type AlipayEnvironment = {
   appId: string;
@@ -82,7 +82,9 @@ export function createAlipayPagePayUrl(
       out_trade_no: outTradeNo,
       product_code: 'FAST_INSTANT_TRADE_PAY',
       subject: `二·${coinPackage.name}数字内容服务包`,
-      body: `${coinPackage.coins}枚站内铜币，用于本平台AI对话与解读服务`,
+      body: isLifetimeVipPackage(coinPackage)
+        ? '终身 VIP，购买后使用全部功能不再消耗铜币'
+        : `${coinPackage.coins}枚站内铜币，用于本平台AI对话与解读服务`,
       total_amount: (coinPackage.amountCents / 100).toFixed(2),
       timeout_express: '30m',
       ...(displayMode === 'embedded'

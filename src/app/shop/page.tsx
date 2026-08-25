@@ -3,18 +3,28 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AlertCircle, Check, Coins, QrCode, ShieldCheck, X } from 'lucide-react';
-import { COIN_PACKAGES, formatCny } from '@/lib/payments/coinPackages';
+import { AlertCircle, Check, Coins, Crown, QrCode, ShieldCheck, X } from 'lucide-react';
+import {
+  COIN_PACKAGES,
+  LIFETIME_VIP_PACKAGE,
+  formatCny,
+  getShopPackage,
+  isLifetimeVipPackage,
+  shopDeliveryMessage,
+} from '@/lib/payments/coinPackages';
 import { requestAppLogin } from '@/utils/iosEmbed';
+import { isLifetimeVip } from '@/utils/vip';
 
 type PaymentMessage = { type: 'success' | 'error' | 'info'; text: string } | null;
 type PaymentProvider = 'alipay' | 'wechat';
+type PaidKind = 'coins' | 'lifetime_vip';
 type WechatPayment = {
   outTradeNo: string;
   qrDataUrl: string;
   expiresAt: number;
   packageName: string;
   coins: number;
+  kind: PaidKind;
   status: 'pending' | 'paid' | 'expired';
 };
 type AlipayPayment = {
@@ -23,8 +33,24 @@ type AlipayPayment = {
   expiresAt: number;
   packageName: string;
   coins: number;
+  kind: PaidKind;
   status: 'pending' | 'paid' | 'expired';
 };
+
+function paidKind(item: { id?: string; kind?: PaidKind; coins?: number }): PaidKind {
+  return isLifetimeVipPackage(item) || item.coins === 0 ? 'lifetime_vip' : 'coins';
+}
+
+function deliveryText(item: { id?: string; kind?: PaidKind; coins?: number; package_id?: string }) {
+  if (item.package_id === LIFETIME_VIP_PACKAGE.id || paidKind(item) === 'lifetime_vip') {
+    return shopDeliveryMessage(LIFETIME_VIP_PACKAGE);
+  }
+  return shopDeliveryMessage({ id: item.id ?? '', coins: item.coins ?? 0 });
+}
+
+function paidItemCaption(item: { packageName: string; coins: number; kind: PaidKind }) {
+  return item.kind === 'lifetime_vip' ? item.packageName : `${item.packageName} · ${item.coins} 枚铜币`;
+}
 
 function isMobilePaymentDevice() {
   const userAgent = window.navigator.userAgent;
@@ -36,6 +62,7 @@ export default function ShopPage() {
   const [loadingPayment, setLoadingPayment] = useState<string | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [balance, setBalance] = useState<number | null>(null);
+  const [vipExpiresAt, setVipExpiresAt] = useState<string | null>(null);
   const [message, setMessage] = useState<PaymentMessage>(null);
   const [wechatPayment, setWechatPayment] = useState<WechatPayment | null>(null);
   const [alipayPayment, setAlipayPayment] = useState<AlipayPayment | null>(null);
@@ -45,7 +72,10 @@ export default function ShopPage() {
   useEffect(() => {
     fetch('/api/user/profile', { credentials: 'include' })
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => setBalance(typeof data?.coins_balance === 'number' ? data.coins_balance : null))
+      .then((data) => {
+        setBalance(typeof data?.coins_balance === 'number' ? data.coins_balance : null);
+        setVipExpiresAt(typeof data?.vip_expires_at === 'string' ? data.vip_expires_at : null);
+      })
       .catch(() => setBalance(null));
 
     const params = new URLSearchParams(window.location.search);
@@ -67,12 +97,13 @@ export default function ShopPage() {
         const data = await response.json().catch(() => ({}));
         if (cancelled) return;
         if (response.ok && data.status === 'paid' && data.credited_at) {
-          setMessage({ type: 'success', text: `${data.coins} 枚铜币已到账。感谢你的支持。` });
+          setMessage({ type: 'success', text: deliveryText(data) });
           window.dispatchEvent(new CustomEvent('coins-should-refresh'));
           fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
             .then((profileResponse) => (profileResponse.ok ? profileResponse.json() : null))
             .then((profile) => {
               if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+              setVipExpiresAt(typeof profile?.vip_expires_at === 'string' ? profile.vip_expires_at : null);
             })
             .catch(() => undefined);
           return;
@@ -116,12 +147,13 @@ export default function ShopPage() {
 
         if (response.ok && data.status === 'paid' && data.credited_at) {
           setWechatPayment((current) => current ? { ...current, status: 'paid' } : null);
-          setMessage({ type: 'success', text: `${wechatPayment.coins} 枚铜币已到账。感谢你的支持。` });
+          setMessage({ type: 'success', text: deliveryText({ ...data, kind: wechatPayment.kind, coins: wechatPayment.coins }) });
           window.dispatchEvent(new CustomEvent('coins-should-refresh'));
           fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
             .then((profileResponse) => (profileResponse.ok ? profileResponse.json() : null))
             .then((profile) => {
               if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+              setVipExpiresAt(typeof profile?.vip_expires_at === 'string' ? profile.vip_expires_at : null);
             })
             .catch(() => undefined);
           return;
@@ -166,12 +198,13 @@ export default function ShopPage() {
 
         if (response.ok && data.status === 'paid' && data.credited_at) {
           setAlipayPayment((current) => current ? { ...current, status: 'paid' } : null);
-          setMessage({ type: 'success', text: `${alipayPayment.coins} 枚铜币已到账。感谢你的支持。` });
+          setMessage({ type: 'success', text: deliveryText({ ...data, kind: alipayPayment.kind, coins: alipayPayment.coins }) });
           window.dispatchEvent(new CustomEvent('coins-should-refresh'));
           fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
             .then((profileResponse) => (profileResponse.ok ? profileResponse.json() : null))
             .then((profile) => {
               if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+              setVipExpiresAt(typeof profile?.vip_expires_at === 'string' ? profile.vip_expires_at : null);
             })
             .catch(() => undefined);
           return;
@@ -205,7 +238,7 @@ export default function ShopPage() {
       return;
     }
 
-    const coinPackage = COIN_PACKAGES.find((item) => item.id === packageId);
+    const coinPackage = getShopPackage(packageId);
     if (!coinPackage) return;
     const alipayDisplayMode = provider === 'alipay' && !isMobilePaymentDevice() ? 'embedded' : 'redirect';
 
@@ -250,6 +283,7 @@ export default function ShopPage() {
           expiresAt: Date.now() + 30 * 60 * 1000,
           packageName: coinPackage.name,
           coins: coinPackage.coins,
+          kind: paidKind(coinPackage),
           status: 'pending',
         });
         return;
@@ -265,6 +299,7 @@ export default function ShopPage() {
         expiresAt: Date.now() + Number(data.expiresInSeconds || 900) * 1000,
         packageName: coinPackage.name,
         coins: coinPackage.coins,
+        kind: paidKind(coinPackage),
         status: 'pending',
       });
     } catch {
@@ -273,6 +308,8 @@ export default function ShopPage() {
       setLoadingPayment(null);
     }
   };
+
+  const alreadyLifetime = isLifetimeVip(vipExpiresAt);
 
   return (
     <main className="min-h-screen bg-[#FBF9F4] px-4 py-12">
@@ -283,16 +320,23 @@ export default function ShopPage() {
 
         <header className="mb-10 max-w-2xl">
           <p className="mb-3 text-xs tracking-[0.28em] text-stone-500">数字内容服务</p>
-          <h1 className="mb-4 text-3xl font-serif text-stone-900">选择铜币服务包</h1>
+          <h1 className="mb-4 text-3xl font-serif text-stone-900">选择服务包</h1>
           <p className="text-sm leading-7 text-stone-600">
-            铜币是本网站数字内容服务的站内使用额度，可用于 AI 对话、深度思考、联网检索与 AI 解卦。
+            铜币可用于 AI 对话、深度思考、联网检索与 AI 解卦。开通终身 VIP 后，全部功能不再消耗铜币。
             铜币不能转赠、交易、提现或兑换现金。
           </p>
-          {balance !== null && (
-            <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-              <Coins className="h-4 w-4" /> 当前余额 {balance} 枚
-            </div>
-          )}
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {alreadyLifetime && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-stone-300 bg-stone-900 px-4 py-2 text-sm text-white">
+                <Crown className="h-4 w-4" /> 终身 VIP 已开通
+              </div>
+            )}
+            {balance !== null && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+                <Coins className="h-4 w-4" /> 当前余额 {balance} 枚
+              </div>
+            )}
+          </div>
         </header>
 
         {message && (
@@ -307,6 +351,48 @@ export default function ShopPage() {
             <span>{message.text}</span>
           </div>
         )}
+
+        <article className="mb-5 flex flex-col rounded-2xl border border-stone-700 bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between md:gap-10">
+          <div className="max-w-xl">
+            <p className="text-xs tracking-[0.22em] text-stone-500">一次开通</p>
+            <h2 className="mt-2 flex items-center gap-2 text-2xl font-serif text-stone-900">
+              <Crown className="h-5 w-5 text-stone-700" />
+              {LIFETIME_VIP_PACKAGE.name}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-stone-600">{LIFETIME_VIP_PACKAGE.description}</p>
+          </div>
+          <div className="mt-6 w-full max-w-sm md:mt-0">
+            <div className="mb-4 flex items-end justify-between">
+              <span className="text-3xl font-serif text-stone-900">{formatCny(LIFETIME_VIP_PACKAGE.amountCents)}</span>
+              <span className="text-sm text-stone-500">终身有效</span>
+            </div>
+            {alreadyLifetime ? (
+              <p className="rounded-xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-sm text-stone-600">
+                你已开通终身 VIP
+              </p>
+            ) : (
+              <div className="grid gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePurchase('wechat', LIFETIME_VIP_PACKAGE.id)}
+                  disabled={loadingPayment !== null}
+                  className="flex items-center justify-center gap-2 rounded-xl bg-[#07C160] px-4 py-3 text-sm text-white transition hover:bg-[#06AD56] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <QrCode className="h-4 w-4" />
+                  {loadingPayment === `wechat:${LIFETIME_VIP_PACKAGE.id}` ? '正在生成二维码…' : '微信扫码支付'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePurchase('alipay', LIFETIME_VIP_PACKAGE.id)}
+                  disabled={loadingPayment !== null}
+                  className="rounded-xl border border-stone-300 bg-white px-4 py-3 text-sm text-stone-700 transition hover:border-stone-500 hover:text-stone-900 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {loadingPayment === `alipay:${LIFETIME_VIP_PACKAGE.id}` ? '正在创建订单…' : '支付宝支付'}
+                </button>
+              </div>
+            )}
+          </div>
+        </article>
 
         <section className="grid gap-5 md:grid-cols-3" aria-label="铜币服务包">
           {COIN_PACKAGES.map((item) => (
@@ -354,7 +440,7 @@ export default function ShopPage() {
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-stone-600" />
             <div className="text-sm leading-7 text-stone-600">
               <h2 className="mb-1 font-medium text-stone-800">清楚、可核验的交付</h2>
-              <p>支付成功后，支付宝或微信支付服务器会通知本网站，铜币将直接增加到当前登录账户，订单与交付全程由系统自动完成。</p>
+              <p>支付成功后，支付宝或微信支付服务器会通知本网站。铜币将增加到当前账户；终身 VIP 开通后，使用全部功能不再消耗铜币。订单与交付全程由系统自动完成。</p>
             </div>
           </div>
         </section>
@@ -421,7 +507,9 @@ export default function ShopPage() {
                   <Check className="h-8 w-8" />
                 </span>
                 <h2 id="wechat-payment-title" className="mt-5 text-2xl font-serif text-stone-900">支付成功</h2>
-                <p className="mt-3 text-sm leading-6 text-stone-600">{wechatPayment.coins} 枚铜币已经到账。</p>
+                <p className="mt-3 text-sm leading-6 text-stone-600">
+                  {wechatPayment.kind === 'lifetime_vip' ? '终身 VIP 已经开通。' : `${wechatPayment.coins} 枚铜币已经到账。`}
+                </p>
                 <button
                   type="button"
                   onClick={() => setWechatPayment(null)}
@@ -442,7 +530,7 @@ export default function ShopPage() {
                 <h2 id="wechat-payment-title" className="mt-3 text-2xl font-serif text-stone-900">
                   请使用微信扫一扫
                 </h2>
-                <p className="mt-2 text-sm text-stone-500">{wechatPayment.packageName} · {wechatPayment.coins} 枚铜币</p>
+                <p className="mt-2 text-sm text-stone-500">{paidItemCaption(wechatPayment)}</p>
                 <div className="mx-auto mt-6 w-fit rounded-2xl border border-stone-200 bg-white p-3 shadow-sm">
                   <Image
                     src={wechatPayment.qrDataUrl}
@@ -484,7 +572,9 @@ export default function ShopPage() {
                   <Check className="h-8 w-8" />
                 </span>
                 <h2 id="alipay-payment-title" className="mt-5 text-2xl font-serif text-stone-900">支付成功</h2>
-                <p className="mt-3 text-sm leading-6 text-stone-600">{alipayPayment.coins} 枚铜币已经到账。</p>
+                <p className="mt-3 text-sm leading-6 text-stone-600">
+                  {alipayPayment.kind === 'lifetime_vip' ? '终身 VIP 已经开通。' : `${alipayPayment.coins} 枚铜币已经到账。`}
+                </p>
                 <button
                   type="button"
                   onClick={() => setAlipayPayment(null)}
@@ -505,7 +595,7 @@ export default function ShopPage() {
                 <h2 id="alipay-payment-title" className="mt-3 text-2xl font-serif text-stone-900">
                   请使用支付宝扫一扫
                 </h2>
-                <p className="mt-2 text-sm text-stone-500">{alipayPayment.packageName} · {alipayPayment.coins} 枚铜币</p>
+                <p className="mt-2 text-sm text-stone-500">{paidItemCaption(alipayPayment)}</p>
                 <div className="mx-auto mt-5 h-[330px] w-full max-w-[360px] overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                   <iframe
                     src={alipayPayment.paymentUrl}

@@ -1,3 +1,5 @@
+export type ShopPackageKind = 'coins' | 'lifetime_vip';
+
 export type CoinPackage = {
   id: string;
   name: string;
@@ -5,6 +7,20 @@ export type CoinPackage = {
   coins: number;
   amountCents: number;
   featured?: boolean;
+  kind?: ShopPackageKind;
+};
+
+export const LIFETIME_VIP_PACKAGE_ID = 'vip_lifetime';
+export const APPLE_LIFETIME_VIP_PRODUCT_ID = 'com.theone.er.vip.lifetime';
+
+export const LIFETIME_VIP_PACKAGE: CoinPackage = {
+  id: LIFETIME_VIP_PACKAGE_ID,
+  name: '终身 VIP',
+  description: '一次开通，之后使用全部功能不再消耗铜币',
+  coins: 0,
+  amountCents: 39900,
+  kind: 'lifetime_vip',
+  featured: true,
 };
 
 export const COIN_PACKAGES: readonly CoinPackage[] = [
@@ -32,10 +48,27 @@ export const COIN_PACKAGES: readonly CoinPackage[] = [
   },
 ] as const;
 
+export const SHOP_PACKAGES: readonly CoinPackage[] = [LIFETIME_VIP_PACKAGE, ...COIN_PACKAGES];
+
+export function isLifetimeVipPackage(item: Pick<CoinPackage, 'id' | 'kind'> | null | undefined) {
+  return item?.kind === 'lifetime_vip' || item?.id === LIFETIME_VIP_PACKAGE_ID;
+}
+
+export function getShopPackage(packageId: string) {
+  return SHOP_PACKAGES.find((item) => item.id === packageId) ?? null;
+}
+
 export function getCoinPackage(packageId: string) {
-  return COIN_PACKAGES.find((item) => item.id === packageId) ?? null;
+  return getShopPackage(packageId);
 }
 
 export function formatCny(amountCents: number) {
   return `¥${(amountCents / 100).toFixed(2)}`;
+}
+
+export function shopDeliveryMessage(item: Pick<CoinPackage, 'id' | 'kind' | 'coins'>) {
+  if (isLifetimeVipPackage(item) || item.coins === 0) {
+    return '终身 VIP 已开通。之后使用全部功能不再消耗铜币。';
+  }
+  return `${item.coins} 枚铜币已到账。感谢你的支持。`;
 }

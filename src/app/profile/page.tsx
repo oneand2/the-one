@@ -231,6 +231,11 @@ export default function ProfilePage() {
                     })()}
               </p>
               <p className="text-xs text-stone-500 mt-1">VIP 使用任意功能不消耗铜币</p>
+              {!isLifetimeVip(vipExpiresAt) && (
+                <Link href="/shop" className="mt-3 inline-block text-sm font-sans text-stone-600 hover:text-stone-800 underline">
+                  开通终身 VIP
+                </Link>
+              )}
             </div>
           ) : (
             coins !== null && (
@@ -238,15 +243,20 @@ export default function ProfilePage() {
                 <label className="block text-sm font-sans text-stone-700 mb-2">铜币余额</label>
                 <p className="text-lg font-sans text-stone-800 tabular-nums">{coins} 铜币</p>
                 <p className="text-xs text-stone-500 mt-1 mb-3">
-                  决行藏每问 2 枚（深度思考 +2，宗师 +20，联网 +2）
+                  决行藏每问 2 枚（深度思考 +2，宗师 +20，联网 +2）。也可开通终身 VIP，之后不再消耗铜币。
                 </p>
-                <button
-                  type="button"
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
-                  className="text-sm font-sans text-stone-600 hover:text-stone-800 underline"
-                >
-                  获取铜币
-                </button>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  <button
+                    type="button"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
+                    className="text-sm font-sans text-stone-600 hover:text-stone-800 underline"
+                  >
+                    获取铜币
+                  </button>
+                  <Link href="/shop" className="text-sm font-sans text-stone-600 hover:text-stone-800 underline">
+                    开通终身 VIP
+                  </Link>
+                </div>
               </div>
             )
           )}

@@ -28,7 +28,12 @@ struct Profile: Decodable {
 
     private static let lifetimeSentinel = "9999-12-31T23:59:59.999Z"
 
-    var isLifetimeVip: Bool { vipExpiresAt == Self.lifetimeSentinel }
+    var isLifetimeVip: Bool {
+        guard let vipExpiresAt else { return false }
+        if vipExpiresAt == Self.lifetimeSentinel { return true }
+        guard let expiry = Self.parseDate(vipExpiresAt) else { return false }
+        return expiry >= Date(timeIntervalSince1970: 4_070_908_800) // 2099-01-01 UTC
+    }
 
     var isActiveVip: Bool {
         guard let vipExpiresAt else { return false }

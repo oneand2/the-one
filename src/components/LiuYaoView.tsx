@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Hand } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { tossOnce, getYaoInfo, type YaoInfo, type YaoValue } from '@/utils/liuyaoLogic';
-import { CoinAnimation } from './CoinAnimation';
+import { tossOnce, getYaoInfo, type YaoInfo } from '@/utils/liuyaoLogic';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
@@ -32,10 +30,9 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
   const [isQuestionSet, setIsQuestionSet] = useState<boolean>(embedded && !!externalQuestion);
   const [yaos, setYaos] = useState<YaoInfo[]>([]);
   const [isTossing, setIsTossing] = useState(false);
-  const [currentTossResult, setCurrentTossResult] = useState<YaoValue | null>(null);
-  const [showCoinAnimation, setShowCoinAnimation] = useState(false);
   const [hexagramAnalysis, setHexagramAnalysis] = useState<HexagramAnalysis | null>(null);
-  const prefillAppliedRef = useRef(false);
+  const reduceMotion = useReducedMotion();
+  const castRunRef = useRef(0);
   
   const pendingImportKey = 'juexingcang-import-pending';
   const inputPresetKey = 'juexingcang-input-preset';
@@ -43,72 +40,62 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
 
   // URL 有 question 时始终同步到输入框（如从见天地「占问今日休咎」跳转过来），保证自动填入
   useEffect(() => {
-    if (!embedded && presetQuestion) {
-      setQuestion(presetQuestion);
-      prefillAppliedRef.current = true;
-    }
+    if (embedded || !presetQuestion) return;
+
+    const syncTimer = window.setTimeout(() => setQuestion(presetQuestion), 0);
+    return () => window.clearTimeout(syncTimer);
   }, [embedded, presetQuestion]);
 
-  // 从数值反推硬币组合
-  const getCoinsFromValue = (value: YaoValue): number[] => {
-    switch (value) {
-      case 6: // 老阴 = 2+2+2
-        return [2, 2, 2];
-      case 7: // 少阳 = 2+2+3
-        return [2, 2, 3];
-      case 8: // 少阴 = 2+3+3
-        return [2, 3, 3];
-      case 9: // 老阳 = 3+3+3
-        return [3, 3, 3];
-      default:
-        return [2, 2, 2];
-    }
-  };
+  // 用户确认问题后，六次铜钱结果立即一次性生成并固定；前端只负责逐爻揭示。
+  // 这样动画帧率、暂停或页面重绘都不会改变最终卦象。
+  useEffect(() => {
+    const castQuestion = question.trim();
+    if (!isQuestionSet || !castQuestion) return;
 
-  // 单次摇卦
-  const handleTossOnce = async () => {
-    if (isTossing || yaos.length >= 6) return;
+    const runID = ++castRunRef.current;
+    const completedCast = Array.from({ length: 6 }, () => getYaoInfo(tossOnce()));
+    let cancelled = false;
 
-    setIsTossing(true);
-    
-    // 计算本次结果
-    const result = tossOnce();
-    setCurrentTossResult(result);
-    setShowCoinAnimation(true);
-  };
+    const reveal = async () => {
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+      if (cancelled || castRunRef.current !== runID) return;
+      setYaos([]);
+      setHexagramAnalysis(null);
+      setIsTossing(true);
 
-  // 硬币动画完成后的回调
-  const handleCoinAnimationComplete = () => {
-    if (currentTossResult === null) return;
+      if (reduceMotion) {
+        setYaos(completedCast);
+        setHexagramAnalysis(analyzeHexagram(completedCast.map((yao) => yao.value)));
+        setIsTossing(false);
+        return;
+      }
 
-    // 添加新的爻到列表
-    const yaoInfo = getYaoInfo(currentTossResult);
-    setYaos(prev => [...prev, yaoInfo]);
-    
-    // 清理状态
-    setShowCoinAnimation(false);
-    setCurrentTossResult(null);
-    setIsTossing(false);
-  };
+      await new Promise((resolve) => window.setTimeout(resolve, 260));
+      for (let count = 1; count <= completedCast.length; count += 1) {
+        if (cancelled || castRunRef.current !== runID) return;
+        setYaos(completedCast.slice(0, count));
+        if (count < completedCast.length) {
+          await new Promise((resolve) => window.setTimeout(resolve, 390));
+        }
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 360));
+      if (!cancelled && castRunRef.current === runID) {
+        setHexagramAnalysis(analyzeHexagram(completedCast.map((yao) => yao.value)));
+        setIsTossing(false);
+      }
+    };
+
+    void reveal();
+    return () => {
+      cancelled = true;
+    };
+  }, [isQuestionSet, question, reduceMotion]);
 
   // 确认问题
   const handleConfirmQuestion = () => {
     if (question.trim()) {
       setIsQuestionSet(true);
     }
-  };
-
-  // 重新起卦
-  const handleReset = () => {
-    if (!embedded) {
-      setQuestion('');
-      setIsQuestionSet(false);
-    }
-    setYaos([]);
-    setCurrentTossResult(null);
-    setShowCoinAnimation(false);
-    setIsTossing(false);
-    setHexagramAnalysis(null);
   };
 
   const handleDivine = () => {
@@ -213,60 +200,51 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
     }
   };
 
-  // 当6个爻都摇完后，自动解卦
-  useEffect(() => {
-    if (yaos.length === 6) {
-      const yaoValues = yaos.map(y => y.value);
-      const analysis = analyzeHexagram(yaoValues);
-      setHexagramAnalysis(analysis);
-    }
-  }, [yaos]);
-
   // 获取爻的符号样式 - 使用 SVG 确保跨浏览器兼容
   const getYaoSymbol = (yao: YaoInfo) => {
     if (yao.value === 7 || yao.value === 9) {
       // 阳爻 —— 使用 SVG 渲染一条完整的线
       return (
-        <svg 
-          viewBox="0 0 112 12" 
-          className="w-28 h-3"
-          style={{ width: '112px', height: '12px' }}
+        <svg
+          viewBox="0 0 112 6"
+          className="h-[6px] w-28"
+          style={{ width: '112px', height: '6px' }}
           preserveAspectRatio="none"
         >
-          <rect 
-            x="0" 
-            y="0" 
-            width="112" 
-            height="12" 
+          <rect
+            x="0"
+            y="0"
+            width="112"
+            height="6"
             fill="#44403c"
-            rx="6"
+            rx="1.5"
           />
         </svg>
       );
     } else {
       // 阴爻 - - 使用 SVG 渲染两条断开的线
       return (
-        <svg 
-          viewBox="0 0 112 12" 
-          className="w-28 h-3"
-          style={{ width: '112px', height: '12px' }}
+        <svg
+          viewBox="0 0 112 6"
+          className="h-[6px] w-28"
+          style={{ width: '112px', height: '6px' }}
           preserveAspectRatio="none"
         >
-          <rect 
-            x="0" 
-            y="0" 
-            width="52" 
-            height="12" 
+          <rect
+            x="0"
+            y="0"
+            width="52"
+            height="6"
             fill="#44403c"
-            rx="6"
+            rx="1.5"
           />
-          <rect 
-            x="60" 
-            y="0" 
-            width="52" 
-            height="12" 
+          <rect
+            x="60"
+            y="0"
+            width="52"
+            height="6"
             fill="#44403c"
-            rx="6"
+            rx="1.5"
           />
         </svg>
       );
@@ -274,12 +252,12 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
   };
 
   return (
-    <div className={embedded ? "flex flex-col items-center w-full" : "min-h-screen flex items-center justify-center pt-28 mobile-content-bottom"}>
+    <div className={embedded ? "flex w-full flex-col items-center" : "min-h-screen flex items-center justify-center pt-28 mobile-content-bottom"}>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="space-y-12 w-full"
+        transition={{ duration: 0.65, ease: [0.32, 0.72, 0, 1] }}
+        className="w-full space-y-8"
       >
         {/* 嵌入模式取消按钮 */}
         {embedded && onCancel && (
@@ -287,7 +265,7 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
             onClick={onCancel}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="self-start mb-6 text-xs text-stone-500 hover:text-stone-700 transition-colors flex items-center gap-1"
+            className="mb-2 flex min-h-11 items-center gap-1.5 self-start font-sans text-[11px] tracking-[0.12em] text-stone-400 transition-colors hover:text-stone-700"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -302,10 +280,10 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col items-center space-y-8"
+            className="mx-auto flex w-full max-w-md flex-col items-center space-y-8"
           >
-            {/* 输入框 */}
-            <div className="w-full max-w-md">
+            <div className="w-full border-l border-stone-300/70 pl-5">
+              <p className="mb-3 font-sans text-[9px] tracking-[0.28em] text-stone-400">所 问 之 事</p>
               <input
                 type="text"
                 value={question}
@@ -315,183 +293,94 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
                     handleConfirmQuestion();
                   }
                 }}
-                placeholder="请从此处输入问题"
-                className="w-full text-center text-stone-700 font-sans text-base bg-transparent border-0 border-b-2 border-stone-300 focus:border-stone-700 focus:outline-none transition-colors duration-300 py-3"
+                placeholder="写下此刻最想问清的事"
+                className="w-full border-0 border-b border-stone-300 bg-transparent py-3 text-left text-[16px] tracking-[0.04em] text-stone-700 outline-none transition-colors duration-500 focus:border-stone-600"
               />
             </div>
 
-            {/* 起卦按钮 */}
             <motion.button
               onClick={handleConfirmQuestion}
               disabled={!question.trim()}
-              className="px-8 py-4 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              whileHover={{ scale: 1.02 }}
+              className="min-h-11 rounded-full bg-[#3d3935] px-7 py-2.5 font-sans text-[12px] tracking-[0.2em] text-[#f7f3ec] transition-colors duration-500 hover:bg-stone-700 disabled:cursor-not-allowed disabled:opacity-40"
               whileTap={{ scale: 0.98 }}
             >
               起卦
             </motion.button>
           </motion.div>
         ) : (
-          <>
-            {/* Phase 2: 摇卦阶段 - 显示问题 */}
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="text-center"
-            >
-              <p className="text-sm text-stone-600 font-serif italic">
-                {question}
-              </p>
-            </motion.div>
-
-            {/* 起卦按钮 */}
-            <div className="text-center space-y-6">
-              {yaos.length < 6 && (
-                <motion.button
-                  onClick={handleTossOnce}
-                  disabled={isTossing}
-                  className="mx-auto px-8 py-4 bg-stone-800 text-white font-sans text-sm rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center gap-3"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Hand className="w-5 h-5" />
-                  {isTossing ? '摇卦中...' : yaos.length === 0 ? '摇卦起卦' : `摇第 ${yaos.length + 1} 爻`}
-                </motion.button>
-              )}
-              
-              <p className="text-xs text-[#999999] font-sans">
-                {yaos.length === 0 
-                  ? '心中默念所问之事，点击摇卦' 
-                  : yaos.length < 6 
-                    ? `已摇 ${yaos.length} 爻，还需摇 ${6 - yaos.length} 次`
-                    : '起卦完成，可查看卦象'}
-              </p>
-            </div>
-          </>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+            className="mx-auto w-full max-w-md border-l border-stone-300/70 pl-5"
+          >
+            <p className="font-sans text-[9px] tracking-[0.28em] text-stone-400">所 问</p>
+            <p className="mt-2 text-[15px] leading-7 tracking-[0.06em] text-stone-700" style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, serif' }}>
+              {question}
+            </p>
+          </motion.div>
         )}
 
-        {/* 硬币动画 - 只在问题确认后显示；pointer-events-none 避免 exit 时透明层挡住下方按钮 */}
         <AnimatePresence>
-          {isQuestionSet && showCoinAnimation && currentTossResult && (
+          {isQuestionSet && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3 }}
-              className="pointer-events-none"
-            >
-              <CoinAnimation
-                finalResult={getCoinsFromValue(currentTossResult)}
-                onAnimationComplete={handleCoinAnimationComplete}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* 卦象显示 - 只在问题确认后显示；relative z-10 确保按钮始终在可点击层 */}
-        <AnimatePresence>
-          {isQuestionSet && yaos.length > 0 && !showCoinAnimation && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.6 }}
-              className="space-y-8 relative z-10"
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+              className="relative z-10 mx-auto w-full max-w-md space-y-7"
             >
-              {/* 卦象图 */}
-              <div className="w-full flex flex-col items-center space-y-4 py-8">
-                <div className="text-center text-xs text-[#999999] font-sans mb-6">
-                  从下往上读
-                </div>
-                
-                <div className="space-y-4 flex flex-col items-center">
-                  {[...yaos].reverse().map((yao, index) => {
-                    // 计算原始索引（反转前的位置）
-                    const originalIndex = yaos.length - 1 - index;
-                    
+              <div className="flex items-center justify-between border-y border-stone-200/70 py-3">
+                <span className="font-sans text-[9px] tracking-[0.3em] text-stone-400">六 爻 成 象</span>
+                <span className="font-sans text-[9px] tabular-nums tracking-[0.18em] text-stone-400" aria-live="polite">
+                  {hexagramAnalysis ? '卦象已定' : `正在成卦 · ${yaos.length}/6`}
+                </span>
+              </div>
+
+              <div className="flex min-h-[230px] w-full flex-col items-center justify-center py-4" aria-label={`六爻已显现 ${yaos.length} 爻`}>
+                <div className="flex flex-col gap-[15px]">
+                  {[5, 4, 3, 2, 1, 0].map((position) => {
+                    const yao = yaos[position];
+                    const positionName = position === 0 ? '初爻' : position === 5 ? '上爻' : `${['', '二', '三', '四', '五'][position]}爻`;
                     return (
-                      <motion.div
-                        key={originalIndex}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        className="flex items-center justify-center gap-3"
-                        style={{ width: '100%', maxWidth: '296px' }}
-                      >
-                        {/* 左侧容器 - 爻位标签，固定宽度，右对齐 */}
-                        <div className="text-right shrink-0" style={{ width: '80px', minWidth: '80px' }}>
-                          <span className="text-xs text-[#999999] font-serif">
-                            {originalIndex === 0 ? '初' : originalIndex === 5 ? '上' : ['', '二', '三', '四', '五'][originalIndex]}爻
-                          </span>
+                      <div key={position} className="grid grid-cols-[42px_112px_54px] items-center gap-3">
+                        <span className={`text-right font-sans text-[9px] tracking-[0.12em] transition-colors duration-500 ${yao ? 'text-stone-400' : 'text-stone-300/50'}`}>
+                          {positionName}
+                        </span>
+                        <div className="flex h-3 w-28 items-center justify-center">
+                          {yao ? (
+                            <motion.div
+                              key={`${position}-${yao.value}`}
+                              initial={{ opacity: 0, scaleX: 0.3, filter: 'blur(3px)' }}
+                              animate={{ opacity: 1, scaleX: 1, filter: 'blur(0px)' }}
+                              transition={{ duration: 0.58, ease: [0.32, 0.72, 0, 1] }}
+                              className="origin-center"
+                            >
+                              {getYaoSymbol(yao)}
+                            </motion.div>
+                          ) : (
+                            <motion.span
+                              className="block h-[4px] w-24 origin-center rounded-[1px] bg-stone-300/60"
+                              animate={isTossing
+                                ? { opacity: [0.18, 0.48, 0.22], scaleX: [0.48, 0.86, 0.56] }
+                                : { opacity: 0.18, scaleX: 0.52 }}
+                              transition={isTossing
+                                ? { duration: 0.82, delay: position * 0.055, repeat: Infinity, ease: [0.32, 0.72, 0, 1] }
+                                : { duration: 0.4 }}
+                            />
+                          )}
                         </div>
-                        
-                        {/* 中间容器 - SVG 线条，固定宽度，始终居中 */}
-                        <div className="shrink-0 flex items-center justify-center" style={{ width: '112px', minWidth: '112px' }}>
-                          {getYaoSymbol(yao)}
-                        </div>
-                        
-                        {/* 右侧容器 - 名称和标记，固定宽度，左对齐 */}
-                        <div className="shrink-0 flex items-center gap-2" style={{ width: '80px', minWidth: '80px' }}>
-                          <span className="text-sm text-[#666666] font-serif">
-                            {yao.name}
-                          </span>
-                          
-                          {/* 变爻标记 */}
-                          <div className="flex items-center justify-center" style={{ width: '16px', height: '16px' }}>
-                            {yao.isChanging ? (
-                              <>
-                                {yao.value === 9 ? (
-                                  // 老阳标记 ○
-                                  <svg 
-                                    viewBox="0 0 12 12" 
-                                    className="w-3 h-3"
-                                    style={{ width: '12px', height: '12px' }}
-                                  >
-                                    <circle 
-                                      cx="6" 
-                                      cy="6" 
-                                      r="5" 
-                                      fill="none" 
-                                      stroke="#44403c" 
-                                      strokeWidth="2"
-                                    />
-                                  </svg>
-                                ) : (
-                                  // 老阴标记 ×
-                                  <svg 
-                                    viewBox="0 0 10 10" 
-                                    className="w-2.5 h-2.5"
-                                    style={{ width: '10px', height: '10px' }}
-                                  >
-                                    <line 
-                                      x1="1" 
-                                      y1="1" 
-                                      x2="9" 
-                                      y2="9" 
-                                      stroke="#44403c" 
-                                      strokeWidth="2" 
-                                      strokeLinecap="round"
-                                    />
-                                    <line 
-                                      x1="9" 
-                                      y1="1" 
-                                      x2="1" 
-                                      y2="9" 
-                                      stroke="#44403c" 
-                                      strokeWidth="2" 
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                )}
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
-                      </motion.div>
+                        <span className="flex items-center gap-1.5 font-sans text-[10px] tracking-[0.08em] text-stone-500">
+                          {yao?.name ?? ''}
+                          {yao?.isChanging && (
+                            <span className="text-[11px] text-[#a66f69]" aria-label="变爻">{yao.value === 9 ? '○' : '×'}</span>
+                          )}
+                        </span>
+                      </div>
                     );
                   })}
                 </div>
+                <p className="mt-5 font-sans text-[9px] tracking-[0.18em] text-stone-300">自下而上 · 初爻至上爻</p>
               </div>
 
               {/* 变爻提示 */}
@@ -516,8 +405,8 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="pt-8 border-t border-stone-200 space-y-8"
+                  transition={{ duration: 0.55, ease: [0.32, 0.72, 0, 1] }}
+                  className="space-y-8 border-t border-stone-200/70 pt-8"
                 >
                   {/* 本卦与变卦 */}
                   {hexagramAnalysis.mainHexagram && (
@@ -589,8 +478,8 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.2 }}
-                    className="mt-16 flex flex-col items-center gap-2 cursor-pointer"
+                    transition={{ delay: 0.25, duration: 0.5 }}
+                    className="mt-10 flex cursor-pointer flex-col items-center gap-3"
                     onClick={handleDivine}
                     role="button"
                     tabIndex={0}
@@ -607,32 +496,17 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
                         e.stopPropagation();
                         handleDivine();
                       }}
-                      className="w-full max-w-md px-8 py-5 text-white font-serif text-base tracking-[0.2em] rounded-lg bg-[#78716c] hover:bg-[#292524] hover:-translate-y-0.5 active:translate-y-0 transition-[background-color,transform] duration-300 cursor-pointer"
+                      className="min-h-11 w-full max-w-sm cursor-pointer rounded-full bg-[#3d3935] px-7 py-3 font-sans text-[12px] tracking-[0.2em] text-[#f7f3ec] transition-colors duration-500 hover:bg-stone-700"
                     >
-                      {embedded ? '解卦' : '凡事有因，于此寻果'}
+                      {embedded ? '请解此卦' : '循此卦象，继续问答'}
                     </button>
-                    {!embedded && <p className="text-xs text-stone-500 font-sans pointer-events-none">进入决行藏继续解卦</p>}
+                    {!embedded && <p className="pointer-events-none font-sans text-[10px] tracking-[0.08em] text-stone-400">进入决行藏继续解卦</p>}
                   </motion.div>
                 </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* 初始状态提示 - 只在问题确认后显示 */}
-        {isQuestionSet && yaos.length === 0 && !showCoinAnimation && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center space-y-4 py-12"
-          >
-            <Sparkles className="w-10 h-10 mx-auto text-stone-400 mb-4" />
-            <p className="text-sm text-[#666666] font-sans max-w-md mx-auto leading-relaxed">
-              六爻起卦，源自《易经》的古老占卜方法。<br />
-              通过摇动三枚铜钱，共六次，得出卦象。
-            </p>
-          </motion.div>
-        )}
 
         {!embedded && (
           <p className="text-center text-xs text-stone-400 font-sans py-6">

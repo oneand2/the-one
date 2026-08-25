@@ -84,6 +84,7 @@ struct HybridWebContentView: UIViewRepresentable {
         webView.scrollView.showsVerticalScrollIndicator = false
         webView.allowsBackForwardNavigationGestures = false
         webView.overrideUserInterfaceStyle = .light
+        Self.lockWebViewZoom(webView)
         if #available(iOS 16.4, *) {
             webView.isInspectable = true
         }
@@ -117,6 +118,28 @@ struct HybridWebContentView: UIViewRepresentable {
         // 保留 WKWebView，避免 SwiftUI 短暂拆掉 representable 时把页面卸掉。
     }
 
+    /// 按原生 App 处理：禁止捏合/双击缩放。WKWebView 在导航后可能把手势重新打开，所以加载完成后会再锁一次。
+    fileprivate static func lockWebViewZoom(_ webView: WKWebView) {
+        let scrollView = webView.scrollView
+        scrollView.minimumZoomScale = 1
+        scrollView.maximumZoomScale = 1
+        scrollView.bouncesZoom = false
+        scrollView.pinchGestureRecognizer?.isEnabled = false
+
+        func disableZoomGestures(in view: UIView) {
+            for recognizer in view.gestureRecognizers ?? [] {
+                if recognizer is UIPinchGestureRecognizer {
+                    recognizer.isEnabled = false
+                }
+                if let tap = recognizer as? UITapGestureRecognizer, tap.numberOfTapsRequired == 2 {
+                    recognizer.isEnabled = false
+                }
+            }
+        }
+        disableZoomGestures(in: webView)
+        disableZoomGestures(in: scrollView)
+    }
+
     private static let embedBootstrapScript = """
     (() => {
       window.__THEONE_IOS_EMBED__ = true;
@@ -125,10 +148,28 @@ struct HybridWebContentView: UIViewRepresentable {
         if (initialTab && !window.__THEONE_TAB__) window.__THEONE_TAB__ = initialTab;
       } catch (e) {}
       window.__THEONE_TAB__ = window.__THEONE_TAB__ || null;
+      const viewportContent = 'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover';
+      const applyViewport = () => {
+        let meta = document.querySelector('meta[name="viewport"]');
+        if (!meta) {
+          meta = document.createElement('meta');
+          meta.setAttribute('name', 'viewport');
+          (document.head || document.documentElement).appendChild(meta);
+        }
+        if (meta.getAttribute('content') !== viewportContent) {
+          meta.setAttribute('content', viewportContent);
+        }
+      };
+      applyViewport();
+      document.addEventListener('DOMContentLoaded', applyViewport);
       const style = document.createElement('style');
       style.id = 'theone-ios-embed-style';
-      style.textContent = '.web-auth-entry,.theone-install-prompt{display:none!important}[data-ios-embed="true"]::before,[data-ios-embed="true"]::after{display:none!important}';
+      style.textContent = 'html,body{touch-action:pan-x pan-y}.web-auth-entry,.theone-install-prompt{display:none!important}[data-ios-embed="true"]::before,[data-ios-embed="true"]::after{display:none!important}';
       (document.head || document.documentElement).appendChild(style);
+      const stopGesture = (event) => { event.preventDefault(); };
+      document.addEventListener('gesturestart', stopGesture, { capture: true, passive: false });
+      document.addEventListener('gesturechange', stopGesture, { capture: true, passive: false });
+      document.addEventListener('gestureend', stopGesture, { capture: true, passive: false });
       const notify = (type) => {
         try { window.webkit.messageHandlers.theone.postMessage({ type }); } catch (e) {}
       };
@@ -436,6 +477,7 @@ struct HybridWebContentView: UIViewRepresentable {
             isLoadingPage = false
             pageReady = true
             loadState.markReady()
+            HybridWebContentView.lockWebViewZoom(webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -443,6 +485,7 @@ struct HybridWebContentView: UIViewRepresentable {
             loadAttempts = 0
             pageReady = true
             loadState.markReady()
+            HybridWebContentView.lockWebViewZoom(webView)
             synchronizeWebCookiesToNative()
         }
 
@@ -538,6 +581,7 @@ final class HybridWebViewContainer: UIView {
     private var modalBackdropActive = false
     private var contentOffsetObservation: NSKeyValueObservation?
     private var contentSizeObservation: NSKeyValueObservation?
+    private var zoomScaleObservation: NSKeyValueObservation?
 
     init(webView: WKWebView) {
         self.webView = webView
@@ -557,6 +601,10 @@ final class HybridWebViewContainer: UIView {
         }
         contentSizeObservation = webView.scrollView.observe(\.contentSize, options: [.initial, .new]) { [weak self] _, _ in
             Task { @MainActor in self?.updateEdgeFades() }
+        }
+        zoomScaleObservation = webView.scrollView.observe(\.zoomScale, options: [.new]) { scrollView, _ in
+            guard abs(scrollView.zoomScale - 1) > 0.001 else { return }
+            scrollView.setZoomScale(1, animated: false)
         }
     }
 

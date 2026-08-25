@@ -34,8 +34,9 @@ struct RootView: View {
 
 private struct LaunchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var fieldVisible = false
     @State private var markVisible = false
+    @State private var accentVisible = false
+    @State private var ruleVisible = false
     @State private var wordsVisible = false
 
     var body: some View {
@@ -44,54 +45,44 @@ private struct LaunchView: View {
                 AppTheme.background
                     .ignoresSafeArea()
 
-                LaunchField()
-                    .opacity(fieldVisible ? 1 : 0)
-                    .scaleEffect(fieldVisible ? 1 : 0.94)
-
                 VStack(spacing: 0) {
                     ZStack {
-                        Circle()
-                            .fill(AppTheme.warmWhite.opacity(0.76))
-                            .frame(width: 142, height: 142)
-
-                        Circle()
-                            .stroke(AppTheme.gold.opacity(0.13), lineWidth: 0.7)
-                            .frame(width: 142, height: 142)
-
-                        Circle()
-                            .stroke(AppTheme.gold.opacity(0.07), lineWidth: 0.7)
-                            .frame(width: 124, height: 124)
-
                         FourSymbolGlyph(
                             symbol: .juexingcang,
-                            width: 58,
-                            lineHeight: 10.5,
-                            color: AppTheme.ink
+                            width: 48,
+                            lineHeight: 8,
+                            color: AppTheme.stone800
                         )
+                        .frame(width: 48, height: 38)
 
-                        RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                            .fill(AppTheme.cinnabar.opacity(0.88))
-                            .frame(width: 5, height: 18)
-                            .offset(x: 49, y: 45)
+                        RoundedRectangle(cornerRadius: 1, style: .continuous)
+                            .fill(AppTheme.cinnabar.opacity(0.72))
+                            .frame(width: 3, height: 13)
+                            .offset(x: 36, y: 25)
+                            .opacity(accentVisible ? 1 : 0)
+                            .offset(y: accentVisible ? 0 : 5)
                     }
-                    .scaleEffect(markVisible ? 1 : 0.82)
+                    .scaleEffect(markVisible ? 1 : 0.9)
                     .opacity(markVisible ? 1 : 0)
 
                     Rectangle()
-                        .fill(AppTheme.gold.opacity(0.42))
-                        .frame(width: 34, height: 0.7)
-                        .padding(.top, 31)
+                        .fill(AppTheme.gold.opacity(0.38))
+                        .frame(width: 30, height: 0.7)
+                        .padding(.top, 29)
                         .padding(.bottom, 19)
-                        .scaleEffect(x: wordsVisible ? 1 : 0.15, y: 1)
+                        .scaleEffect(x: ruleVisible ? 1 : 0.08, y: 1)
+                        .opacity(ruleVisible ? 1 : 0)
 
                     Text("世间即道场，人生是修行")
                         .font(.kaiti(17))
                         .tracking(2.6)
-                        .foregroundStyle(AppTheme.stone700)
-                        .multilineTextAlignment(.center)
+                        .foregroundStyle(AppTheme.stone600)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.9)
                         .opacity(wordsVisible ? 1 : 0)
-                        .offset(y: wordsVisible ? 0 : 9)
+                        .offset(y: wordsVisible ? 0 : 8)
                 }
+                .frame(width: proxy.size.width - 48)
                 .position(x: proxy.size.width / 2, y: proxy.size.height * 0.46)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -100,67 +91,26 @@ private struct LaunchView: View {
         .accessibilityLabel("二，世间即道场，人生是修行")
         .onAppear {
             guard !reduceMotion else {
-                fieldVisible = true
                 markVisible = true
+                accentVisible = true
+                ruleVisible = true
                 wordsVisible = true
                 return
             }
 
-            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.90)) {
-                fieldVisible = true
-            }
-            withAnimation(.spring(response: 0.72, dampingFraction: 0.86).delay(0.08)) {
+            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.58).delay(0.04)) {
                 markVisible = true
             }
-            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.68).delay(0.28)) {
+            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.42).delay(0.20)) {
+                accentVisible = true
+            }
+            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.52).delay(0.30)) {
+                ruleVisible = true
+            }
+            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.62).delay(0.43)) {
                 wordsVisible = true
             }
         }
-    }
-}
-
-/// 像宣纸上极淡的圆规痕：暗示「道场」与循环，但不与品牌符号争夺视觉中心。
-private struct LaunchField: View {
-    var body: some View {
-        Canvas { context, size in
-            let center = CGPoint(x: size.width / 2, y: size.height * 0.46)
-            let radii: [(CGFloat, Double)] = [
-                (118, 0.10),
-                (190, 0.065),
-                (278, 0.035)
-            ]
-
-            for (radius, opacity) in radii {
-                let rect = CGRect(
-                    x: center.x - radius,
-                    y: center.y - radius,
-                    width: radius * 2,
-                    height: radius * 2
-                )
-                context.stroke(
-                    Path(ellipseIn: rect),
-                    with: .color(AppTheme.gold.opacity(opacity)),
-                    lineWidth: 0.7
-                )
-            }
-
-            var axisMarks = Path()
-            axisMarks.move(to: CGPoint(x: center.x, y: center.y - 199))
-            axisMarks.addLine(to: CGPoint(x: center.x, y: center.y - 181))
-            axisMarks.move(to: CGPoint(x: center.x, y: center.y + 181))
-            axisMarks.addLine(to: CGPoint(x: center.x, y: center.y + 199))
-            axisMarks.move(to: CGPoint(x: center.x - 199, y: center.y))
-            axisMarks.addLine(to: CGPoint(x: center.x - 181, y: center.y))
-            axisMarks.move(to: CGPoint(x: center.x + 181, y: center.y))
-            axisMarks.addLine(to: CGPoint(x: center.x + 199, y: center.y))
-            context.stroke(
-                axisMarks,
-                with: .color(AppTheme.gold.opacity(0.10)),
-                lineWidth: 0.7
-            )
-        }
-        .ignoresSafeArea()
-        .accessibilityHidden(true)
     }
 }
 

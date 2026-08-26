@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">转叉狗：壁炉旁木轮中的厨房犬</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M23 110H337" stroke="#71857E" stroke-opacity=".2" stroke-linecap="round"/>
+  <g transform="translate(39 19)" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="72" cy="52" r="43" fill="#CDD6CC" fill-opacity=".28" stroke-opacity=".58" stroke-width="1.3"/>
+    <circle cx="72" cy="52" r="34" fill="#F4F1E8" stroke-opacity=".4" stroke-width="1"/>
+    <g stroke-opacity=".28" stroke-width=".9">
+      <path d="M72 9V18M72 86V95M29 52H38M106 52H115M42 22L49 29M95 75L102 82M42 82L49 75M95 29L102 22"/>
+    </g>
+    <path d="M50 59C50 51 56 46 66 46H78C85 46 91 49 94 54L99 56L96 61H87C84 66 77 69 67 68L56 67Z" fill="#B79D80" fill-opacity=".72" stroke-opacity=".62" stroke-width="1.15"/>
+    <path d="M57 47L53 39L63 45M86 48L91 41L93 53M59 67L56 76M83 67L87 76" stroke-opacity=".62" stroke-width="1.25"/>
+    <circle cx="91.5" cy="54" r="1.4" fill="#B66D5C" stroke="none"/>
+  </g>
+  <path d="M154 67C185 67 203 68 226 67" stroke="#776956" stroke-opacity=".64" stroke-width="1.2" stroke-dasharray="2.5 3"/>
+  <g transform="translate(222 26)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 81V24H92V81" fill="#E5D8CA" fill-opacity=".36" stroke="#776956" stroke-opacity=".46" stroke-width="1.1"/>
+    <path d="M30 81C31 60 39 48 54 45C72 48 80 59 81 81Z" fill="#F4F1E8" stroke="#776956" stroke-opacity=".4" stroke-width="1"/>
+    <g fill="#B66D5C" fill-opacity=".6" stroke="#A86456" stroke-opacity=".34" stroke-width=".8">
+      <path d="M47 79C41 72 44 64 49 59C50 67 57 69 56 79Z"/>
+      <path d="M59 79C55 72 60 65 64 61C67 70 71 72 68 79Z"/>
+    </g>
+    <path d="M7 51H99M13 47V55M93 47V55" stroke="#56645A" stroke-opacity=".62" stroke-width="1.2"/>
+    <path d="M39 51C46 45 61 45 68 51C61 57 46 57 39 51Z" fill="#B79D80" fill-opacity=".68" stroke="#776956" stroke-opacity=".54" stroke-width="1"/>
+  </g>
+  <g fill="#71857E" fill-opacity=".24"><circle cx="191" cy="35" r="1.1"/><circle cx="208" cy="24" r=".8"/><circle cx="326" cy="22" r="1"/></g>
+</svg>

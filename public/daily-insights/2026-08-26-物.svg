@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">无叶花：地下寄生并暂时困住甲虫的Hydnora africana</title>
+  <rect width="360" height="136" fill="#F4F1E8"/>
+  <path d="M0 76C76 72 136 79 199 75C254 71 305 77 360 72V136H0V76Z" fill="#E5D8CA" fill-opacity=".5"/>
+  <path d="M0 76C76 72 136 79 199 75C254 71 305 77 360 72" stroke="#776956" stroke-opacity=".34" stroke-width="1"/>
+  <g transform="translate(82 18)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M69 60C58 47 57 32 65 19C76 31 82 42 82 57" fill="#B66D5C" fill-opacity=".58" stroke="#A86456" stroke-opacity=".66" stroke-width="1.25"/>
+    <path d="M83 58C83 40 91 26 106 17C108 36 101 50 94 61" fill="#B66D5C" fill-opacity=".66" stroke="#A86456" stroke-opacity=".66" stroke-width="1.25"/>
+    <path d="M95 62C105 47 119 41 133 44C127 58 116 67 101 70" fill="#B66D5C" fill-opacity=".54" stroke="#A86456" stroke-opacity=".62" stroke-width="1.2"/>
+    <path d="M64 61C79 56 94 57 104 68C98 79 74 82 62 69Z" fill="#9C866B" fill-opacity=".7" stroke="#776956" stroke-opacity=".58" stroke-width="1.2"/>
+    <path d="M76 65C82 61 91 62 96 68C92 73 81 74 76 69Z" fill="#F3F1E9" fill-opacity=".72" stroke="#56645A" stroke-opacity=".35" stroke-width=".9"/>
+    <g transform="translate(82 62)" fill="#56645A" fill-opacity=".72" stroke="#56645A" stroke-opacity=".56" stroke-width=".8">
+      <ellipse cx="4" cy="4" rx="3.2" ry="4"/>
+      <path d="M1 2L-3 0M1 5L-3 7M7 2L11 0M7 5L11 7" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M82 79C74 91 62 96 46 99M83 78C94 90 108 95 125 99M62 93C52 87 40 84 28 87M105 92C117 85 131 84 144 88" stroke="#776956" stroke-opacity=".52" stroke-width="2"/>
+    <path d="M47 99C64 104 105 104 125 99" stroke="#B79D80" stroke-opacity=".58" stroke-width="4"/>
+  </g>
+  <g transform="translate(246 10)" stroke="#71857E" stroke-opacity=".4" stroke-linecap="round">
+    <path d="M57 63C53 44 52 27 55 8M55 28C45 22 37 19 27 18M54 41C65 33 72 28 80 24" stroke-width="1.15"/>
+    <path d="M27 18C34 9 44 8 52 13C45 22 37 24 27 18ZM80 24C73 14 64 14 57 20C63 28 72 29 80 24Z" fill="#CDD6CC" fill-opacity=".62" stroke-width="1"/>
+    <path d="M57 64C52 80 44 96 33 109M57 64C67 79 74 91 84 106M52 78L36 82M66 78L81 72" stroke="#776956" stroke-opacity=".38" stroke-width="1"/>
+  </g>
+  <g fill="#71857E" fill-opacity=".22"><circle cx="28" cy="35" r="1.1"/><circle cx="46" cy="24" r=".8"/><circle cx="208" cy="31" r="1"/></g>
+</svg>

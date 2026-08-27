@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { tossOnce, getYaoInfo, type YaoInfo } from '@/utils/liuyaoLogic';
+import { dayanOnce, getYaoInfo, type DayanResult, type YaoInfo } from '@/utils/liuyaoLogic';
+import { DayanAnimation } from './DayanAnimation';
 import { analyzeHexagram, type HexagramAnalysis } from '@/utils/iching-logic';
 import type { ImportData } from '@/types/import-data';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
@@ -33,7 +34,11 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
   const [hexagramAnalysis, setHexagramAnalysis] = useState<HexagramAnalysis | null>(null);
   const reduceMotion = useReducedMotion();
   const castRunRef = useRef(0);
-  
+  // 大衍筮法动画：六爻的三变过程一次算定，逐爻重演
+  const [dayanCast, setDayanCast] = useState<DayanResult[] | null>(null);
+  const [animIndex, setAnimIndex] = useState(0);
+  const yaoResolverRef = useRef<(() => void) | null>(null);
+
   const pendingImportKey = 'juexingcang-import-pending';
   const inputPresetKey = 'juexingcang-input-preset';
   const presetQuestion = searchParams.get('question');
@@ -46,14 +51,15 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
     return () => window.clearTimeout(syncTimer);
   }, [embedded, presetQuestion]);
 
-  // 用户确认问题后，六次铜钱结果立即一次性生成并固定；前端只负责逐爻揭示。
-  // 这样动画帧率、暂停或页面重绘都不会改变最终卦象。
+  // 用户确认问题后，六爻的大衍筮法（蓍草三变）结果立即一次性算定并固定；
+  // 前端只负责逐爻重演三变过程。这样动画帧率、暂停或页面重绘都不会改变最终卦象。
   useEffect(() => {
     const castQuestion = question.trim();
     if (!isQuestionSet || !castQuestion) return;
 
     const runID = ++castRunRef.current;
-    const completedCast = Array.from({ length: 6 }, () => getYaoInfo(tossOnce()));
+    const cast = Array.from({ length: 6 }, () => dayanOnce());
+    const completedCast = cast.map((r) => getYaoInfo(r.value));
     let cancelled = false;
 
     const reveal = async () => {
@@ -62,24 +68,31 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
       setYaos([]);
       setHexagramAnalysis(null);
       setIsTossing(true);
+      setAnimIndex(0);
 
       if (reduceMotion) {
+        setDayanCast(null);
         setYaos(completedCast);
         setHexagramAnalysis(analyzeHexagram(completedCast.map((yao) => yao.value)));
         setIsTossing(false);
         return;
       }
 
+      setDayanCast(cast);
       await new Promise((resolve) => window.setTimeout(resolve, 260));
-      for (let count = 1; count <= completedCast.length; count += 1) {
+      for (let i = 0; i < cast.length; i += 1) {
         if (cancelled || castRunRef.current !== runID) return;
-        setYaos(completedCast.slice(0, count));
-        if (count < completedCast.length) {
-          await new Promise((resolve) => window.setTimeout(resolve, 390));
-        }
+        setAnimIndex(i);
+        // 等待本爻的三变动画演完，再揭示该爻
+        await new Promise<void>((resolve) => {
+          yaoResolverRef.current = resolve;
+        });
+        if (cancelled || castRunRef.current !== runID) return;
+        setYaos(completedCast.slice(0, i + 1));
       }
       await new Promise((resolve) => window.setTimeout(resolve, 360));
       if (!cancelled && castRunRef.current === runID) {
+        setDayanCast(null);
         setHexagramAnalysis(analyzeHexagram(completedCast.map((yao) => yao.value)));
         setIsTossing(false);
       }
@@ -90,6 +103,25 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
       cancelled = true;
     };
   }, [isQuestionSet, question, reduceMotion]);
+
+  // 某一爻的大衍动画演完
+  const handleDayanYaoComplete = () => {
+    const resolve = yaoResolverRef.current;
+    yaoResolverRef.current = null;
+    resolve?.();
+  };
+
+  // 略过仪式：直接呈现已算定的卦象（结果不变，只跳过动画）
+  const skipCastAnimation = () => {
+    if (!dayanCast) return;
+    castRunRef.current += 1; // 作废逐爻动画循环
+    yaoResolverRef.current = null;
+    const all = dayanCast.map((r) => getYaoInfo(r.value));
+    setDayanCast(null);
+    setYaos(all);
+    setHexagramAnalysis(analyzeHexagram(all.map((yao) => yao.value)));
+    setIsTossing(false);
+  };
 
   // 确认问题
   const handleConfirmQuestion = () => {
@@ -333,9 +365,37 @@ export const LiuYaoView: React.FC<LiuYaoViewProps> = ({
               <div className="flex items-center justify-between border-y border-stone-200/70 py-3">
                 <span className="font-sans text-[9px] tracking-[0.3em] text-stone-400">六 爻 成 象</span>
                 <span className="font-sans text-[9px] tabular-nums tracking-[0.18em] text-stone-400" aria-live="polite">
-                  {hexagramAnalysis ? '卦象已定' : `正在成卦 · ${yaos.length}/6`}
+                  {hexagramAnalysis ? '卦象已定' : `大衍成卦 · ${yaos.length}/6`}
                 </span>
               </div>
+
+              {/* 大衍筮法（蓍草三变）仪式动画 */}
+              <AnimatePresence>
+                {isTossing && dayanCast && animIndex < dayanCast.length && (
+                  <motion.div
+                    key="dayan-stage"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.45, ease: [0.32, 0.72, 0, 1] }}
+                    className="relative"
+                  >
+                    <DayanAnimation
+                      key={animIndex}
+                      result={dayanCast[animIndex]}
+                      yaoIndex={animIndex}
+                      onComplete={handleDayanYaoComplete}
+                    />
+                    <button
+                      type="button"
+                      onClick={skipCastAnimation}
+                      className="absolute right-0 top-1 min-h-11 px-2 font-sans text-[9px] tracking-[0.24em] text-stone-300 transition-colors duration-500 hover:text-stone-500"
+                    >
+                      略过仪式
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <div className="flex min-h-[230px] w-full flex-col items-center justify-center py-4" aria-label={`六爻已显现 ${yaos.length} 爻`}>
                 <div className="flex flex-col gap-[15px]">

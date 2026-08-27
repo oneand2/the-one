@@ -18,7 +18,7 @@ export const LIFETIME_VIP_PACKAGE: CoinPackage = {
   name: '终身 VIP',
   description: '一次开通，之后使用全部功能不再消耗铜币',
   coins: 0,
-  amountCents: 39900,
+  amountCents: 39800,
   kind: 'lifetime_vip',
   featured: true,
 };

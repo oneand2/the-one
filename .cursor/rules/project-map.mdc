@@ -52,7 +52,7 @@ alwaysApply: true
 - 服务端 Supabase 使用 `src/utils/supabase/server.ts`。
 - 跨用户或管理员级操作使用 `src/utils/supabase/admin.ts`，需要 `SUPABASE_SERVICE_ROLE_KEY`。
 - 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、`wechat_identities`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
-- 终身 VIP 可购买：网页 `/shop` 支付宝/微信商品 `vip_lifetime`（¥399）；iOS 非消耗型 IAP `com.theone.er.vip.lifetime`。入账后写入 `user_profiles.vip_expires_at` 哨兵值，聊天与解卦不再扣铜币。生产库需执行 `supabase-lifetime-vip.sql`。
+- 终身 VIP 可购买：网页 `/shop` 支付宝/微信商品 `vip_lifetime`（¥398）；iOS 非消耗型 IAP `com.theone.er.vip.lifetime`。入账后写入 `user_profiles.vip_expires_at` 哨兵值，聊天与解卦不再扣铜币。生产库需执行 `supabase-lifetime-vip.sql`。
 - `README.md` 说明 `daoyoushuju` 通过 `type` 和 `input_data` JSONB 存储保存记录。
 
 ## 重要 API 区域

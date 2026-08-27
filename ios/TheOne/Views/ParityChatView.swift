@@ -256,7 +256,7 @@ struct ParityChatView: View {
                         if !liuyaoMode { resetLiuYao() }
                     }
                 } label: {
-                    HStack(spacing: 5) { Circle().fill(liuyaoMode ? AppTheme.stone700 : AppTheme.stone300).frame(width: 6, height: 6); Text("六爻") }
+                    HStack(spacing: 5) { Circle().fill(liuyaoMode ? AppTheme.stone700 : AppTheme.stone300).frame(width: 6, height: 6); Text("起卦") }
                 }
                 Button { showImport = true } label: { Label("导入数据", systemImage: "tray.and.arrow.down") }
                 Spacer()

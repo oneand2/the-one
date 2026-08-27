@@ -2139,7 +2139,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                     text-[10px] tracking-[0.2em] font-light transition-colors duration-300
                     ${liuyaoMode ? 'text-stone-600' : 'text-stone-400 group-hover:text-stone-500'}
                   `}>
-                    六爻
+                    起卦
                   </span>
                 </button>
 

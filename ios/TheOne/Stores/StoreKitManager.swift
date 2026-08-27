@@ -39,7 +39,7 @@ final class StoreKitManager: ObservableObject {
 
     /// 与网页 `SHOP_PACKAGES` / Configuration.storekit 对齐，避免 StoreKit 未返回时整栏空白。
     private static let catalog: [(id: String, name: String, description: String, coins: Int, price: String, kind: StoreProductKind)] = [
-        (lifetimeVIPProductID, "终身 VIP", "一次开通，之后使用全部功能不再消耗铜币", 0, "¥399.00", .lifetimeVip),
+        (lifetimeVIPProductID, "终身 VIP", "一次开通，之后使用全部功能不再消耗铜币", 0, "¥398.00", .lifetimeVip),
         ("com.theone.er.coins.100", "初见", "适合轻量体验 AI 对话与解读服务", 100, "¥9.90", .coins),
         ("com.theone.er.coins.360", "深观", "适合持续使用与多轮深入交流", 360, "¥29.90", .coins),
         ("com.theone.er.coins.800", "长明", "适合长期使用数字内容服务", 800, "¥59.90", .coins),

@@ -2,6 +2,14 @@
 import { useState, useEffect } from "react";
 import { isIOSEmbed } from "@/utils/iosEmbed";
 
+function isMobileBrowser() {
+  const ua = navigator.userAgent;
+  if (/iPhone|iPod|iPad|Android|Mobile/i.test(ua)) return true;
+  // iPadOS 13+ 默认使用桌面版 Safari UA，需靠触控点数识别
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
 export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -12,35 +20,49 @@ export default function InstallPrompt() {
     // 已经运行在 SwiftUI App 内，不再展示浏览器的 PWA 安装引导。
     if (isIOSEmbed()) return;
 
+    // 电脑网页端不弹自定义安装卡；桌面 Chrome/Edge 也会发 beforeinstallprompt。
+    if (!isMobileBrowser()) return;
+
     // 1. 检查是否已经是 APP 模式 (Standalone)
-    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
-    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    const standalone = window.matchMedia("(display-mode: standalone)").matches;
+    setIsStandalone(standalone);
+    if (standalone) return;
 
     // 2. 检查用户以前是否关闭过 (避免每次都弹，烦人)
-    // 如果你想测试，可以先把这行注释掉
     const lastDismissed = localStorage.getItem("installPromptDismissed");
     if (lastDismissed && Date.now() - parseInt(lastDismissed) < 7 * 24 * 60 * 60 * 1000) {
-      // 如果 7 天内关闭过，就不弹
       return;
     }
 
     // 3. 判断设备类型
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent)
+      || (/macintosh/.test(userAgent) && navigator.maxTouchPoints > 1);
     setIsIOS(isIosDevice);
 
-    // 4. 安卓：监听浏览器的安装事件
-    window.addEventListener("beforeinstallprompt", (e) => {
+    const timeouts: number[] = [];
+    const showLater = () => {
+      timeouts.push(window.setTimeout(() => setIsVisible(true), 3000));
+    };
+
+    const onBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // 延迟 3 秒显示，不要一进来就挡住视线
-      setTimeout(() => setIsVisible(true), 3000);
-    });
+      showLater();
+    };
+
+    // 4. 安卓：监听浏览器的安装事件
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
 
     // 5. iOS：直接延迟显示教程
     if (isIosDevice) {
-      setTimeout(() => setIsVisible(true), 3000);
+      showLater();
     }
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      timeouts.forEach((id) => window.clearTimeout(id));
+    };
   }, []);
 
   // 点击"安装"按钮 (仅安卓有效)
@@ -58,17 +80,15 @@ export default function InstallPrompt() {
   // 点击关闭
   const handleDismiss = () => {
     setIsVisible(false);
-    // 记录关闭时间，7天内不再打扰
     localStorage.setItem("installPromptDismissed", Date.now().toString());
   };
 
   if (!isVisible || isStandalone) return null;
 
   return (
-    <div className="theone-install-prompt fixed bottom-4 left-4 right-4 z-50 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-black/5 md:left-auto md:right-4 md:w-96 animate-in slide-in-from-bottom-10 fade-in duration-500">
+    <div className="theone-install-prompt fixed bottom-4 left-4 right-4 z-50 rounded-xl bg-white p-4 shadow-2xl ring-1 ring-black/5 animate-in slide-in-from-bottom-10 fade-in duration-500">
       <div className="flex items-start justify-between">
         <div className="flex gap-4">
-          {/* 这里显示的 App 图标，自动用你 public 里的图 */}
           <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
              <img src="/icon-192.png" alt="App Icon" className="h-full w-full object-cover" />
           </div>
@@ -88,7 +108,6 @@ export default function InstallPrompt() {
 
       <div className="mt-4">
         {isIOS ? (
-          // iOS 显示教程
           <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
             <p className="flex items-center gap-2">
               1. 点击浏览器底部的 <span className="text-xl">Share</span> 分享按钮
@@ -98,7 +117,6 @@ export default function InstallPrompt() {
             </p>
           </div>
         ) : (
-          // 安卓显示按钮
           <button
             onClick={handleInstallClick}
             className="w-full rounded-lg bg-black py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-gray-800 active:scale-95 transition-all"

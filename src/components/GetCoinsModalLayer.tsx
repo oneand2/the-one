@@ -25,7 +25,7 @@ export function GetCoinsModalLayer() {
         <h2 className="text-center text-xl font-serif text-stone-900">铜币与数字内容服务</h2>
         <div className="mt-5 space-y-3 text-sm leading-7 text-stone-600">
           <p>铜币是本站数字内容服务的使用额度，可用于 AI 对话、深度思考、联网检索与 AI 解卦。</p>
-          <p>也可以一次开通终身 VIP（399 元），之后使用全部功能不再消耗铜币。</p>
+          <p>也可以一次开通终身 VIP（398 元），之后使用全部功能不再消耗铜币。</p>
           <p>购买时将进入支付宝或微信支付；支付成功后权益直接增加到当前账户，全程由系统自动完成。</p>
           <p>铜币不可转赠、交易、提现或兑换现金。</p>
         </div>

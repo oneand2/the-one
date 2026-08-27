@@ -14,7 +14,7 @@ struct RootView: View {
             }
         }
         .task {
-            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            try? await Task.sleep(nanoseconds: 2_100_000_000)
             if reduceMotion {
                 showLaunch = false
             } else {
@@ -34,10 +34,14 @@ struct RootView: View {
 
 private struct LaunchView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var markVisible = false
-    @State private var accentVisible = false
+    @State private var firstStroke: CGFloat = 0
+    @State private var secondStroke: CGFloat = 0
+    @State private var mountVisible = false
     @State private var ruleVisible = false
     @State private var wordsVisible = false
+    @State private var captionVisible = false
+
+    private let slogan = Array("世间即道场，人生是修行")
 
     var body: some View {
         GeometryReader { proxy in
@@ -45,45 +49,53 @@ private struct LaunchView: View {
                 AppTheme.background
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    ZStack {
-                        FourSymbolGlyph(
-                            symbol: .juexingcang,
-                            width: 48,
-                            lineHeight: 8,
-                            color: AppTheme.stone800
-                        )
-                        .frame(width: 48, height: 38)
+                // 装裱细框：沿屏幕四边内收 18pt，把「空」围成「境」。
+                Rectangle()
+                    .stroke(AppTheme.stone300.opacity(0.9), lineWidth: 0.75)
+                    .padding(18)
+                    .opacity(mountVisible ? 1 : 0)
 
-                        RoundedRectangle(cornerRadius: 1, style: .continuous)
-                            .fill(AppTheme.cinnabar.opacity(0.72))
-                            .frame(width: 3, height: 13)
-                            .offset(x: 36, y: 25)
-                            .opacity(accentVisible ? 1 : 0)
-                            .offset(y: accentVisible ? 0 : 5)
+                VStack(spacing: 0) {
+                    // 老阳：两个等长阳爻相叠。第一笔自左伸出，第二笔自右应回——连接之上的连接。
+                    VStack(spacing: 14) {
+                        LaunchBar(width: 56, height: 7, color: AppTheme.stone800, progress: firstStroke, anchor: .leading)
+                        LaunchBar(width: 56, height: 7, color: AppTheme.stone800, progress: secondStroke, anchor: .trailing)
                     }
-                    .scaleEffect(markVisible ? 1 : 0.9)
-                    .opacity(markVisible ? 1 : 0)
 
                     Rectangle()
                         .fill(AppTheme.gold.opacity(0.38))
-                        .frame(width: 30, height: 0.7)
-                        .padding(.top, 29)
-                        .padding(.bottom, 19)
+                        .frame(width: 26, height: 0.7)
+                        .padding(.top, 34)
+                        .padding(.bottom, 20)
                         .scaleEffect(x: ruleVisible ? 1 : 0.08, y: 1)
                         .opacity(ruleVisible ? 1 : 0)
 
-                    Text("世间即道场，人生是修行")
-                        .font(.kaiti(17))
-                        .tracking(2.6)
-                        .foregroundStyle(AppTheme.stone600)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.9)
-                        .opacity(wordsVisible ? 1 : 0)
-                        .offset(y: wordsVisible ? 0 : 8)
+                    HStack(spacing: 2.6) {
+                        ForEach(Array(slogan.enumerated()), id: \.offset) { index, character in
+                            Text(String(character))
+                                .font(.kaiti(17))
+                                .foregroundStyle(AppTheme.stone600)
+                                .opacity(wordsVisible ? 1 : 0)
+                                .offset(y: wordsVisible ? 0 : 7)
+                                .animation(
+                                    .timingCurve(0.22, 0.68, 0, 1, duration: 0.46)
+                                        .delay(1.05 + Double(index) * 0.03),
+                                    value: wordsVisible
+                                )
+                        }
+                    }
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.9)
                 }
                 .frame(width: proxy.size.width - 48)
                 .position(x: proxy.size.width / 2, y: proxy.size.height * 0.46)
+
+                Text("用之则行　舍之则藏")
+                    .font(.kaiti(10))
+                    .tracking(3.4)
+                    .foregroundStyle(AppTheme.stone500.opacity(0.6))
+                    .opacity(captionVisible ? 1 : 0)
+                    .position(x: proxy.size.width / 2, y: proxy.size.height - proxy.safeAreaInsets.bottom - 44)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -91,26 +103,52 @@ private struct LaunchView: View {
         .accessibilityLabel("二，世间即道场，人生是修行")
         .onAppear {
             guard !reduceMotion else {
-                markVisible = true
-                accentVisible = true
+                mountVisible = true
+                firstStroke = 1
+                secondStroke = 1
                 ruleVisible = true
                 wordsVisible = true
+                captionVisible = true
                 return
             }
 
-            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.58).delay(0.04)) {
-                markVisible = true
+            withAnimation(.easeOut(duration: 0.4)) {
+                mountVisible = true
             }
-            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.42).delay(0.20)) {
-                accentVisible = true
+            withAnimation(.timingCurve(0.5, 0.06, 0.24, 1, duration: 0.5).delay(0.15)) {
+                firstStroke = 1
             }
-            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.52).delay(0.30)) {
+            withAnimation(.timingCurve(0.5, 0.06, 0.24, 1, duration: 0.5).delay(0.45)) {
+                secondStroke = 1
+            }
+            withAnimation(.timingCurve(0.32, 0.72, 0, 1, duration: 0.42).delay(0.95)) {
                 ruleVisible = true
             }
-            withAnimation(.timingCurve(0.22, 0.68, 0, 1, duration: 0.62).delay(0.43)) {
-                wordsVisible = true
+            // 逐字入场由每个字自带的 delay 驱动，这里直接置位。
+            wordsVisible = true
+            withAnimation(.easeOut(duration: 0.38).delay(1.35)) {
+                captionVisible = true
             }
         }
+    }
+}
+
+/// 一根阳爻：纯几何直边，用横向遮罩从 anchor 一侧「写」出。
+private struct LaunchBar: View {
+    var width: CGFloat
+    var height: CGFloat
+    var color: Color
+    var progress: CGFloat
+    var anchor: UnitPoint
+
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: width, height: height)
+            .mask {
+                Rectangle()
+                    .scaleEffect(x: max(progress, 0.0001), anchor: anchor)
+            }
     }
 }
 

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">七年徒：住在师傅家中学习与劳作的伦敦学徒</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M19 112V35L37 21H225L241 35V112" fill="#CDD6CC" fill-opacity=".24" stroke="#56645A" stroke-opacity=".48" stroke-width="1.1" stroke-linejoin="round"/>
+  <path d="M12 35H248L229 18H33L12 35Z" fill="#B79D80" fill-opacity=".34" stroke="#776956" stroke-opacity=".42" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M27 73H226M173 35V73" stroke="#56645A" stroke-opacity=".28" stroke-width="1"/>
+  <g transform="translate(181 42)" stroke="#71857E" stroke-opacity=".48" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 20H34V27H0Z" fill="#F4F1E8" stroke-width="1"/>
+    <path d="M4 27V32M30 27V32M3 17C12 14 24 14 32 17" stroke-width="1"/>
+    <path d="M7 12V18M27 12V18" stroke-width=".9"/>
+  </g>
+  <g transform="translate(61 54)" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="36" cy="7" r="5.5" fill="#B79D80" fill-opacity=".68" stroke-opacity=".54" stroke-width="1.05"/>
+    <path d="M35 13L30 31L39 43M32 22L17 32M32 22L49 28M39 43L30 57M39 43L47 57" stroke-opacity=".68" stroke-width="1.45"/>
+    <path d="M0 34H67V40H0Z" fill="#9AAB9B" fill-opacity=".5" stroke-opacity=".48" stroke-width="1.05"/>
+    <path d="M7 40V59M59 40V59" stroke-opacity=".46" stroke-width="1.15"/>
+    <path d="M17 32L25 28L27 33L19 37Z" fill="#B66D5C" fill-opacity=".66" stroke="#A86456" stroke-opacity=".54" stroke-width=".9"/>
+    <path d="M49 28L55 18M52 17L59 21" stroke="#776956" stroke-opacity=".66" stroke-width="1.4"/>
+  </g>
+  <g transform="translate(270 49)" stroke="#71857E" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="14" cy="6" r="5" fill="#CDD6CC" fill-opacity=".82" stroke-opacity=".45" stroke-width="1"/>
+    <path d="M14 12L13 29M13 18L3 27M13 18L23 25M13 29L7 43M13 29L20 43" stroke-opacity=".5" stroke-width="1.25"/>
+    <path d="M23 25L34 27" stroke="#776956" stroke-opacity=".46" stroke-width="1.1"/>
+  </g>
+  <path d="M22 113C90 109 167 114 235 110C275 108 312 110 340 107" stroke="#71857E" stroke-opacity=".24" stroke-linecap="round"/>
+  <g fill="#71857E" fill-opacity=".24"><circle cx="263" cy="28" r="1.1"/><circle cx="285" cy="21" r=".8"/><circle cx="321" cy="38" r="1"/></g>
+</svg>

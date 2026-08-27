@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">午餐盒：随孟买铁路往返家庭与办公室的午餐</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 101C74 94 127 99 181 96C239 92 291 95 360 88V136H0V101Z" fill="#CDD6CC" fill-opacity=".3"/>
+  <path d="M0 105H360M0 111H360" stroke="#56645A" stroke-opacity=".28" stroke-width="1"/>
+  <g transform="translate(44 27)" stroke="#56645A" stroke-linejoin="round">
+    <path d="M19 21H113V63H19Z" fill="#CDD6CC" fill-opacity=".55" stroke-opacity=".44" stroke-width="1.05"/>
+    <path d="M27 16H104L113 21H19L27 16Z" fill="#9AAB9B" fill-opacity=".48" stroke-opacity=".42" stroke-width="1"/>
+    <path d="M30 63H42M91 63H103" stroke-opacity=".5" stroke-width="2.2" stroke-linecap="round"/>
+    <path d="M37 31H55V48H37ZM76 31H94V48H76Z" fill="#F4F1E8" stroke="#71857E" stroke-opacity=".38" stroke-width=".9"/>
+    <path d="M61 24V57" stroke="#71857E" stroke-opacity=".28" stroke-width=".9"/>
+  </g>
+  <g transform="translate(203 17)" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="48" cy="24" rx="29" ry="8" fill="#F4F1E8" stroke-opacity=".48" stroke-width="1.1"/>
+    <path d="M19 24V42C19 47 32 51 48 51C64 51 77 47 77 42V24" fill="#B79D80" fill-opacity=".22" stroke-opacity=".5" stroke-width="1.1"/>
+    <ellipse cx="48" cy="42" rx="29" ry="8" fill="#F4F1E8" fill-opacity=".62" stroke-opacity=".42" stroke-width="1"/>
+    <path d="M19 42V60C19 65 32 69 48 69C64 69 77 65 77 60V42" fill="#CDD6CC" fill-opacity=".48" stroke-opacity=".5" stroke-width="1.1"/>
+    <ellipse cx="48" cy="60" rx="29" ry="8" fill="#F4F1E8" fill-opacity=".68" stroke-opacity=".42" stroke-width="1"/>
+    <path d="M19 60V78C19 83 32 87 48 87C64 87 77 83 77 78V60" fill="#9AAB9B" fill-opacity=".44" stroke-opacity=".5" stroke-width="1.1"/>
+    <path d="M27 22C28 4 68 4 69 22" stroke="#776956" stroke-opacity=".55" stroke-width="1.35"/>
+    <circle cx="74" cy="48" r="3.2" fill="#B66D5C" fill-opacity=".74" stroke="none"/>
+  </g>
+  <path d="M26 86C69 80 106 83 151 88C173 90 188 88 205 83" stroke="#71857E" stroke-opacity=".34" stroke-width="1" stroke-dasharray="3 6" stroke-linecap="round"/>
+  <g transform="translate(306 59)" stroke="#776956" stroke-opacity=".46" stroke-linecap="round">
+    <path d="M0 37V7M20 37V0M39 37V11" stroke-width="1"/>
+    <path d="M-5 37H45" stroke-width="1.1"/>
+  </g>
+  <g fill="#71857E" fill-opacity=".24"><circle cx="23" cy="30" r="1"/><circle cx="332" cy="27" r="1.1"/><circle cx="317" cy="37" r=".8"/></g>
+</svg>

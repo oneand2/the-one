@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" fill="none" role="img" aria-labelledby="title">
+  <title id="title">九成血：休息时把红细胞集中进肝脏的玻璃蛙</title>
+  <rect width="360" height="136" fill="#F4F1E8"/>
+  <path d="M22 103C87 86 144 77 208 76C261 74 303 84 343 98C277 106 218 113 154 114C101 115 57 111 22 103Z" fill="#CDD6CC" fill-opacity=".48" stroke="#71857E" stroke-opacity=".32" stroke-width="1.05"/>
+  <path d="M29 102C98 98 161 92 220 86C267 82 306 88 339 98" stroke="#56645A" stroke-opacity=".24" stroke-width="1" stroke-linecap="round"/>
+  <g transform="translate(101 21)" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M43 34C55 18 84 12 111 22C129 29 140 44 138 58C136 72 119 79 101 75C87 72 79 65 69 66C57 66 47 76 34 74C22 72 17 63 22 54C26 46 35 42 43 34Z" fill="#CDD6CC" fill-opacity=".48" stroke-opacity=".56" stroke-width="1.55"/>
+    <circle cx="55" cy="31" r="8" fill="#F4F1E8" fill-opacity=".72" stroke-opacity=".48" stroke-width="1.15"/>
+    <circle cx="56" cy="31" r="2.4" fill="#56645A" fill-opacity=".66" stroke="none"/>
+    <path d="M38 40C23 35 12 31 2 23M26 49C15 50 7 55 0 64M113 30C127 23 140 19 153 19M127 50C141 52 151 57 158 65" stroke-opacity=".5" stroke-width="1.35"/>
+    <path d="M47 68C37 76 30 84 26 94M80 68C77 82 71 91 63 99M108 70C116 81 124 88 136 93" stroke-opacity=".52" stroke-width="1.4"/>
+    <path d="M67 40C78 33 93 36 100 47C96 60 82 66 69 59C65 53 64 46 67 40Z" fill="#B66D5C" fill-opacity=".58" stroke="#A86456" stroke-opacity=".52" stroke-width="1"/>
+    <path d="M49 51C64 47 77 51 90 58M81 29C78 39 77 48 80 60" stroke="#71857E" stroke-opacity=".32" stroke-width=".85"/>
+    <g fill="#B66D5C" fill-opacity=".64" stroke="none">
+      <circle cx="73" cy="43" r="1.7"/><circle cx="82" cy="40" r="1.6"/><circle cx="91" cy="45" r="1.7"/><circle cx="76" cy="51" r="1.5"/><circle cx="86" cy="53" r="1.6"/><circle cx="93" cy="51" r="1.3"/>
+    </g>
+  </g>
+  <g fill="#71857E" fill-opacity=".23"><circle cx="43" cy="33" r="1.1"/><circle cx="62" cy="22" r=".8"/><circle cx="318" cy="39" r="1"/></g>
+</svg>

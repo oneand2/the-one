@@ -50,7 +50,9 @@ export const COIN_PACKAGES: readonly CoinPackage[] = [
 
 export const SHOP_PACKAGES: readonly CoinPackage[] = [LIFETIME_VIP_PACKAGE, ...COIN_PACKAGES];
 
-export function isLifetimeVipPackage(item: Pick<CoinPackage, 'id' | 'kind'> | null | undefined) {
+export function isLifetimeVipPackage(
+  item: { id?: string; kind?: ShopPackageKind } | null | undefined,
+) {
   return item?.kind === 'lifetime_vip' || item?.id === LIFETIME_VIP_PACKAGE_ID;
 }
 

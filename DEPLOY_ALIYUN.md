@@ -63,6 +63,8 @@ cp .env.production.example .env.production
 
 - `WECHAT_LOGIN_APP_ID`：微信开放平台中审核通过的“网站应用” AppID
 - `WECHAT_LOGIN_APP_SECRET`：对应网站应用的 AppSecret，仅放在服务器环境变量中
+- `WECHAT_MINIPROGRAM_APP_ID`：小程序「决行藏」AppID，用于微信内一键登录
+- `WECHAT_MINIPROGRAM_APP_SECRET`：对应小程序 AppSecret，仅放在服务器环境变量中
 
 微信登录授权回调地址固定为：
 

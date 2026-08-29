@@ -1,0 +1,8 @@
+<view class="page">
+  <view class="emblem">
+    <view class="bar"></view>
+    <view class="bar"></view>
+  </view>
+  <text class="title">决行藏</text>
+  <text class="hint">请从网站登录页进入，以确认身份</text>
+</view>

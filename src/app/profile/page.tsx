@@ -177,13 +177,13 @@ export default function ProfilePage() {
                     <p className="mt-1 text-xs font-sans text-emerald-700/75">{wechatStatus.nickname}</p>
                   )}
                   <p className="mt-2 text-xs leading-5 text-stone-500">
-                    以后可以直接在登录页使用微信扫码进入当前账号。
+                    以后可以直接在登录页使用微信进入当前账号。
                   </p>
                 </div>
               ) : (
                 <div>
                   <p className="mb-3 text-xs leading-5 text-stone-500">
-                    绑定后，微信扫码登录仍会进入当前账号，铜币、VIP 和历史记录不会变化。
+                    绑定后，微信登录仍会进入当前账号，铜币、VIP 和历史记录不会变化。
                   </p>
                   <a
                     href="/api/auth/wechat/start?mode=bind&next=/profile"

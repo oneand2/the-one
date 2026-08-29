@@ -1,0 +1,75 @@
+.page {
+  min-height: 100vh;
+  padding: 96px 32px 48px;
+  background: #fbf9f4;
+  color: #3d3935;
+  box-sizing: border-box;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.emblem {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 28px;
+  color: #2c2c2c;
+}
+
+.bar {
+  height: 7px;
+  background: currentColor;
+}
+
+.eyebrow {
+  color: #a8a29e;
+  font-size: 10px;
+  letter-spacing: 0.34em;
+}
+
+.title {
+  margin-top: 14px;
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: #333;
+}
+
+.message {
+  margin-top: 16px;
+  max-width: 280px;
+  color: #8a8175;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.primary,
+.ghost {
+  width: 100%;
+  max-width: 320px;
+  margin: 36px auto 0;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+}
+
+.primary {
+  background: #292524;
+  color: #f8f5ee;
+}
+
+.ghost {
+  margin-top: 16px;
+  background: transparent;
+  color: #8a8175;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.07);
+}

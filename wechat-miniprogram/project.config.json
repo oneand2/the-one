@@ -1,0 +1,14 @@
+{
+  "description": "决行藏 — 网站登录接力",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "es6": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "appid": "wx2d58690a73c9ad7d",
+  "projectname": "juexingcang-web-login",
+  "libVersion": "3.7.0"
+}

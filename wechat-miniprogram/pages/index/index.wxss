@@ -1,0 +1,36 @@
+.page {
+  min-height: 100vh;
+  padding: 120px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.emblem {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 28px;
+}
+
+.bar {
+  height: 7px;
+  background: #2c2c2c;
+}
+
+.title {
+  font-family: "Songti SC", "STSong", serif;
+  font-size: 28px;
+  letter-spacing: 0.16em;
+}
+
+.hint {
+  margin-top: 16px;
+  color: #8a8175;
+  font-size: 13px;
+  line-height: 1.7;
+}

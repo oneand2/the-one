@@ -1,6 +1,11 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getWechatLoginConfig } from '@/lib/auth/wechat';
+import {
+  getWechatLoginConfig,
+  getWechatMiniProgramConfig,
+  isWechatInAppBrowser,
+} from '@/lib/auth/wechat';
 import { createClient } from '@/utils/supabase/server';
 import { LoginForm } from './LoginForm';
 import styles from './login.module.css';
@@ -19,7 +24,9 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = (params.next as string) || '/';
   const message = params.message as string;
-  const wechatEnabled = getWechatLoginConfig().enabled;
+  const inWechat = isWechatInAppBrowser((await headers()).get('user-agent'));
+  const wechatEnabled = getWechatLoginConfig().enabled || (getWechatMiniProgramConfig().enabled && inWechat);
+  const wechatRelay = getWechatMiniProgramConfig().enabled && inWechat;
   
   if (user) {
     redirect(next);

@@ -23,6 +23,12 @@
 # misc
 .DS_Store
 *.pem
+*.key
+wechat-miniprogram/private.*
+wechat-miniprogram/upload-ci.*
+wechat-miniprogram/node_modules/
+wechat-miniprogram/package.json
+wechat-miniprogram/package-lock.json
 
 # debug
 npm-debug.log*

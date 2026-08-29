@@ -1,0 +1,23 @@
+<view class="page">
+  <view class="brand">
+    <view class="emblem" aria-hidden="true">
+      <view class="bar"></view>
+      <view class="bar"></view>
+    </view>
+    <text class="eyebrow">确 认 身 份</text>
+    <text class="title">经由决行藏</text>
+    <text class="message">{{message}}</text>
+  </view>
+
+  <button
+    wx:if="{{status === 'error'}}"
+    class="primary"
+    bindtap="retry"
+  >再试一次</button>
+
+  <button
+    wx:if="{{status === 'ok' && completeUrl}}"
+    class="ghost"
+    bindtap="openSite"
+  >返回网站</button>
+</view>

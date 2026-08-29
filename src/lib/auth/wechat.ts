@@ -5,7 +5,9 @@ const WECHAT_ACCESS_TOKEN_URL = 'https://api.weixin.qq.com/sns/oauth2/access_tok
 const WECHAT_USERINFO_URL = 'https://api.weixin.qq.com/sns/userinfo';
 
 export const WECHAT_OAUTH_COOKIE = 'the_one_wechat_oauth';
+export const WECHAT_MP_TICKET_COOKIE = 'the_one_wechat_mp_ticket';
 export const WECHAT_OAUTH_MAX_AGE_SECONDS = 10 * 60;
+export const WECHAT_MINIPROGRAM_LOGIN_PATH = 'pages/web-login/index';
 
 export type WechatOAuthMode = 'login' | 'bind';
 
@@ -63,6 +65,31 @@ export function getWechatLoginConfig() {
     siteUrl,
     enabled: Boolean(appId && appSecret),
   };
+}
+
+export function getWechatMiniProgramConfig() {
+  const appId = process.env.WECHAT_MINIPROGRAM_APP_ID?.trim() || '';
+  const appSecret = process.env.WECHAT_MINIPROGRAM_APP_SECRET?.trim() || '';
+  const envVersion = (process.env.WECHAT_MINIPROGRAM_ENV || 'release').trim();
+  const loginPath = (process.env.WECHAT_MINIPROGRAM_LOGIN_PATH || WECHAT_MINIPROGRAM_LOGIN_PATH).trim()
+    || WECHAT_MINIPROGRAM_LOGIN_PATH;
+  const siteUrl = resolveSiteUrl();
+
+  return {
+    appId,
+    appSecret,
+    envVersion: envVersion === 'trial' || envVersion === 'develop' ? envVersion : 'release',
+    loginPath: loginPath.replace(/^\//, ''),
+    siteUrl,
+    enabled: Boolean(appId && appSecret),
+  };
+}
+
+export function isWechatInAppBrowser(userAgent: string | null | undefined) {
+  const ua = userAgent || '';
+  if (!/MicroMessenger/i.test(ua)) return false;
+  if (/WindowsWechat|MacWechat|wxwork|WeChatWork/i.test(ua)) return false;
+  return true;
 }
 
 export function sanitizeNextPath(value: string | null | undefined, fallback = '/') {

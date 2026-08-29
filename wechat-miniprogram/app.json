@@ -1,0 +1,15 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/web-login/index",
+    "pages/web-login/webview"
+  ],
+  "window": {
+    "navigationBarTitleText": "决行藏",
+    "navigationBarBackgroundColor": "#FBF9F4",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FBF9F4"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

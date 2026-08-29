@@ -5,12 +5,15 @@ import {
   buildAppAbsoluteUrl,
   buildWechatAuthorizeUrl,
   getWechatLoginConfig,
+  getWechatMiniProgramConfig,
+  isWechatInAppBrowser,
   sanitizeNextPath,
   signWechatOAuthContext,
   WECHAT_OAUTH_COOKIE,
   WECHAT_OAUTH_MAX_AGE_SECONDS,
   type WechatOAuthMode,
 } from '@/lib/auth/wechat';
+import { insertWechatLoginTicket, setWechatTicketCookie } from '@/lib/auth/wechatTickets';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +23,7 @@ function redirectWithMessage(path: string, message: string) {
 
 export async function GET(request: NextRequest) {
   const config = getWechatLoginConfig();
+  const miniProgram = getWechatMiniProgramConfig();
   const requestedMode = request.nextUrl.searchParams.get('mode');
   const mode: WechatOAuthMode = requestedMode === 'bind' ? 'bind' : 'login';
   const next = sanitizeNextPath(
@@ -27,7 +31,7 @@ export async function GET(request: NextRequest) {
     mode === 'bind' ? '/profile' : '/',
   );
 
-  if (!config.enabled) {
+  if (!config.enabled && !(miniProgram.enabled && isWechatInAppBrowser(request.headers.get('user-agent')))) {
     return redirectWithMessage(
       mode === 'bind' ? '/profile' : '/login',
       '微信登录尚未配置，请稍后再试',
@@ -44,6 +48,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
     bindUserId = user.id;
+  }
+
+  if (miniProgram.enabled && isWechatInAppBrowser(request.headers.get('user-agent'))) {
+    const ticketId = randomBytes(16).toString('hex');
+    try {
+      await insertWechatLoginTicket({ id: ticketId, mode, next, bindUserId });
+    } catch (error) {
+      console.error('wechat miniprogram ticket insert failed:', error);
+      return redirectWithMessage(
+        mode === 'bind' ? '/profile' : '/login',
+        '暂时无法打开小程序登录，请稍后重试',
+      );
+    }
+
+    const response = NextResponse.redirect(buildAppAbsoluteUrl('/login/wechat-bridge'));
+    setWechatTicketCookie(response, ticketId, miniProgram.siteUrl.startsWith('https://'));
+    return response;
+  }
+
+  if (!config.enabled) {
+    return redirectWithMessage(
+      mode === 'bind' ? '/profile' : '/login',
+      '微信登录尚未配置，请稍后再试',
+    );
   }
 
   const state = randomBytes(32).toString('hex');

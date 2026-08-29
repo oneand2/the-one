@@ -43,22 +43,37 @@ export type WechatUserInfo = WechatApiError & {
   unionid?: string;
 };
 
+const PRODUCTION_SITE_URL = 'https://www.the-one-and-the-two.com';
+
+export function resolveSiteUrl() {
+  const configured = (process.env.NEXT_PUBLIC_SITE_URL || '').trim().replace(/\/$/, '');
+  if (configured) return configured;
+  if (process.env.NODE_ENV === 'production') return PRODUCTION_SITE_URL;
+  return 'http://localhost:3000';
+}
+
 export function getWechatLoginConfig() {
   const appId = process.env.WECHAT_LOGIN_APP_ID?.trim() || '';
   const appSecret = process.env.WECHAT_LOGIN_APP_SECRET?.trim() || '';
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || '').trim().replace(/\/$/, '');
+  const siteUrl = resolveSiteUrl();
 
   return {
     appId,
     appSecret,
     siteUrl,
-    enabled: Boolean(appId && appSecret && siteUrl),
+    enabled: Boolean(appId && appSecret),
   };
 }
 
 export function sanitizeNextPath(value: string | null | undefined, fallback = '/') {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
   return value;
+}
+
+export function buildAppAbsoluteUrl(path: string, message?: string) {
+  const url = new URL(sanitizeNextPath(path), `${resolveSiteUrl()}/`);
+  if (message) url.searchParams.set('message', message);
+  return url;
 }
 
 export function buildWechatAuthorizeUrl(appId: string, redirectUri: string, state: string) {

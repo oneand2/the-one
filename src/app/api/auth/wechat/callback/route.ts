@@ -1,11 +1,11 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  buildAppAbsoluteUrl,
   deriveWechatAuthIdentity,
   exchangeWechatCode,
   fetchWechatUserInfo,
   getWechatLoginConfig,
-  sanitizeNextPath,
   verifyWechatOAuthContext,
   WECHAT_OAUTH_COOKIE,
 } from '@/lib/auth/wechat';
@@ -22,13 +22,10 @@ type WechatIdentityRow = {
 
 function setRedirect(
   response: NextResponse,
-  request: NextRequest,
   path: string,
   message?: string,
-  siteUrl?: string,
 ) {
-  const url = new URL(sanitizeNextPath(path), siteUrl || request.url);
-  if (message) url.searchParams.set('message', message);
+  const url = buildAppAbsoluteUrl(path, message);
   response.headers.set('Location', url.toString());
   return response;
 }
@@ -61,17 +58,17 @@ async function findWechatIdentity(
 
 export async function GET(request: NextRequest) {
   const config = getWechatLoginConfig();
-  const response = NextResponse.redirect(new URL('/', request.url));
+  const response = NextResponse.redirect(buildAppAbsoluteUrl('/'));
   response.cookies.set(WECHAT_OAUTH_COOKIE, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: config.siteUrl.startsWith('https://'),
     sameSite: 'lax',
     maxAge: 0,
     path: '/api/auth/wechat',
   });
 
   if (!config.enabled) {
-    return setRedirect(response, request, '/login', '微信登录尚未配置', config.siteUrl);
+    return setRedirect(response, '/login', '微信登录尚未配置');
   }
 
   const context = verifyWechatOAuthContext(
@@ -83,10 +80,8 @@ export async function GET(request: NextRequest) {
   if (!context || !returnedState || returnedState !== context.state || !code) {
     return setRedirect(
       response,
-      request,
       context?.mode === 'bind' ? '/profile' : '/login',
       '微信授权已失效，请重新扫码',
-      config.siteUrl,
     );
   }
 
@@ -119,10 +114,10 @@ export async function GET(request: NextRequest) {
     if (context.mode === 'bind') {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !context.bindUserId || user.id !== context.bindUserId) {
-        return setRedirect(response, request, '/login', '原账号登录状态已变化，请重新登录后绑定', config.siteUrl);
+        return setRedirect(response, '/login', '原账号登录状态已变化，请重新登录后绑定');
       }
       if (identity && identity.user_id !== user.id) {
-        return setRedirect(response, request, '/profile', '这个微信已经绑定其他账号', config.siteUrl);
+        return setRedirect(response, '/profile', '这个微信已经绑定其他账号');
       }
 
       const { data: existingForUser, error: existingError } = await admin
@@ -132,7 +127,7 @@ export async function GET(request: NextRequest) {
         .maybeSingle();
       if (existingError) throw existingError;
       if (existingForUser && !identity) {
-        return setRedirect(response, request, '/profile', '当前账号已经绑定另一个微信', config.siteUrl);
+        return setRedirect(response, '/profile', '当前账号已经绑定另一个微信');
       }
 
       if (!identity) {
@@ -156,7 +151,7 @@ export async function GET(request: NextRequest) {
         if (updated.error) throw updated.error;
       }
 
-      return setRedirect(response, request, context.next, '微信绑定成功', config.siteUrl);
+      return setRedirect(response, context.next, '微信绑定成功');
     }
 
     if (!identity) {
@@ -218,15 +213,13 @@ export async function GET(request: NextRequest) {
     const verified = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' });
     if (verified.error || !verified.data.session) throw verified.error || new Error('无法建立登录会话');
 
-    return setRedirect(response, request, context.next, undefined, config.siteUrl);
+    return setRedirect(response, context.next);
   } catch (error) {
     console.error('wechat oauth callback failed:', error);
     return setRedirect(
       response,
-      request,
       context.mode === 'bind' ? '/profile' : '/login',
       '微信登录失败，请稍后重试',
-      config.siteUrl,
     );
   }
 }

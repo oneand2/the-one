@@ -69,6 +69,7 @@ jobs:
 
           PAYMENT_ENV_FILE="$RUNNER_TEMP/payment-production.env"
           umask 077
+          SYNC_WECHAT_LOGIN=0
           {
             printf 'ALIPAY_APP_ID=%s\n' "$ALIPAY_APP_ID"
             printf 'ALIPAY_SELLER_ID=%s\n' "$ALIPAY_SELLER_ID"
@@ -82,9 +83,11 @@ jobs:
             printf 'WECHAT_PAY_CERT_SERIAL_NO=%s\n' "$WECHAT_PAY_CERT_SERIAL_NO"
             printf 'WECHAT_PAY_PUBLIC_KEY_BASE64=%s\n' "$WECHAT_PAY_PUBLIC_KEY_BASE64"
             printf 'WECHAT_PAY_PUBLIC_KEY_ID=%s\n' "$WECHAT_PAY_PUBLIC_KEY_ID"
+            printf 'NEXT_PUBLIC_SITE_URL=%s\n' 'https://www.the-one-and-the-two.com'
             if test -n "${WECHAT_LOGIN_APP_ID:-}" && test -n "${WECHAT_LOGIN_APP_SECRET:-}"; then
               printf 'WECHAT_LOGIN_APP_ID=%s\n' "$WECHAT_LOGIN_APP_ID"
               printf 'WECHAT_LOGIN_APP_SECRET=%s\n' "$WECHAT_LOGIN_APP_SECRET"
+              SYNC_WECHAT_LOGIN=1
             fi
           } > "$PAYMENT_ENV_FILE"
 
@@ -113,7 +116,11 @@ jobs:
             "set -eu; \
              sudo touch '$DEPLOY_PATH/.env.production'; \
              sudo cp '$DEPLOY_PATH/.env.production' '$DEPLOY_PATH/backups/env-production-before-payment-sync'; \
-             sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' -e '/^WECHAT_LOGIN_/d' '$DEPLOY_PATH/.env.production'; \
+             if test '$SYNC_WECHAT_LOGIN' = 1; then \
+               sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' -e '/^WECHAT_LOGIN_/d' -e '/^NEXT_PUBLIC_SITE_URL=/d' '$DEPLOY_PATH/.env.production'; \
+             else \
+               sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' -e '/^NEXT_PUBLIC_SITE_URL=/d' '$DEPLOY_PATH/.env.production'; \
+             fi; \
              sudo sh -c \"printf '\\n' >> '$DEPLOY_PATH/.env.production'; cat /tmp/payment-production.env >> '$DEPLOY_PATH/.env.production'\"; \
              rm -f /tmp/payment-production.env"
 

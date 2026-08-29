@@ -1,8 +1,11 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { getWechatLoginConfig } from '@/lib/auth/wechat';
 import { createClient } from '@/utils/supabase/server';
 import { LoginForm } from './LoginForm';
 import styles from './login.module.css';
+
+export const dynamic = 'force-dynamic';
 
 export default async function LoginPage({
   searchParams,
@@ -16,11 +19,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const next = (params.next as string) || '/';
   const message = params.message as string;
-  const wechatEnabled = Boolean(
-    process.env.WECHAT_LOGIN_APP_ID?.trim()
-    && process.env.WECHAT_LOGIN_APP_SECRET?.trim()
-    && process.env.NEXT_PUBLIC_SITE_URL?.trim()
-  );
+  const wechatEnabled = getWechatLoginConfig().enabled;
   
   if (user) {
     redirect(next);

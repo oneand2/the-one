@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import {
+  buildAppAbsoluteUrl,
   buildWechatAuthorizeUrl,
   getWechatLoginConfig,
   sanitizeNextPath,
@@ -13,10 +14,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-function redirectWithMessage(request: NextRequest, path: string, message: string) {
-  const url = new URL(path, request.url);
-  url.searchParams.set('message', message);
-  return NextResponse.redirect(url);
+function redirectWithMessage(path: string, message: string) {
+  return NextResponse.redirect(buildAppAbsoluteUrl(path, message));
 }
 
 export async function GET(request: NextRequest) {
@@ -30,7 +29,6 @@ export async function GET(request: NextRequest) {
 
   if (!config.enabled) {
     return redirectWithMessage(
-      request,
       mode === 'bind' ? '/profile' : '/login',
       '微信登录尚未配置，请稍后再试',
     );
@@ -41,9 +39,8 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      const loginUrl = new URL('/login', request.url);
+      const loginUrl = buildAppAbsoluteUrl('/login', '请先登录原账号，再绑定微信');
       loginUrl.searchParams.set('next', '/profile');
-      loginUrl.searchParams.set('message', '请先登录原账号，再绑定微信');
       return NextResponse.redirect(loginUrl);
     }
     bindUserId = user.id;
@@ -58,7 +55,7 @@ export async function GET(request: NextRequest) {
   const response = NextResponse.redirect(buildWechatAuthorizeUrl(config.appId, callbackUrl, state));
   response.cookies.set(WECHAT_OAUTH_COOKIE, context, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: config.siteUrl.startsWith('https://'),
     sameSite: 'lax',
     maxAge: WECHAT_OAUTH_MAX_AGE_SECONDS,
     path: '/api/auth/wechat',

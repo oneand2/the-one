@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">定义之外：被带进讲堂的无羽鸡</title>
+  <rect width="360" height="136" fill="#F3F0E8"/>
+  <path d="M0 109C57 103 119 109 181 105C244 101 302 104 360 99V136H0Z" fill="#CDD6CC" opacity=".25"/>
+  <g transform="translate(67 25)">
+    <path d="M36 66C23 59 18 47 22 35C26 21 40 13 55 17C68 20 76 31 75 44C74 58 64 68 50 70L47 92H36L40 69Z" fill="#D8C3B2" stroke="#7B655A" stroke-width="1.15" opacity=".78"/>
+    <path d="M51 17C51 8 58 3 66 6C72 8 75 14 73 20L89 24L74 31" fill="#D8C3B2" stroke="#7B655A" stroke-width="1.15" stroke-linejoin="round"/>
+    <circle cx="65" cy="15" r="1.6" fill="#4E514D"/>
+    <path d="M38 93L34 103M47 93L52 103M29 103H39M48 103H58" fill="none" stroke="#7B655A" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M35 41C45 33 57 35 63 45C56 54 44 55 35 48" fill="none" stroke="#F3F0E8" stroke-width="1" opacity=".54"/>
+  </g>
+  <g transform="translate(218 24)" fill="none" stroke="#59675E" opacity=".58">
+    <path d="M13 10H91V91H13Z" fill="#EEE9DE" opacity=".62"/>
+    <circle cx="37" cy="38" r="10"/>
+    <path d="M26 70H48M31 59L25 70M43 59L49 70" stroke-linecap="round"/>
+    <circle cx="68" cy="38" r="10"/>
+    <path d="M58 70H79M63 59L57 70M73 59L80 70" stroke-linecap="round"/>
+  </g>
+  <path d="M184 62H214M205 56L215 62L205 68" fill="none" stroke="#A86456" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity=".68"/>
+  <circle cx="184" cy="62" r="3" fill="#A86456" opacity=".7"/>
+</svg>

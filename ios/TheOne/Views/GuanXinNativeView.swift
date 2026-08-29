@@ -3,7 +3,7 @@ import SwiftUI
 struct GuanXinNativeView: View {
     @EnvironmentObject private var auth: AuthStore
     @State private var daily: DailyDraw?
-    @State private var isLoadingDaily = true
+    @State private var isLoadingDaily = false
     @State private var isDrawing = false
     @State private var errorMessage: String?
 
@@ -59,7 +59,6 @@ struct GuanXinNativeView: View {
     }
 
     private func loadDaily() async {
-        isLoadingDaily = true
         errorMessage = nil
         defer { isLoadingDaily = false }
         guard auth.isAuthenticated else { daily = nil; return }

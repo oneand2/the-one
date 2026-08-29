@@ -237,12 +237,14 @@ struct LoginView: View {
         if mode == .login {
             UnifiedProviderDivider()
 
-            SignInWithAppleButton(.continue, onRequest: configureAppleRequest, onCompletion: handleAppleResult)
-                .signInWithAppleButtonStyle(.black)
-                .frame(height: 48)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .disabled(isWorking)
-                .sensoryTap()
+            NativeAppleSignInButton(
+                onRequest: configureAppleRequest,
+                onCompletion: handleAppleResult
+            )
+            .frame(height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .allowsHitTesting(!isWorking)
+            .opacity(isWorking ? 0.45 : 1)
         } else {
             Text("验证码将发送至你的邮箱，验证后即完成注册")
                 .font(.system(size: 10))
@@ -360,28 +362,104 @@ struct LoginView: View {
     }
 
     private func configureAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
+        auth.errorMessage = nil
         appleNonce = AuthStore.randomNonce()
         request.nonce = AuthStore.sha256(appleNonce)
         request.requestedScopes = [.fullName, .email]
     }
 
     private func handleAppleResult(_ result: Result<ASAuthorization, Error>) {
-        guard case .success(let authorization) = result,
-              let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-              let tokenData = credential.identityToken,
-              let token = String(data: tokenData, encoding: .utf8) else {
-            if case .failure(let error) = result { auth.errorMessage = error.localizedDescription }
-            return
-        }
-        let name = [credential.fullName?.givenName, credential.fullName?.familyName]
-            .compactMap { $0 }
-            .joined()
-        Task {
-            isWorking = true
-            defer { isWorking = false }
-            if await auth.loginWithApple(identityToken: token, nonce: appleNonce, nickname: name) {
-                dismiss()
+        switch result {
+        case .failure(let error):
+            if let authorizationError = error as? ASAuthorizationError,
+               authorizationError.code == .canceled {
+                return
             }
+            auth.errorMessage = "Apple 登录未完成：\(error.localizedDescription)"
+            return
+        case .success(let authorization):
+            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                  let tokenData = credential.identityToken,
+                  let token = String(data: tokenData, encoding: .utf8),
+                  !appleNonce.isEmpty else {
+                auth.errorMessage = "Apple 登录凭据不完整，请重新尝试"
+                return
+            }
+
+            let name = [credential.fullName?.givenName, credential.fullName?.familyName]
+                .compactMap { $0 }
+                .joined()
+            Task {
+                isWorking = true
+                defer { isWorking = false }
+                if await auth.loginWithApple(identityToken: token, nonce: appleNonce, nickname: name) {
+                    dismiss()
+                }
+            }
+        }
+    }
+}
+
+private struct NativeAppleSignInButton: UIViewRepresentable {
+    var onRequest: (ASAuthorizationAppleIDRequest) -> Void
+    var onCompletion: (Result<ASAuthorization, Error>) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onRequest: onRequest, onCompletion: onCompletion)
+    }
+
+    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
+        let button = ASAuthorizationAppleIDButton(type: .continue, style: .black)
+        button.cornerRadius = 12
+        button.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        button.addTarget(context.coordinator, action: #selector(Coordinator.handleTap), for: .touchUpInside)
+        return button
+    }
+
+    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {
+        context.coordinator.onRequest = onRequest
+        context.coordinator.onCompletion = onCompletion
+    }
+
+    final class Coordinator: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+        var onRequest: (ASAuthorizationAppleIDRequest) -> Void
+        var onCompletion: (Result<ASAuthorization, Error>) -> Void
+        private var controller: ASAuthorizationController?
+
+        init(
+            onRequest: @escaping (ASAuthorizationAppleIDRequest) -> Void,
+            onCompletion: @escaping (Result<ASAuthorization, Error>) -> Void
+        ) {
+            self.onRequest = onRequest
+            self.onCompletion = onCompletion
+        }
+
+        @objc func handleTap() {
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            onRequest(request)
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            self.controller = controller
+            controller.performRequests()
+        }
+
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+            self.controller = nil
+            onCompletion(.success(authorization))
+        }
+
+        func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+            self.controller = nil
+            onCompletion(.failure(error))
+        }
+
+        func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+            let windows = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap(\.windows)
+            return windows.first(where: \.isKeyWindow) ?? windows.first ?? ASPresentationAnchor()
         }
     }
 }

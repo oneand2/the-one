@@ -135,10 +135,23 @@ final class StoreKitManager: ObservableObject {
     }
 
     func recoverUnfinishedTransactions() async {
-        await restorePurchases()
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { [weak self] in
+                guard let self else { return }
+                for await verification in Transaction.unfinished {
+                    _ = try? await self.deliver(verification)
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(2))
+            }
+            _ = await group.next()
+            group.cancelAll()
+        }
     }
 
-    func restorePurchases() async {
+    func restoreLifetimeVIP() async {
+        message = nil
         do {
             try await AppStore.sync()
         } catch {
@@ -146,32 +159,17 @@ final class StoreKitManager: ObservableObject {
             return
         }
 
-        var any = false
+        var restored = false
         for await verification in Transaction.currentEntitlements {
-            any = ((try? await deliver(verification)) ?? false) || any
+            guard case .verified(let transaction) = verification,
+                  transaction.productID == Self.lifetimeVIPProductID else {
+                continue
+            }
+            restored = ((try? await deliver(verification)) ?? false) || restored
         }
 
-        let recoveredUnfinished = await withTaskGroup(of: Bool.self) { group in
-            group.addTask { [weak self] in
-                guard let self else { return false }
-                var found = false
-                for await verification in Transaction.unfinished {
-                    found = ((try? await self.deliver(verification)) ?? false) || found
-                }
-                return found
-            }
-            group.addTask {
-                try? await Task.sleep(for: .seconds(2))
-                return false
-            }
-            let first = await group.next() ?? false
-            group.cancelAll()
-            return first
-        }
-        any = recoveredUnfinished || any
-
-        if !any, message == nil {
-            message = "没有可恢复的购买。"
+        if !restored, message == nil {
+            message = "没有找到可恢复的终身 VIP。铜币属于消耗型项目，不通过 Apple 恢复。"
         }
     }
 

@@ -1,0 +1,61 @@
+{
+  "startDate": "2026-08-27",
+  "stories": [
+    {
+      "title": "道不可言",
+      "sourceLabel": "《庄子·天道》",
+      "originalLanguage": "文言",
+      "originalText": "桓公读书于堂上，轮扁斫轮于堂下，释椎凿而上，问桓公曰：“敢问公之所读者何言邪？”公曰：“圣人之言也。”曰：“圣人在乎？”公曰：“已死矣。”曰：“然则君之所读者，古人之糟魄已夫！”桓公曰：“寡人读书，轮人安得议乎！有说则可，无说则死。”轮扁曰：“臣也，以臣之事观之。斫轮，徐则甘而不固，疾则苦而不入。不徐不疾，得之于手而应于心，口不能言，有数存焉于其间。臣不能以喻臣之子，臣之子亦不能受之于臣，是以行年七十而老斫轮。”",
+      "body": "齐桓公在堂上读书，轮扁在堂下做车轮。他放下锤凿，上前问桓公读的是什么。桓公说，是圣人的话；轮扁又问，圣人还活着吗。桓公说，已经死了。\n\n轮扁说，那么您读的只是古人留下的糟粕。桓公听后发怒，命他讲出道理，否则就要处死他。\n\n轮扁说，车轮做得慢，榫头松而不牢；做得快，又紧得装不进去。不快不慢的分寸，手能做到，心里明白，嘴却说不出来。\n\n这份手感，他不能教给儿子，儿子也无法从他那里接过去。因此他已经七十岁，还在亲手做车轮。",
+      "sources": "《庄子·天道》轮扁斫轮；中国哲学书电子化计划，https://ctext.org/zhuangzi/tian-dao/zh"
+    },
+    {
+      "title": "不动而胜",
+      "sourceLabel": "《庄子·达生》",
+      "originalLanguage": "文言",
+      "originalText": "纪渻子为王养斗鸡。十日而问：“鸡已乎？”曰：“未也，方虚憍而恃气。”十日又问，曰：“未也，犹应向景。”十日又问，曰：“未也，犹疾视而盛气。”十日又问，曰：“几矣。鸡虽有鸣者，已无变矣，望之似木鸡矣，其德全矣；异鸡无敢应者，反走矣。”",
+      "body": "纪渻子替周宣王训练斗鸡。过了十天，宣王问鸡练好没有。纪渻子说还没有，它正在虚张声势，仗着一股气。\n\n又过十天，鸡听到声音、看见影子仍会作出反应。再过十天，它还是目光急切，气势强盛。纪渻子每次都说，还没有。\n\n第四个十天，纪渻子终于说差不多了。别的鸡在旁边鸣叫，它已经毫无反应；远远望去，像一只木头做的鸡。\n\n别的斗鸡看见它，没有一只敢上前应战，全都转身逃走。",
+      "sources": "《庄子·达生》纪渻子养斗鸡；中国哲学书电子化计划，https://ctext.org/zhuangzi/full-understanding-of-life/zh"
+    },
+    {
+      "title": "学无止境",
+      "sourceLabel": "《列子·汤问》",
+      "originalLanguage": "文言",
+      "originalText": "薛谭学讴于秦青，未穷青之技，自谓尽之，遂辞归。秦青弗止，饯于郊衢，抚节悲歌，声振林木，响遏行云。薛谭乃谢求反，终身不敢言归。",
+      "body": "薛谭跟随秦青学习唱歌。还没有学完老师的本领，他便以为能学的都已经学尽，向秦青告辞回乡。\n\n秦青没有阻拦，在城外大道旁为他饯行。席间，秦青打着节拍唱起悲歌。声音传出去，林木仿佛也被震动，天上的行云像停了下来。\n\n薛谭听完，当场向老师谢罪，请求返回继续学习。此后很长时间，他再也不敢提起回乡。",
+      "sources": "《列子·汤问》薛谭学讴；古文岛原文页，https://m.gushiwen.cn/shiwenv_b18a26f326a3.aspx"
+    },
+    {
+      "title": "心不在马",
+      "sourceLabel": "《韩非子·喻老》",
+      "originalLanguage": "文言",
+      "originalText": "赵襄主学御于王子期，俄而与于期逐，三易马而三后。襄主曰：“子之教我御，术未尽也。”对曰：“术已尽，用之则过也。凡御之所贵：马体安于车，人心调于马，而后可以进速致远。今君后则欲逮臣，先则恐逮于臣。夫诱道争远，非先则后也。而先后心皆在于臣，尚何以调于马？此君之所以后也。”",
+      "body": "赵襄王向王子期学习驾车。不久，他便要求和老师比赛。途中换了三次马，每一次仍落在王子期后面。\n\n赵襄王问，您教我的驾车方法，是不是还留了一部分没有说。王子期回答，方法已经全部教完，只是您使用时出了错。\n\n驾车要让马安稳地套在车上，驾车人的心也要与马相协调。赵襄王落后时只想着追上老师，领先时又担心老师赶上来。\n\n王子期问，您的心从头到尾都放在我身上，又拿什么来与马协调？",
+      "sources": "《韩非子·喻老》赵襄王学御；识典古籍原文页，https://www.shidianguji.com/mid-page/7620933491027623982"
+    },
+    {
+      "title": "定义之外",
+      "sourceLabel": "《名哲言行录》",
+      "originalLanguage": "古希腊语",
+      "originalText": "Πλάτωνος ὁρισαμένου, Ἄνθρωπός ἐστι ζῷον δίπουν ἄπτερον, καὶ εὐδοκιμοῦντος, τίλας ἀλεκτρυόνα εἰσήνεγκεν εἰς τὴν σχολὴν καί φησιν, Οὗτός ἐστιν ὁ Πλάτωνος ἄνθρωπος. ὅθεν τῷ ὅρῳ προσετέθη τὸ πλατυώνυχον.",
+      "body": "第欧根尼·拉尔修在《名哲言行录》中记载，柏拉图曾把人定义为“没有羽毛的两足动物”。这个定义在讲堂上得到不少称赞。\n\n犬儒学派哲人第欧根尼找来一只鸡，把羽毛拔光，带进柏拉图的讲堂。他举起鸡，对在场的人说：“这就是柏拉图所说的人。”\n\n柏拉图的门徒没有与他继续争辩。他们修改了原来的定义，在“没有羽毛的两足动物”后面，又补上一条：有宽而扁的指甲。",
+      "sources": "Diogenes Laertius, Lives of Eminent Philosophers, 6.40；Perseus Digital Library，https://www.perseus.tufts.edu/hopper/text?doc=Perseus%3Atext%3A1999.01.0258%3Abook%3D6%3Achapter%3D2"
+    },
+    {
+      "title": "所学何用",
+      "sourceLabel": "鲁米《玛斯纳维》",
+      "originalLanguage": "波斯语",
+      "originalText": "آن یکی نحوی به کشتی در نشست\nرو به کشتیبان نهاد آن خودپرست\nگفت هیچ از نحو خواندی گفت لا\nگفت نیم عمر تو شد در فنا\nدل‌شکسته گشت کشتیبان ز تاب\nلیک آن دم کرد خامش از جواب\nباد کشتی را به گردابی فکند\nگفت کشتیبان بدان نحوی بلند\nهیچ دانی آشنا کردن بگو\nگفت نی ای خوش‌جواب خوب‌رو\nگفت کل عمرت ای نحوی فناست\nزانک کشتی غرق این گردابهاست",
+      "body": "一名文法家登上一条船。他问船夫有没有学过文法。船夫回答没有。文法家告诉他，那么你的一半人生都白白浪费了。\n\n船夫听后心里不快，却没有回嘴。船行到水上，风忽然大起来，把船推向一个漩涡。\n\n船夫高声问文法家，您学过游泳吗。文法家回答，自己不会游泳。\n\n船夫说，那么您的一生都要白白浪费了，因为这条船马上就要沉进漩涡。",
+      "sources": "Jalal al-Din Rumi, Masnavi, Book I, lines 2835–2841；Dar al-Masnavi，https://www.dar-al-masnavi.org/n-I-2829.html"
+    },
+    {
+      "title": "代价过高",
+      "sourceLabel": "富兰克林《哨子》",
+      "originalLanguage": "英语",
+      "originalText": "When I was a Child of seven Years old, my Friends on a Holiday fill’d my little Pocket with Halfpence. I went directly to a Shop where they sold Toys for Children; and being charm’d with the Sound of a Whistle that I met by the way, in the hands of another Boy, I voluntarily offer’d and gave all my Money for it.\n\nWhen I came home, whistling all over the House, much pleas’d with my Whistle, but disturbing all the Family, my Brothers, Sisters & Cousins, understanding the Bargain I had made, told me I had given four times as much for it as it was worth.\n\nThis however was afterwards of use to me, the Impression continuing on my Mind; so that often when I was tempted to buy some unnecessary thing, I said to my self, Do not give too much for the Whistle; and I sav’d my Money.",
+      "body": "富兰克林七岁时，亲友在节日里给了他一些零钱。他在路上听见另一个孩子吹哨子，很喜欢那声音，便主动拿出身上所有的钱，把哨子换了过来。\n\n回家后，他一路吹着哨子，自己十分高兴，却吵得全家不得安宁。兄弟姐妹和表亲问清价钱，告诉他：这只哨子只值他所付价格的四分之一。\n\n众人又细数那些本可用余钱买到的东西，笑他做了一笔傻买卖。富兰克林又气又悔，哭了起来；这份懊恼，已经超过哨子带给他的快乐。\n\n后来每当他想买一件并不需要的东西，便会提醒自己：不要为一只哨子付出过高的代价。",
+      "sources": "Benjamin Franklin, The Whistle, 10 November 1779；Founders Online, National Archives，https://founders.archives.gov/documents/Franklin/01-31-02-0041"
+    }
+  ]
+}

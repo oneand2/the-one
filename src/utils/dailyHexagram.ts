@@ -495,3 +495,144 @@ export function getHexagramByIndex(index: number): DailyHexagramEntry | null {
   if (!Number.isInteger(index) || index < 1 || index > DAILY_HEXAGRAM_ENTRIES.length) return null;
   return withHexagramCode(DAILY_HEXAGRAM_ENTRIES[index - 1]!);
 }
+
+const DAILY_HEXAGRAM_STORAGE_KEY = 'guanxin-daily-hexagram';
+
+export type DailyHexagramSnapshot = {
+  periodKey: string;
+  hexagram: DailyHexagramEntry | null;
+  status: 'drawn' | 'ready';
+};
+
+type StoredDailyDraw = {
+  periodKey: string;
+  hexagramIndex: number;
+};
+
+let memorySnapshot: DailyHexagramSnapshot | null = null;
+let inflight: Promise<DailyHexagramSnapshot> | null = null;
+
+function readStoredDraw(): StoredDailyDraw | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(DAILY_HEXAGRAM_STORAGE_KEY);
+    if (!raw) return null;
+    const stored = JSON.parse(raw) as StoredDailyDraw;
+    if (typeof stored?.periodKey !== 'string' || !Number.isInteger(stored.hexagramIndex)) return null;
+    return stored;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredDraw(periodKey: string, hexagramIndex: number) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(
+      DAILY_HEXAGRAM_STORAGE_KEY,
+      JSON.stringify({ periodKey, hexagramIndex } satisfies StoredDailyDraw),
+    );
+  } catch {
+    // quota / private mode
+  }
+}
+
+/** 同步读取本地快照：有今日之卦则直接展示，否则进入可抽取态，不经过加载占位。 */
+export function readDailyHexagramSnapshot(): DailyHexagramSnapshot {
+  const periodKey = getDailyHexagramPeriod();
+  if (memorySnapshot?.periodKey === periodKey) return memorySnapshot;
+
+  const stored = readStoredDraw();
+  if (stored?.periodKey === periodKey) {
+    const hexagram = getHexagramByIndex(stored.hexagramIndex);
+    if (hexagram) {
+      const snapshot: DailyHexagramSnapshot = { periodKey, hexagram, status: 'drawn' };
+      memorySnapshot = snapshot;
+      return snapshot;
+    }
+  }
+
+  return { periodKey, hexagram: null, status: 'ready' };
+}
+
+export function rememberDailyHexagramDraw(hexagramIndex: number): DailyHexagramEntry | null {
+  const hexagram = getHexagramByIndex(hexagramIndex);
+  if (!hexagram) return null;
+  const periodKey = getDailyHexagramPeriod();
+  memorySnapshot = { periodKey, hexagram, status: 'drawn' };
+  writeStoredDraw(periodKey, hexagramIndex);
+  return hexagram;
+}
+
+export function clearDailyHexagramCache() {
+  memorySnapshot = null;
+  inflight = null;
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(DAILY_HEXAGRAM_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+async function loadDailyHexagramSnapshot(): Promise<DailyHexagramSnapshot> {
+  const periodKey = getDailyHexagramPeriod();
+  try {
+    const response = await fetch('/api/daily-hexagram', { credentials: 'include', cache: 'no-store' });
+    if (response.status === 401) {
+      const cached = readDailyHexagramSnapshot();
+      if (cached.hexagram) return cached;
+      memorySnapshot = { periodKey, hexagram: null, status: 'ready' };
+      return memorySnapshot;
+    }
+    if (!response.ok) throw new Error('LOAD_FAILED');
+
+    const payload = await response.json() as { periodKey?: string; draw?: { hexagramIndex?: number } | null };
+    const nextPeriod = payload.periodKey || periodKey;
+    const index = payload.draw?.hexagramIndex;
+    const hexagram = typeof index === 'number' ? getHexagramByIndex(index) : null;
+    const snapshot: DailyHexagramSnapshot = {
+      periodKey: nextPeriod,
+      hexagram,
+      status: hexagram ? 'drawn' : 'ready',
+    };
+    memorySnapshot = snapshot;
+    if (hexagram && typeof index === 'number') {
+      writeStoredDraw(nextPeriod, index);
+    } else {
+      const stored = readStoredDraw();
+      if (stored?.periodKey === nextPeriod) {
+        try {
+          window.localStorage.removeItem(DAILY_HEXAGRAM_STORAGE_KEY);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    return snapshot;
+  } catch (error) {
+    const cached = readDailyHexagramSnapshot();
+    if (cached.hexagram) return cached;
+    throw error;
+  }
+}
+
+/** 首页即可预取；见自己挂载时复用同一请求，避免打开 tab 再等一轮。 */
+export function prefetchDailyHexagram(): Promise<DailyHexagramSnapshot> {
+  if (inflight) return inflight;
+  inflight = loadDailyHexagramSnapshot().finally(() => {
+    inflight = null;
+  });
+  return inflight;
+}
+
+if (typeof window !== 'undefined') {
+  const flag = '__theoneDailyHexagramAuthListener' as const;
+  const target = window as Window & { [flag]?: boolean };
+  if (!target[flag]) {
+    target[flag] = true;
+    window.addEventListener('theone:auth-changed', () => {
+      clearDailyHexagramCache();
+    });
+  }
+}

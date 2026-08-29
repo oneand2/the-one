@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">所学何用：漩涡中的船、书卷与船桨</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <g fill="none" stroke="#71857E" stroke-linecap="round">
+    <path d="M0 94C49 86 86 99 130 91C180 82 225 98 269 90C307 84 336 89 360 86" opacity=".34"/>
+    <path d="M0 108C53 100 96 113 145 105C200 96 246 111 299 102C323 98 343 99 360 99" opacity=".24"/>
+    <path d="M230 96C250 80 282 82 295 98C307 113 291 125 273 121C257 118 252 104 263 96C271 90 282 92 285 99" stroke-width="1.2" opacity=".6"/>
+  </g>
+  <g transform="translate(68 38)">
+    <path d="M6 46H155L137 70H31Z" fill="#B79D80" stroke="#765F52" stroke-width="1.15" opacity=".72"/>
+    <path d="M31 46C48 37 67 36 84 41C102 34 123 36 142 46" fill="none" stroke="#765F52" stroke-width="1" opacity=".5"/>
+    <circle cx="57" cy="24" r="7" fill="#A98274" opacity=".72"/>
+    <circle cx="111" cy="24" r="7" fill="#7D8C82" opacity=".72"/>
+    <path d="M49 45C50 32 53 27 57 27C61 27 64 32 65 45M103 45C104 32 107 27 111 27C115 27 118 32 119 45" fill="none" stroke="#665E56" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M119 43L146 13" stroke="#59675E" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <path d="M207 37C220 32 233 34 243 43V68C232 61 220 60 207 65Z" fill="#EEE8DA" stroke="#766957" stroke-width="1" opacity=".8"/>
+  <path d="M217 46H235M217 52H232" stroke="#766957" stroke-width=".9" stroke-linecap="round" opacity=".46"/>
+  <path d="M210 72C223 76 232 84 236 96" fill="none" stroke="#A86456" stroke-width="1" stroke-dasharray="2 5" opacity=".58"/>
+  <circle cx="237" cy="98" r="3" fill="#A86456" opacity=".68"/>
+</svg>

@@ -23,7 +23,7 @@ alwaysApply: true
 - 样式：Tailwind CSS 4，通过 `@tailwindcss/postcss` 接入；全局样式在 `src/app/globals.css`。
 - 鉴权/数据：Supabase，通过 `@supabase/ssr` 和 `@supabase/supabase-js` 使用。
 - AI/API：Next Route Handlers 中使用 OpenAI 兼容 SDK；默认、推理、宗师模式模型由环境变量选择。宗师模式只读 `AI_MEDITATION_FALLBACK_*`，不再做主备切换。
-- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。原生 iOS 项目位于 `ios/`；网页可用 `?embed=ios` 嵌入。
+- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。原生 iOS 项目位于 `ios/`（当前 TestFlight build 9）；网页可用 `?embed=ios` 嵌入。iOS 终身 VIP 为非消耗型，可恢复；铜币为消耗型，购买后绑定账户、不经 Apple 恢复。
 
 ## 关键目录
 
@@ -51,7 +51,8 @@ alwaysApply: true
 - 浏览器端 Supabase 鉴权使用 `src/utils/supabase/client.ts`。
 - 服务端 Supabase 使用 `src/utils/supabase/server.ts`。
 - 跨用户或管理员级操作使用 `src/utils/supabase/admin.ts`，需要 `SUPABASE_SERVICE_ROLE_KEY`。
-- 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、`wechat_identities`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
+- 重要表/脚本包括 `user_profiles`、`chat_sessions`、`chat_messages`、`world_news`、`daily_insights`、`wechat_identities`、兑换码、VIP 字段，以及保存古典八字和 MBTI 记录的 `daoyoushuju`。
+- `daily_insights` 每天一篇见闻，含 `title`、`source_label`、`original_language`、`original_text`、`body`；不再按「时/地/物」分栏。
 - 终身 VIP 可购买：网页 `/shop` 支付宝/微信商品 `vip_lifetime`（¥398）；iOS 非消耗型 IAP `com.theone.er.vip.lifetime`。入账后写入 `user_profiles.vip_expires_at` 哨兵值，聊天与解卦不再扣铜币。生产库需执行 `supabase-lifetime-vip.sql`。
 - `README.md` 说明 `daoyoushuju` 通过 `type` 和 `input_data` JSONB 存储保存记录。
 
@@ -67,10 +68,10 @@ alwaysApply: true
 - `src/app/api/admin/news-items/sync/route.ts`：管理员把 `world_news` 解析回填到结构化标题库 `news_items`（按日期或全量，幂等）。
 - `src/app/api/news-retrieval/preview/route.ts`：占问前程检索预览（调试用），返回扩展关键词与命中新闻。
 
-## 占问前程功能（见天地 → 决行藏）
+## 占问前程（决行藏）
 
-- 「见天地」今日能量卡片（`src/components/DailyFortuneCard.tsx`）填写处境问题，携带八字格局（四柱/用神）跳转决行藏（`?tab=juexingcang&qiancheng=1`，载荷存 localStorage `juexingcang-qiancheng-pending`）。
-- 决行藏（`src/components/JueXingCangView.tsx`）读取载荷后自动以 `importData.qiancheng` 发起占问，流式渲染「个人格局 / 全年大势 / 前程指引」三层结果。
+- 见天地能量卡片不再提供「占问前程」入口。
+- 决行藏（`src/components/JueXingCangView.tsx`）仍可读 `juexingcang-qiancheng-pending`，以 `importData.qiancheng` 发起占问并流式渲染「个人格局 / 全年大势 / 前程指引」。
 - 三级新闻漏斗：① 标题库 `news_items` ② `src/utils/newsRetrieval.ts` 关键词扩展+近一年匹配 Top N ③ 命中条目原文链接溯源。解析工具 `src/utils/newsItems.ts`。建表脚本 `src/app/api/world-news/news-items-schema.sql`。
 
 ## 常用命令

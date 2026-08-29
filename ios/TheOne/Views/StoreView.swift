@@ -50,9 +50,9 @@ struct StoreView: View {
                         }
 
                         VStack(spacing: 10) {
-                            Button("恢复购买") {
+                            Button("恢复终身 VIP") {
                                 Task {
-                                    await purchases.restorePurchases()
+                                    await purchases.restoreLifetimeVIP()
                                     await profile.load()
                                 }
                             }
@@ -72,7 +72,7 @@ struct StoreView: View {
                                     .lineSpacing(3)
                             }
 
-                            Text("铜币不可转赠、交易、提现或兑换现金，也不会过期。终身 VIP 开通后，使用全部功能不再消耗铜币。")
+                            Text("仅非消耗型终身 VIP 可通过 Apple 恢复。铜币购买完成后会直接绑定当前账户，不可转赠、交易、提现或兑换现金，也不会过期。")
                                 .font(.system(size: 10))
                                 .foregroundStyle(AppTheme.stone400)
                                 .multilineTextAlignment(.center)

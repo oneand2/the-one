@@ -1,19 +1,25 @@
 /**
- * 发布今日见闻。
+ * 按周发布今日见闻：每天一则故事。
  *
- *   npm run insights:publish -- --file content/2026-08-18.json
- *   npm run insights:publish -- --file content/2026-08-18.json --dry-run
+ *   npm run insights:publish -- --file content/2026-08-27-week.json
+ *   npm run insights:publish -- --file content/2026-08-27-week.json --dry-run
  *
- * JSON 结构（一天三条，地/时/物 各一）：
+ * JSON 结构：
  * {
- *   "date": "2026-08-18",
- *   "items": [
- *     { "category": "地", "title": "爸爸日", "body": "第一段\n\n第二段", "sources": "OECD 就业统计" },
- *     { "category": "时", "title": "两段觉", "body": "...", "sources": "..." },
- *     { "category": "物", "title": "八条腕", "body": "...", "sources": "..." }
+ *   "startDate": "2026-08-27",
+ *   "stories": [
+ *     {
+ *       "title": "道不可言",
+ *       "sourceLabel": "《庄子·天道》",
+ *       "originalLanguage": "文言",
+ *       "originalText": "桓公读书于堂上……",
+ *       "body": "第一段\n\n第二段",
+ *       "sources": "内部核查来源"
+ *     }
  *   ]
  * }
  *
+ * stories 必须正好七则，依次对应 startDate 起连续七天。
  * 校验规则见 docs/jinri-jianwen-content-guide.md。
  */
 import { readFile } from 'node:fs/promises';
@@ -24,22 +30,29 @@ import { createAdminClient } from '../src/utils/supabase/admin';
 
 dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 
-const CATEGORIES = ['地', '时', '物'] as const;
-type Category = (typeof CATEGORIES)[number];
+const DAY_MS = 24 * 60 * 60 * 1000;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-interface InsightItem {
-  category: Category;
+interface StoryItem {
   title: string;
+  sourceLabel: string;
+  originalLanguage: string;
+  originalText: string;
   body: string;
-  sources?: string;
+  sources: string;
 }
 
-interface InsightFile {
-  date: string;
-  items: InsightItem[];
+interface StoryWeekFile {
+  startDate: string;
+  stories: StoryItem[];
 }
 
 const countChars = (value: string) => Array.from(value.trim()).length;
+
+const addDays = (date: string, offset: number) => {
+  const start = new Date(`${date}T00:00:00Z`);
+  return new Date(start.getTime() + offset * DAY_MS).toISOString().slice(0, 10);
+};
 
 function parseArgs() {
   const args = process.argv.slice(2);
@@ -53,44 +66,66 @@ function parseArgs() {
   return { file, dryRun };
 }
 
-function validate(payload: InsightFile) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.date)) {
-    throw new Error(`发布已中止：date 需为 YYYY-MM-DD，收到 ${payload.date}`);
+function validate(payload: StoryWeekFile) {
+  if (!DATE_RE.test(payload.startDate)) {
+    throw new Error(`发布已中止：startDate 需为 YYYY-MM-DD，收到 ${payload.startDate}`);
   }
-  if (!Array.isArray(payload.items) || payload.items.length !== 3) {
-    throw new Error(`发布已中止：一天必须三条，实际 ${payload.items?.length ?? 0} 条`);
+  if (Number.isNaN(new Date(`${payload.startDate}T00:00:00Z`).getTime())) {
+    throw new Error(`发布已中止：startDate 不是有效日期，收到 ${payload.startDate}`);
+  }
+  if (!Array.isArray(payload.stories) || payload.stories.length !== 7) {
+    throw new Error(`发布已中止：每周必须七则，实际 ${payload.stories?.length ?? 0} 则`);
   }
 
-  const seen = new Set<string>();
-  for (const item of payload.items) {
-    if (!CATEGORIES.includes(item.category)) {
-      throw new Error(`发布已中止：类目只能是 地/时/物，收到「${item.category}」`);
-    }
-    if (seen.has(item.category)) {
-      throw new Error(`发布已中止：类目「${item.category}」重复`);
-    }
-    seen.add(item.category);
-
-    const titleLen = countChars(item.title);
+  const titles = new Set<string>();
+  for (const story of payload.stories) {
+    const titleLen = countChars(story.title);
     if (titleLen < 2 || titleLen > 5) {
-      throw new Error(`发布已中止：标题「${item.title}」应为二到五字，实际 ${titleLen} 字`);
+      throw new Error(`发布已中止：标题「${story.title}」应为二到五字，实际 ${titleLen} 字`);
     }
-    if (/[。？！，、；：]/.test(item.title)) {
-      throw new Error(`发布已中止：标题「${item.title}」含标点，应为名词性短语而非句子`);
+    if (/[。？！，、；：]/.test(story.title)) {
+      throw new Error(`发布已中止：标题「${story.title}」含标点，应为简短题眼`);
     }
+    if (titles.has(story.title)) {
+      throw new Error(`发布已中止：标题「${story.title}」在本周重复`);
+    }
+    titles.add(story.title);
 
-    const paragraphs = item.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
-    if (paragraphs.length < 3 || paragraphs.length > 6) {
+    const sourceLabelLen = countChars(story.sourceLabel);
+    if (sourceLabelLen < 2 || sourceLabelLen > 24) {
       throw new Error(
-        `发布已中止：「${item.title}」正文应为三到六段，实际 ${paragraphs.length} 段`
+        `发布已中止：「${story.title}」的 sourceLabel 应为 2–24 字，实际 ${sourceLabelLen} 字`
       );
     }
-    const bodyLen = countChars(item.body);
-    if (bodyLen < 120 || bodyLen > 400) {
-      throw new Error(`发布已中止：「${item.title}」正文 ${bodyLen} 字，应在 120–400 字之间`);
+
+    const originalLanguageLen = countChars(story.originalLanguage);
+    if (originalLanguageLen < 2 || originalLanguageLen > 12) {
+      throw new Error(
+        `发布已中止：「${story.title}」的 originalLanguage 应为 2–12 字，实际 ${originalLanguageLen} 字`
+      );
     }
-    if (!item.sources?.trim()) {
-      throw new Error(`发布已中止：「${item.title}」缺少 sources，每条必须留档来源`);
+    const originalLen = countChars(story.originalText);
+    if (originalLen < 20 || originalLen > 1600) {
+      throw new Error(
+        `发布已中止：「${story.title}」原文 ${originalLen} 字，应在 20–1600 字之间`
+      );
+    }
+
+    const paragraphs = story.body.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+    if (paragraphs.length < 3 || paragraphs.length > 6) {
+      throw new Error(
+        `发布已中止：「${story.title}」正文应为三到六段，实际 ${paragraphs.length} 段`
+      );
+    }
+    const bodyLen = countChars(story.body);
+    if (bodyLen < 120 || bodyLen > 400) {
+      throw new Error(`发布已中止：「${story.title}」正文 ${bodyLen} 字，应在 120–400 字之间`);
+    }
+    if (/这个故事告诉我们|由此可见|这说明了/.test(story.body)) {
+      throw new Error(`发布已中止：「${story.title}」含显式说理，正文应停在故事本身`);
+    }
+    if (!story.sources?.trim()) {
+      throw new Error(`发布已中止：「${story.title}」缺少 sources`);
     }
   }
 }
@@ -98,21 +133,25 @@ function validate(payload: InsightFile) {
 async function main() {
   const { file, dryRun } = parseArgs();
   const raw = await readFile(resolve(process.cwd(), file), 'utf8');
-  const payload = JSON.parse(raw) as InsightFile;
+  const payload = JSON.parse(raw) as StoryWeekFile;
 
   validate(payload);
 
-  const rows = payload.items.map((item) => ({
-    insight_date: payload.date,
-    category: item.category,
-    title: item.title,
-    body: item.body.trim(),
-    sources: item.sources?.trim() ?? null,
+  const rows = payload.stories.map((story, index) => ({
+    insight_date: addDays(payload.startDate, index),
+    title: story.title,
+    source_label: story.sourceLabel,
+    original_language: story.originalLanguage,
+    original_text: story.originalText.trim(),
+    body: story.body.trim(),
+    sources: story.sources.trim(),
   }));
 
-  console.log(`校验通过：${payload.date}`);
+  console.log(`校验通过：${rows[0].insight_date} 至 ${rows.at(-1)?.insight_date}`);
   for (const row of rows) {
-    console.log(`  ${row.category}　${row.title}　${countChars(row.body)} 字`);
+    console.log(
+      `  ${row.insight_date}　${row.title}　${row.source_label}　原文 ${countChars(row.original_text)} 字 / 译文 ${countChars(row.body)} 字`
+    );
   }
 
   if (dryRun) {
@@ -123,13 +162,13 @@ async function main() {
   const supabase = createAdminClient();
   const { error } = await supabase
     .from('daily_insights')
-    .upsert(rows, { onConflict: 'insight_date,category' });
+    .upsert(rows, { onConflict: 'insight_date' });
 
   if (error) throw new Error(`写入失败：${error.message}`);
-  console.log(`已发布 ${payload.date} 的三条见闻`);
+  console.log(`已发布一周共 ${rows.length} 则见闻`);
 }
 
-main().catch((e) => {
-  console.error(e instanceof Error ? e.message : e);
+main().catch((error) => {
+  console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });

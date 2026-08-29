@@ -23,10 +23,8 @@ struct RootView: View {
                 }
             }
         }
-        .sheet(isPresented: $auth.showsLogin) {
+        .fullScreenCover(isPresented: $auth.showsLogin) {
             LoginView()
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
         }
         .tint(AppTheme.ink)
     }

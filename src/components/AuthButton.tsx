@@ -124,6 +124,11 @@ export function AuthButton() {
     if (previousUserIdRef.current === nextUserId) return;
     previousUserIdRef.current = nextUserId;
     clearRecordsCaches();
+    try {
+      window.localStorage.removeItem('guanxin-daily-hexagram');
+    } catch {
+      // ignore
+    }
     window.dispatchEvent(new CustomEvent('theone:auth-changed'));
   }, [user]);
 
@@ -158,6 +163,11 @@ export function AuthButton() {
 
   const handleSignOut = async () => {
     clearRecordsCaches();
+    try {
+      window.localStorage.removeItem('guanxin-daily-hexagram');
+    } catch {
+      // ignore
+    }
     try {
       const supabase = createClient();
       await supabase.auth.signOut();

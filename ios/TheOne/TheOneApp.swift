@@ -29,12 +29,18 @@ struct TheOneApp: App {
                 .preferredColorScheme(.light)
                 .task {
                     await auth.restoreSession()
-                    if auth.isAuthenticated { await profile.load() }
+                    if auth.isAuthenticated {
+                        await profile.load()
+                        await purchases.recoverUnfinishedTransactions()
+                    }
                     await purchases.prepare()
                 }
                 .onChange(of: auth.isAuthenticated) { _, authenticated in
                     if authenticated {
-                        Task { await profile.load() }
+                        Task {
+                            await profile.load()
+                            await purchases.recoverUnfinishedTransactions()
+                        }
                     } else {
                         profile.reset()
                     }

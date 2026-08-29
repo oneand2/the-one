@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -8,8 +8,12 @@ import { DailyFortuneCard } from '@/components/DailyFortuneCard';
 import { BaziSheetCard } from '@/components/BaziSheetCard';
 import type { TabType } from '@/types/tabs';
 import {
+  clearDailyHexagramCache,
   getDailyHexagramPeriod,
   getHexagramByIndex,
+  prefetchDailyHexagram,
+  readDailyHexagramSnapshot,
+  rememberDailyHexagramDraw,
   type DailyHexagramEntry,
 } from '@/utils/dailyHexagram';
 import { requestAppLogin } from '@/utils/iosEmbed';
@@ -84,37 +88,49 @@ const UnrevealedHexagram: React.FC<{ drawing: boolean }> = ({ drawing }) => (
 
 const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
   const router = useRouter();
-  const [drawState, setDrawState] = useState<DrawState>('loading');
+  const [resolved, setResolved] = useState(false);
+  const [drawState, setDrawState] = useState<DrawState>('ready');
   const [periodKey, setPeriodKey] = useState(() => getDailyHexagramPeriod());
   const [hexagram, setHexagram] = useState<DailyHexagramEntry | null>(null);
+  const [ceremonialReveal, setCeremonialReveal] = useState(false);
 
-  const loadDraw = useCallback(async () => {
+  const loadDraw = useCallback(async (showLoading = false) => {
     const currentPeriod = getDailyHexagramPeriod();
     setPeriodKey(currentPeriod);
-    setDrawState('loading');
+    if (showLoading) setDrawState('loading');
 
     try {
-      const response = await fetch('/api/daily-hexagram', { credentials: 'include', cache: 'no-store' });
-      if (response.status === 401) {
-        setHexagram(null);
-        setDrawState('ready');
-        return;
-      }
-      if (!response.ok) throw new Error('LOAD_FAILED');
-
-      const payload = await response.json() as { draw?: { hexagramIndex?: number } | null };
-      const accountHexagram = payload.draw?.hexagramIndex
-        ? getHexagramByIndex(payload.draw.hexagramIndex)
-        : null;
-      setHexagram(accountHexagram);
-      setDrawState(accountHexagram ? 'drawn' : 'ready');
+      const snapshot = await prefetchDailyHexagram();
+      setPeriodKey(snapshot.periodKey);
+      setHexagram(snapshot.hexagram);
+      setDrawState(snapshot.status);
     } catch {
-      setDrawState('error');
+      setDrawState((prev) => (prev === 'drawn' ? prev : 'error'));
     }
+  }, []);
+
+  useLayoutEffect(() => {
+    const snapshot = readDailyHexagramSnapshot();
+    setPeriodKey(snapshot.periodKey);
+    setHexagram(snapshot.hexagram);
+    setDrawState(snapshot.status);
+    setResolved(true);
   }, []);
 
   useEffect(() => {
     void loadDraw();
+  }, [loadDraw]);
+
+  useEffect(() => {
+    const onAuthChanged = () => {
+      clearDailyHexagramCache();
+      setCeremonialReveal(false);
+      setHexagram(null);
+      setDrawState('ready');
+      void loadDraw();
+    };
+    window.addEventListener('theone:auth-changed', onAuthChanged);
+    return () => window.removeEventListener('theone:auth-changed', onAuthChanged);
   }, [loadDraw]);
 
   useEffect(() => {
@@ -150,8 +166,9 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
       const wait = revealAt - Date.now();
       if (wait > 0) await new Promise((resolve) => window.setTimeout(resolve, wait));
 
-      const result = getHexagramByIndex(index);
+      const result = rememberDailyHexagramDraw(index) ?? getHexagramByIndex(index);
       if (!result) throw new Error('INVALID_DRAW');
+      setCeremonialReveal(true);
       setHexagram(result);
       setDrawState('drawn');
     } catch {
@@ -163,7 +180,10 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
     <section className="mb-10 flex items-stretch gap-4 sm:gap-5" aria-live="polite">
       <span className="w-px flex-shrink-0 bg-gradient-to-b from-stone-300/80 via-stone-300/50 to-transparent" />
       <div className="relative min-w-0 flex-1 pt-0.5">
-        <AnimatePresence initial={false} mode="popLayout">
+        {!resolved ? (
+          <div className="min-h-[156px]" />
+        ) : (
+          <AnimatePresence initial={false} mode="popLayout">
           {drawState === 'loading' ? (
             <motion.div
               key="loading"
@@ -189,7 +209,7 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
               </p>
               <button
                 type="button"
-                onClick={() => void loadDraw()}
+                onClick={() => void loadDraw(true)}
                 className="font-sans text-[10px] tracking-[0.18em] text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-stone-800"
               >
                 重新尝试
@@ -198,10 +218,10 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
           ) : hexagram && drawState === 'drawn' ? (
             <motion.div
               key={`result-${periodKey}`}
-              initial={{ opacity: 0, y: 14, filter: 'blur(4px)' }}
+              initial={ceremonialReveal ? { opacity: 0, y: 14, filter: 'blur(4px)' } : false}
               animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.75, ease: [0.32, 0.72, 0, 1] }}
+              transition={{ duration: ceremonialReveal ? 0.75 : 0.35, ease: [0.32, 0.72, 0, 1] }}
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-2.5 whitespace-nowrap">
@@ -285,6 +305,7 @@ const DailyHexagramDraw: React.FC<{ todayText: string }> = ({ todayText }) => {
             </motion.div>
           )}
         </AnimatePresence>
+        )}
       </div>
     </section>
   );

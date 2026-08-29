@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">道不可言：堂上书卷与堂下车轮</title>
+  <rect width="360" height="136" fill="#F3F0E8"/>
+  <path d="M0 108C64 101 115 110 171 105C226 100 285 106 360 99V136H0Z" fill="#D8D2C6" opacity=".24"/>
+  <g fill="none" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="104" cy="81" r="39" stroke-width="1.25" opacity=".72"/>
+    <circle cx="104" cy="81" r="8" stroke-width="1.1" opacity=".62"/>
+    <path d="M104 42V73M104 89V120M65 81H96M112 81H143M77 54L98 75M110 87L131 108M77 108L98 87M110 75L131 54" stroke-width="1" opacity=".5"/>
+    <path d="M48 123H161" stroke-width="1" opacity=".32"/>
+  </g>
+  <g transform="translate(206 31)">
+    <path d="M9 11C36 3 69 4 103 13V73C70 64 38 65 9 73Z" fill="#EEE8DB" stroke="#766957" stroke-width="1" opacity=".82"/>
+    <path d="M56 10V70M21 25C31 21 40 21 48 23M21 35C31 31 40 31 48 33M65 23C76 20 86 21 94 24M65 33C76 30 86 31 94 34" fill="none" stroke="#766957" stroke-linecap="round" stroke-width=".9" opacity=".5"/>
+    <circle cx="104" cy="13" r="4" fill="#A86456" opacity=".72"/>
+  </g>
+  <path d="M154 111L192 72M184 71L197 84" fill="none" stroke="#8B6B5F" stroke-linecap="round" stroke-width="2" opacity=".68"/>
+  <circle cx="41" cy="33" r="2" fill="#718078" opacity=".42"/>
+</svg>

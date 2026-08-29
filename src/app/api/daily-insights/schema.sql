@@ -1,60 +1,33 @@
--- 今日见闻（见天地）：每天 地 / 时 / 物 各一条
-CREATE TABLE IF NOT EXISTS daily_insights (
+-- 今日见闻（见天地）：每天一则有出处的短故事
+CREATE TABLE IF NOT EXISTS public.daily_insights (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  insight_date DATE NOT NULL,
-  -- 类目：地=别的地方，时=从前，物=人以外的东西
-  category TEXT NOT NULL CHECK (category IN ('地', '时', '物')),
+  insight_date DATE NOT NULL UNIQUE,
+  -- 仅供尚未更新的旧前端完成查询；始终为空，新版不读取，发布稳定后可删除
+  category TEXT NOT NULL DEFAULT '',
   -- 标题：名词性短语，二到五字
   title TEXT NOT NULL,
-  -- 正文：段落之间用空行分隔
+  -- 前台显示的简短出处，如《庄子·天道》
+  source_label TEXT NOT NULL CHECK (char_length(source_label) BETWEEN 2 AND 24),
+  -- 原文语种与原文；中文经典存文言，外国经典存原语言文本
+  original_language TEXT NOT NULL CHECK (char_length(original_language) BETWEEN 2 AND 12),
+  original_text TEXT NOT NULL CHECK (char_length(original_text) BETWEEN 20 AND 1600),
+  -- 译文：段落之间用空行分隔
   body TEXT NOT NULL,
-  -- 来源留档，仅供内部核查，前台不展示
+  -- 完整来源留档，仅供内部核查，前台不展示
   sources TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  -- 同一天同一类目只能有一条
-  UNIQUE (insight_date, category)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_daily_insights_date ON daily_insights(insight_date DESC);
+ALTER TABLE public.daily_insights ENABLE ROW LEVEL SECURITY;
 
-ALTER TABLE daily_insights ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public.daily_insights FROM anon, authenticated;
+GRANT SELECT ON TABLE public.daily_insights TO anon, authenticated;
+GRANT ALL ON TABLE public.daily_insights TO service_role;
 
--- 所有人可读
-CREATE POLICY "允许所有用户读取见闻"
-  ON daily_insights
+CREATE POLICY "所有人可以读取见闻"
+  ON public.daily_insights
   FOR SELECT
+  TO anon, authenticated
   USING (true);
 
--- 仅管理员可写（与 world_news 一致）
-CREATE POLICY "只有管理员可以插入见闻"
-  ON daily_insights
-  FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email = '892777353@qq.com'
-    )
-  );
-
-CREATE POLICY "只有管理员可以更新见闻"
-  ON daily_insights
-  FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email = '892777353@qq.com'
-    )
-  );
-
-CREATE POLICY "只有管理员可以删除见闻"
-  ON daily_insights
-  FOR DELETE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users
-      WHERE auth.users.id = auth.uid()
-      AND auth.users.email = '892777353@qq.com'
-    )
-  );
+-- 写入统一由服务端发布脚本使用 service_role 完成。

@@ -11,6 +11,7 @@ import { GuanXinView } from '@/components/GuanXinView';
 import { JueXingCangView } from '@/components/JueXingCangView';
 import { mobileUI } from '@/generated/mobile-ui';
 import type { TabType } from '@/types/tabs';
+import { prefetchDailyHexagram } from '@/utils/dailyHexagram';
 
 const VALID_TABS: TabType[] = ['guanshi', 'guanxin', 'bazi', 'mbti', 'wendao', 'juexingcang'];
 const LEGACY_TAB_ALIASES: Partial<Record<string, TabType>> = { bazi: 'guanxin' };
@@ -120,6 +121,7 @@ const HomeContent: React.FC = () => {
   useEffect(() => {
     if (window.__THEONE_IOS_EMBED__) setEmbedFromNative(true);
     window.scrollTo(0, 0);
+    void prefetchDailyHexagram();
   }, []);
 
   useEffect(() => {

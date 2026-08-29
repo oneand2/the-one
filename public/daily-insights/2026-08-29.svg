@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">学无止境：歌声穿过林木并停住行云</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M0 110C79 103 145 110 212 105C268 101 314 104 360 100V136H0Z" fill="#D6D1C5" opacity=".24"/>
+  <g fill="none" stroke="#5C6B61" stroke-linecap="round">
+    <path d="M53 107V49M83 107V35M116 107V55M273 107V47M305 107V34M330 107V58" stroke-width="1.15" opacity=".56"/>
+    <path d="M53 64L41 54M53 75L65 64M83 53L69 43M83 63L97 49M116 72L103 62M273 65L260 53M305 51L291 39M305 61L318 48M330 75L341 64" stroke-width="1" opacity=".46"/>
+  </g>
+  <g transform="translate(151 47)">
+    <circle cx="27" cy="13" r="7" fill="#A98274" opacity=".74"/>
+    <path d="M16 61C17 37 20 23 27 22C35 23 38 38 39 61M18 37L7 50M37 37L50 47M21 61L17 78M35 61L41 78" fill="none" stroke="#695F55" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M45 45L59 32M56 29L64 36" fill="none" stroke="#8C6D60" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <g fill="none" stroke="#A86456" stroke-linecap="round" opacity=".58">
+    <path d="M202 58C218 48 234 47 250 53"/>
+    <path d="M205 69C225 60 245 61 262 70"/>
+    <path d="M142 59C126 50 111 50 97 57"/>
+  </g>
+  <path d="M225 27C240 18 254 20 263 29C275 22 291 24 298 34C277 39 249 39 225 27Z" fill="#CDD6CC" opacity=".56"/>
+  <circle cx="205" cy="58" r="2.4" fill="#A86456" opacity=".72"/>
+</svg>

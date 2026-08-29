@@ -25,11 +25,9 @@ private struct BaziSheetCache: Codable {
 
 struct DailyFortuneNativeCard: View {
     @EnvironmentObject private var auth: AuthStore
-    @EnvironmentObject private var flow: AppFlowStore
     @State private var records: [ClassicalRecord] = []
     @State private var saved: SavedDailyFortune?
     @State private var fortune: DailyFortuneResponse?
-    @State private var question = ""
     @State private var isLoading = false
     @State private var showPicker = false
     @State private var showBreakdown = false
@@ -86,20 +84,6 @@ struct DailyFortuneNativeCard: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                Divider().overlay(AppTheme.stone200)
-                Text("占 问 前 程").font(.system(size: 10)).tracking(2.5).foregroundStyle(AppTheme.stone400)
-                TextField("写下你正在权衡的前程之事", text: $question, axis: .vertical)
-                    .font(.kaiti(13)).lineLimit(2...4)
-                    .padding(13)
-                    .background(Color.black.opacity(0.022), in: RoundedRectangle(cornerRadius: 10))
-                    .overlay { RoundedRectangle(cornerRadius: 10).stroke(AppTheme.stone200) }
-                Button { askFuture(saved) } label: {
-                    Text("占问前程")
-                        .font(.kaiti(13)).tracking(1.3)
-                        .foregroundStyle(.white).frame(maxWidth: .infinity).frame(height: 42)
-                        .background(AppTheme.ink, in: RoundedRectangle(cornerRadius: 9))
-                }
-                .buttonStyle(.plain)
             } else {
                 Text("选取一份八字排盘，以日柱与用神推演今日能量。")
                     .font(.kaiti(11.5)).foregroundStyle(Color(red: 138 / 255, green: 129 / 255, blue: 117 / 255))
@@ -209,23 +193,6 @@ struct DailyFortuneNativeCard: View {
                 "year": parts.year ?? 2000, "month": parts.month ?? 1, "day": parts.day ?? 1, "yongshen": value.yongshen,
             ])
         } catch { errorMessage = error.localizedDescription }
-    }
-
-    private func askFuture(_ value: SavedDailyFortune) {
-        let text = question.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { errorMessage = "请先写下你想占问的前程之事"; return }
-        let pillarObject: [String: Any] = [
-            "year": ["gan": value.pillars.year.gan, "zhi": value.pillars.year.zhi],
-            "month": ["gan": value.pillars.month.gan, "zhi": value.pillars.month.zhi],
-            "day": ["gan": value.pillars.day.gan, "zhi": value.pillars.day.zhi],
-            "hour": ["gan": value.pillars.hour.gan, "zhi": value.pillars.hour.zhi],
-        ]
-        let payload: [String: Any] = [
-            "type": "qiancheng", "question": text, "bazi": value.bazi.mapValues(\.anyValue),
-            "pillars": pillarObject, "hasHour": value.hasHour, "yongshen": value.yongshen,
-            "yongshenWuxing": fortune?.yongshenWuxing ?? "", "name": value.name ?? "",
-        ]
-        flow.openChat(preset: text, importData: ["qiancheng": payload], autoSend: true)
     }
 
     private func relationColor(_ relation: String) -> Color {

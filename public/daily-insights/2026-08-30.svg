@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">心不在马：驾车人的目光越过马投向对手</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 108C72 102 128 108 184 104C248 99 301 104 360 98V136H0Z" fill="#D8D2C6" opacity=".27"/>
+  <g fill="none" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="109" cy="98" r="18" stroke-width="1.2" opacity=".7"/>
+    <circle cx="167" cy="98" r="18" stroke-width="1.2" opacity=".7"/>
+    <path d="M104 78H160L173 98H109L104 78ZM126 78L133 55H150L158 78" stroke-width="1.15" opacity=".68"/>
+    <path d="M150 55C180 52 205 59 222 75" stroke-width="1" opacity=".5"/>
+  </g>
+  <g transform="translate(211 41)" fill="#AAB6AD" stroke="#56645A" stroke-width="1.05" opacity=".78" stroke-linejoin="round">
+    <path d="M3 48C11 26 28 17 49 22L64 9L72 12L64 26C74 35 73 47 68 57L57 76H48L52 56H27L23 76H14L16 52Z"/>
+    <path d="M32 23L27 11L43 21"/>
+  </g>
+  <circle cx="140" cy="48" r="6" fill="#A98274" opacity=".72"/>
+  <path d="M144 50C166 50 192 58 215 72" fill="none" stroke="#A86456" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="3 5" opacity=".62"/>
+  <path d="M231 30C248 27 267 30 280 39M271 33L281 39L272 44" fill="none" stroke="#718078" stroke-linecap="round" stroke-linejoin="round" opacity=".4"/>
+  <circle cx="315" cy="91" r="2" fill="#718078" opacity=".4"/>
+</svg>

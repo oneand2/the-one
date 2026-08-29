@@ -138,7 +138,7 @@ export const GuanShiView: React.FC = () => {
           <p className="text-stone-500/70 font-sans tracking-wide">
             <span className="text-stone-600/60">声明</span>
             <span className="text-stone-400/50 mx-1.5">·</span>
-            见闻为历史与文化资料的整理，力求准确，如有出入欢迎指正。黄历与子午流注属传统文化内容，不构成医疗建议。
+            见闻取材于古籍与文化记录，部分为寓言或后世轶事，出处以现存文本为准；如有出入欢迎指正。黄历与子午流注属传统文化内容，不构成医疗建议。
           </p>
         </div>
       </motion.div>

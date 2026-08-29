@@ -246,7 +246,7 @@ struct LoginView: View {
             .allowsHitTesting(!isWorking)
             .opacity(isWorking ? 0.45 : 1)
         } else {
-            Text("验证码将发送至你的邮箱，验证后即完成注册")
+            Text("已注册的邮箱请直接登录。验证码只会发给尚未注册的邮箱")
                 .font(.system(size: 10))
                 .foregroundStyle(AppTheme.authFaint)
                 .multilineTextAlignment(.center)
@@ -350,7 +350,7 @@ struct LoginView: View {
                         dismiss()
                     }
                 } catch {
-                    auth.errorMessage = error.localizedDescription
+                    auth.errorMessage = AuthStore.friendlyMessage(error)
                 }
             }
         }

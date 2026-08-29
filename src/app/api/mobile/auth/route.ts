@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createMobileAuthClient } from '@/lib/mobileAuth';
+import { requestSignupOtp } from '@/utils/authOtp';
 
 export const dynamic = 'force-dynamic';
 
@@ -94,14 +95,22 @@ export async function POST(request: NextRequest) {
     }
     const nickname = (body.nickname ?? '').trim().slice(0, 50);
     const inviteCode = (body.inviteCode ?? '').trim().toUpperCase().slice(0, 32);
-    const { data, error } = await supabase.auth.signUp({
+    const result = await requestSignupOtp(supabase, {
       email,
       password: body.password,
-      options: { data: { nickname, invite_code: inviteCode || undefined } },
+      nickname,
+      inviteCode,
     });
-    if (error) return json({ error: `注册失败：${error.message}` }, { status: 400 });
-    if (data.user && data.session) await ensureProfile(supabase, data.user.id, nickname);
-    return json({ needsVerification: !data.session, email });
+    if ('error' in result) return json({ error: result.error }, { status: 400 });
+    if ('sessionUserId' in result) {
+      await ensureProfile(supabase, result.sessionUserId, nickname);
+      return json({
+        authenticated: true,
+        needsVerification: false,
+        user: { id: result.sessionUserId, email, nickname },
+      });
+    }
+    return json({ needsVerification: true, email });
   }
 
   if (body.action === 'verify-signup') {

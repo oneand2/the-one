@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { requestRecoveryOtp, requestSignupOtp } from '@/utils/authOtp';
 
 export type AuthResult = { redirectUrl?: string; error?: string; otpEmail?: string };
 
@@ -56,24 +57,27 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   const confirmPassword = formData.get('confirmPassword') as string;
   const nickname = (formData.get('nickname') as string)?.trim() ?? '';
   const inviteCode = (formData.get('invite_code') as string)?.trim().toUpperCase() ?? '';
+  const nextUrl = (formData.get('next') as string) || '/';
+
+  if (!email || !email.includes('@')) {
+    return { error: '请输入有效的邮箱地址' };
+  }
 
   if (password !== confirmPassword) {
     return { error: '两次输入的密码不一致' };
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { nickname: nickname.slice(0, 50), invite_code: inviteCode.slice(0, 32) || undefined },
-    },
-  });
-
-  if (error) {
-    return { error: '注册失败：' + error.message };
+  const result = await requestSignupOtp(supabase, { email, password, nickname, inviteCode });
+  if ('error' in result) return { error: result.error };
+  if ('sessionUserId' in result) {
+    await supabase.from(PROFILE_TABLE).upsert(
+      { user_id: result.sessionUserId, nickname, coins_balance: INITIAL_COINS },
+      { onConflict: 'user_id', ignoreDuplicates: true },
+    );
+    return { redirectUrl: nextUrl };
   }
-  return { otpEmail: email };
+  return { otpEmail: result.otpEmail };
 }
 
 /** 验证注册 OTP 验证码，验证成功后自动登录并建立用户档案 */
@@ -145,12 +149,9 @@ export async function requestPasswordReset(formData: FormData): Promise<AuthResu
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
-
-  if (error) {
-    return { error: '发送失败：' + (error.message || '请稍后重试') };
-  }
-  return { otpEmail: email };
+  const result = await requestRecoveryOtp(supabase, email);
+  if ('error' in result) return { error: result.error };
+  return { otpEmail: result.otpEmail };
 }
 
 /** 验证找回密码 OTP 并设置新密码 */

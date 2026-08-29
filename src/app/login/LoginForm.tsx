@@ -401,7 +401,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                   </FieldStack>
                   <PrimaryButton pending={pending} label="发送验证码" />
                   <button type="button" className={styles.secondaryAction} onClick={() => selectMode('login')}>已有账号，返回登录</button>
-                  <p className={styles.formHint}>验证码将发送至你的邮箱，验证后即完成注册</p>
+                  <p className={styles.formHint}>已注册的邮箱请直接登录。验证码只会发给尚未注册的邮箱</p>
                 </form>
               </StateFrame>
             )}

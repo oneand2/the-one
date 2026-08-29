@@ -93,9 +93,24 @@ final class AuthStore: ObservableObject {
             try await operation()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = Self.friendlyMessage(error)
             return false
         }
+    }
+
+    static func friendlyMessage(_ error: Error) -> String {
+        let raw = error.localizedDescription
+        let lower = raw.lowercased()
+        if lower.contains("error sending confirmation email")
+            || lower.contains("error sending recovery email")
+            || lower.contains("unable to send email")
+            || lower.contains("error sending email") {
+            return "验证邮件暂时发不出去。请改用微信注册，或稍后再试。"
+        }
+        if lower.contains("user already registered") || lower.contains("already been registered") {
+            return "该邮箱已注册，请直接登录。若忘记密码，请使用「忘记密码」。"
+        }
+        return raw
     }
 
     static func randomNonce() -> String {

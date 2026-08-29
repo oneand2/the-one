@@ -49,6 +49,13 @@ jobs:
           WECHAT_PAY_PUBLIC_KEY_ID: ${{ secrets.WECHAT_PAY_PUBLIC_KEY_ID }}
           WECHAT_LOGIN_APP_ID: ${{ secrets.WECHAT_LOGIN_APP_ID }}
           WECHAT_LOGIN_APP_SECRET: ${{ secrets.WECHAT_LOGIN_APP_SECRET }}
+          WECHAT_MINIPROGRAM_APP_ID: ${{ secrets.WECHAT_MINIPROGRAM_APP_ID }}
+          WECHAT_MINIPROGRAM_APP_SECRET: ${{ secrets.WECHAT_MINIPROGRAM_APP_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
         run: |
           set -eu
           test -n "$DEPLOY_HOST"
@@ -70,6 +77,8 @@ jobs:
           PAYMENT_ENV_FILE="$RUNNER_TEMP/payment-production.env"
           umask 077
           SYNC_WECHAT_LOGIN=0
+          SYNC_WECHAT_MINIPROGRAM=0
+          SYNC_SMTP=0
           {
             printf 'ALIPAY_APP_ID=%s\n' "$ALIPAY_APP_ID"
             printf 'ALIPAY_SELLER_ID=%s\n' "$ALIPAY_SELLER_ID"
@@ -88,6 +97,19 @@ jobs:
               printf 'WECHAT_LOGIN_APP_ID=%s\n' "$WECHAT_LOGIN_APP_ID"
               printf 'WECHAT_LOGIN_APP_SECRET=%s\n' "$WECHAT_LOGIN_APP_SECRET"
               SYNC_WECHAT_LOGIN=1
+            fi
+            if test -n "${WECHAT_MINIPROGRAM_APP_ID:-}" && test -n "${WECHAT_MINIPROGRAM_APP_SECRET:-}"; then
+              printf 'WECHAT_MINIPROGRAM_APP_ID=%s\n' "$WECHAT_MINIPROGRAM_APP_ID"
+              printf 'WECHAT_MINIPROGRAM_APP_SECRET=%s\n' "$WECHAT_MINIPROGRAM_APP_SECRET"
+              SYNC_WECHAT_MINIPROGRAM=1
+            fi
+            if test -n "${SMTP_HOST:-}" && test -n "${SMTP_USER:-}" && test -n "${SMTP_PASS:-}"; then
+              printf 'SMTP_HOST=%s\n' "$SMTP_HOST"
+              printf 'SMTP_PORT=%s\n' "${SMTP_PORT:-465}"
+              printf 'SMTP_USER=%s\n' "$SMTP_USER"
+              printf 'SMTP_PASS=%s\n' "$SMTP_PASS"
+              printf 'SMTP_FROM=%s\n' "${SMTP_FROM:-$SMTP_USER}"
+              SYNC_SMTP=1
             fi
           } > "$PAYMENT_ENV_FILE"
 
@@ -116,11 +138,11 @@ jobs:
             "set -eu; \
              sudo touch '$DEPLOY_PATH/.env.production'; \
              sudo cp '$DEPLOY_PATH/.env.production' '$DEPLOY_PATH/backups/env-production-before-payment-sync'; \
-             if test '$SYNC_WECHAT_LOGIN' = 1; then \
-               sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' -e '/^WECHAT_LOGIN_/d' -e '/^NEXT_PUBLIC_SITE_URL=/d' '$DEPLOY_PATH/.env.production'; \
-             else \
-               sudo sed -i -e '/^ALIPAY_/d' -e '/^WECHAT_PAY_/d' -e '/^NEXT_PUBLIC_SITE_URL=/d' '$DEPLOY_PATH/.env.production'; \
-             fi; \
+             WECHAT_ENV_SED='-e /^ALIPAY_/d -e /^WECHAT_PAY_/d -e /^NEXT_PUBLIC_SITE_URL=/d'; \
+             if test '$SYNC_WECHAT_LOGIN' = 1; then WECHAT_ENV_SED=\"\$WECHAT_ENV_SED -e /^WECHAT_LOGIN_/d\"; fi; \
+             if test '$SYNC_WECHAT_MINIPROGRAM' = 1; then WECHAT_ENV_SED=\"\$WECHAT_ENV_SED -e /^WECHAT_MINIPROGRAM_/d\"; fi; \
+             if test '$SYNC_SMTP' = 1; then WECHAT_ENV_SED=\"\$WECHAT_ENV_SED -e /^SMTP_/d\"; fi; \
+             sudo sed -i \$WECHAT_ENV_SED '$DEPLOY_PATH/.env.production'; \
              sudo sh -c \"printf '\\n' >> '$DEPLOY_PATH/.env.production'; cat /tmp/payment-production.env >> '$DEPLOY_PATH/.env.production'\"; \
              rm -f /tmp/payment-production.env"
 

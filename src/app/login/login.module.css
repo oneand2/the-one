@@ -384,8 +384,9 @@
 
 .providerArrow {
   display: grid;
-  width: 11px;
-  height: 11px;
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
   color: var(--auth-faint);
 }
 

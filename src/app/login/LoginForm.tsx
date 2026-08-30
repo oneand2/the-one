@@ -379,7 +379,12 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                           <span className={styles.wechatSeal}>微</span>
                           <span>微信扫码登录</span>
                         </span>
-                        <span className={styles.providerArrow} aria-hidden="true">↗</span>
+                        <span className={styles.providerArrow} aria-hidden="true">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 11L11 5" />
+                            <path d="M6.5 5H11V9.5" />
+                          </svg>
+                        </span>
                       </a>
                       <p className={styles.providerHint}>已有账号请先用原方式登录，再到个人设置绑定微信</p>
                     </>

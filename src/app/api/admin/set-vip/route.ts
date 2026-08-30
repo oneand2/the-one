@@ -4,7 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { ADMIN_EMAIL, getVipExpiresAt, type VipDuration } from '@/utils/vip';
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 50;
+const INITIAL_COINS = 300;
 
 const DURATIONS: VipDuration[] = ['1m', '3m', '6m', '1y', 'lifetime'];
 

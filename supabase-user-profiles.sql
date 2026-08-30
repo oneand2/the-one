@@ -4,7 +4,7 @@
 create table if not exists user_profiles (
   user_id uuid primary key references auth.users(id) on delete cascade,
   nickname text default '',
-  coins_balance int not null default 50,
+  coins_balance int not null default 300,
   invite_code text unique
 );
 

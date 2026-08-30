@@ -1,4 +1,4 @@
--- 设备指纹表：用于限制「IP 注册」新人 50 铜币仅每设备一次
+-- 设备指纹表：用于限制「IP 注册」新人 300 铜币仅每设备一次
 -- 在 Supabase SQL Editor 中执行
 
 create table if not exists device_fingerprints (
@@ -10,7 +10,7 @@ create table if not exists device_fingerprints (
 
 create index if not exists idx_device_fingerprints_visitor_id on device_fingerprints(visitor_id);
 
-comment on table device_fingerprints is 'IP 注册设备指纹，用于防刷新人 50 铜币';
+comment on table device_fingerprints is 'IP 注册设备指纹，用于防刷新人 300 铜币';
 comment on column device_fingerprints.visitor_id is 'FingerprintJS visitorId';
 comment on column device_fingerprints.user_id is '首次在该设备上领取奖励的用户 id（可选）';
 

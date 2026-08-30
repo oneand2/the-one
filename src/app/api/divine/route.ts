@@ -5,7 +5,7 @@ import { isVip } from '@/utils/vip';
 
 const COINS_DIVINE = 6;
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 50;
+const INITIAL_COINS = 300;
 
 export async function POST(req: Request) {
   try {

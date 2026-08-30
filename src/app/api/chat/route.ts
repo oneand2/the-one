@@ -13,7 +13,7 @@ const COINS_REASONING = 2;
 const COINS_MEDITATION = 20;
 const COINS_SEARCH = 2;
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 50;
+const INITIAL_COINS = 300;
 
 export async function POST(req: Request) {
   try {

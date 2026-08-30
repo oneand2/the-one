@@ -6,7 +6,7 @@ import { requestSignupOtp } from '@/utils/authOtp';
 export const dynamic = 'force-dynamic';
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 50;
+const INITIAL_COINS = 300;
 const NO_EMAIL_SUFFIX = '@no-email.app';
 
 type AuthBody = {

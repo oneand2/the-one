@@ -7,7 +7,7 @@ import { requestRecoveryOtp, requestSignupOtp } from '@/utils/authOtp';
 export type AuthResult = { redirectUrl?: string; error?: string; otpEmail?: string };
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 50;
+const INITIAL_COINS = 300;
 const INVITE_REWARD = 200;
 
 const NO_EMAIL_SUFFIX = '@no-email.app';

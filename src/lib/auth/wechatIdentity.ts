@@ -160,7 +160,7 @@ export async function loginOrCreateWechatUser(
     }
 
     const profileRow = await admin.from('user_profiles').upsert(
-      { user_id: user.id, nickname: profile.nickname, coins_balance: 50 },
+      { user_id: user.id, nickname: profile.nickname, coins_balance: 300 },
       { onConflict: 'user_id', ignoreDuplicates: true },
     );
     if (profileRow.error) throw profileRow.error;

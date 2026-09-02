@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">材与不材：未被砍伐的大树与待选的鹅</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M0 111C68 104 118 110 178 106C245 101 304 105 360 100V136H0Z" fill="#D7D1C5" opacity=".24"/>
+  <g fill="none" stroke="#56645A" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M102 116C100 94 105 76 101 56C95 34 104 21 119 17C139 12 158 22 160 42C164 61 151 76 142 87C135 96 134 107 136 116Z" fill="#C7D0C6" stroke-width="1.2" opacity=".82"/>
+    <path d="M113 113C118 88 116 65 119 39M119 54L100 39M119 66L143 43M117 79L95 66M120 88L145 70" stroke-width="1" opacity=".5"/>
+    <path d="M59 116L83 87M71 84L91 100" stroke="#8B6B5F" stroke-width="2" opacity=".66"/>
+  </g>
+  <g transform="translate(238 57)" stroke="#6C746C" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 38C12 23 25 16 39 20C48 22 53 30 52 39C51 49 43 55 32 55H18C10 51 6 46 8 38Z" fill="#E3DED3" stroke-width="1.1"/>
+    <path d="M39 21C38 10 45 4 54 8C60 10 62 16 59 22L72 26L59 31" fill="#E3DED3" stroke-width="1.1"/>
+    <circle cx="52" cy="16" r="1.5" fill="#4D554F" stroke="none"/>
+    <path d="M21 55L18 69M35 55L39 69M13 69H23M34 69H44" fill="none" stroke-width="1"/>
+  </g>
+  <circle cx="298" cy="77" r="3.2" fill="#A86456" opacity=".72"/>
+  <path d="M177 30C193 26 207 28 219 35" fill="none" stroke="#71857E" stroke-width="1" stroke-linecap="round" opacity=".35"/>
+</svg>

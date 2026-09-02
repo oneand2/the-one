@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-09-03",
+  "stories": [
+    {
+      "title": "材与不材",
+      "origin": "china",
+      "sourceLabel": "《庄子·山木》",
+      "originalLanguage": "文言",
+      "originalText": "莊子行於山中，見大木，枝葉盛茂，伐木者止其旁而不取也。問其故。曰：『無所可用。』莊子曰：『此木以不材得終其天年。』夫子出於山，舍於故人之家。故人喜，命豎子殺鴈而烹之。豎子請曰：『其一能鳴，其一不能鳴，請奚殺？』主人曰：『殺不能鳴者。』明日，弟子問於莊子曰：『昨日山中之木，以不材得終其天年；今主人之鴈，以不材死。先生將何處？』莊子笑曰：『周將處乎材與不材之間。材與不材之間，似之而非也，故未免乎累。』",
+      "body": "庄子走在山中，看见一棵枝叶茂盛的大树。伐木人停在树旁，却不动斧。庄子问原因，对方说，这棵树没有用处。庄子便对弟子说，它正因无用，得以活完天年。\n\n出山后，一行人投宿在老朋友家。主人高兴，吩咐童仆杀一只鹅款待客人。童仆问，一只能叫，一只不会叫，该杀哪只；主人答，杀那只不会叫的。\n\n第二天，弟子问庄子：山里的树因无用保住性命，主人的鹅却因无用被杀，先生愿处在哪一边？\n\n庄子笑着说，自己将处在有用与无用之间；随即又补了一句：看似如此，其实也并不可靠，仍免不了牵累。",
+      "sources": "《庄子·山木》树与雁章；中国哲学书电子化计划，https://ctext.org/zhuangzi/tree-on-the-mountain/zh"
+    },
+    {
+      "title": "临渊失射",
+      "origin": "china",
+      "sourceLabel": "《列子·黄帝》",
+      "originalLanguage": "文言",
+      "originalText": "列禦寇為伯昏无人射，引之盈貫，措杯水其肘上，發之，鏑矢復沓，方矢復寓。當是時也，猶象人也。伯昏无人曰：『是射之射，非不射之射也。當與汝登高山，履危石，臨百仞之淵，若能射乎？』於是无人遂登高山，履危石，臨百仞之淵，背逡巡，足二分垂在外，揖禦寇而進之。禦寇伏地，汗流至踵。伯昏无人曰：『夫至人者，上闚青天，下潛黃泉，揮斥八極。神氣不變。今汝怵然有恂目之志，爾於中也殆矣夫！』",
+      "body": "列御寇为伯昏无人演示射箭。他拉满弓弦，在手肘上放一杯水，接连放箭；前箭的箭尾尚在，后箭又射到同一处。整个过程中，他的身体像木偶一样不动。\n\n伯昏无人看完说，这只是“射之射”，还不是“不射之射”。他问列御寇，若登上高山，踩着危险的石头，面对百仞深渊，还能射吗。\n\n伯昏无人先登到崖边，背对深谷慢慢退步，两脚已有一部分悬在崖外。他向列御寇作揖，请他上前。\n\n列御寇伏在地上，汗一直流到脚跟。",
+      "sources": "《列子·黄帝》伯昏无人试射；中国哲学书电子化计划，https://ctext.org/liezi/huang-di/zh"
+    },
+    {
+      "title": "纳之不弃",
+      "origin": "china",
+      "sourceLabel": "《世说新语·德行》",
+      "originalLanguage": "文言",
+      "originalText": "華歆、王朗俱乘船避難，有一人欲依附，歆輒難之。朗曰：『幸尚寬，何為不可？』後賊追至，王欲舍所攜人。歆曰：『本所以疑，正為此耳。既已納其自託，寧可以急相棄邪？』遂攜拯如初。世以此定華、王之優劣。",
+      "body": "《世说新语》记载，华歆与王朗同乘一条船避难。途中有人请求上船，华歆显得为难；王朗看船上还有空位，便说为什么不可以。\n\n船行不久，追兵赶来。先前爽快答应的王朗转而想把搭船的人丢下，以便尽快逃走。\n\n华歆说，自己起初犹豫，正是考虑到这种时候。既然已经接受别人托身相随，怎能因为形势危急就把人抛弃。\n\n一行人于是仍带着那个人前行，和此前一样，没有把他留给身后的追兵。",
+      "sources": "刘义庆《世说新语·德行》第十三则；中国哲学书电子化计划，https://ctext.org/shi-shuo-xin-yu/de-xing/zh；维基文库四库全书本，https://zh.wikisource.org/zh-hant/%E4%B8%96%E8%AA%AC%E6%96%B0%E8%AA%9E_%28%E5%9B%9B%E5%BA%AB%E5%85%A8%E6%9B%B8%E6%9C%AC%29/%E5%8D%B7%E4%B8%8A%E4%B9%8B%E4%B8%8A"
+    },
+    {
+      "title": "猛狗酸酒",
+      "origin": "china",
+      "sourceLabel": "《韩非子·外储说右上》",
+      "originalLanguage": "文言",
+      "originalText": "宋人有酤酒者，升概甚平，遇客甚謹，為酒甚美，縣幟甚高，著然不售，酒酸，怪其故，問其所知閭長者楊倩。倩曰：『汝狗猛耶？』曰：『狗猛則酒何故而不售？』曰：『人畏焉。或令孺子懷錢挈壺罋而往酤，而狗迓而齕之，此酒所以酸而不售也。』",
+      "body": "《韩非子》写过一位宋国卖酒人。他量酒公平，对客人恭敬，酿出的酒很好，店外酒旗也挂得醒目；然而酒始终卖不出去，最后放酸了。\n\n卖酒人想不通，去问里中一位长者。长者没有先问价格和酿法，只问他：你家的狗是不是很凶？\n\n卖酒人说，狗凶和酒卖不出去有什么关系。长者回答，人们怕它；有人让孩子带钱提壶来买酒，狗迎面就扑上去咬。\n\n店里的酒、量具、招牌和待客之礼都没有改变。挡在客人与门之间的那条狗，足以让好酒在坛中慢慢变酸。",
+      "sources": "《韩非子·外储说右上》宋人酤酒章；中国哲学书电子化计划，https://ctext.org/text.pl?if=gb&node=2465&remap=gb&show=parallel"
+    },
+    {
+      "title": "未到山上",
+      "origin": "world",
+      "sourceLabel": "《徒然草·第五十二段》",
+      "originalLanguage": "日语",
+      "originalText": "仁和寺にある法師、年寄るまで石清水を拝まざりければ、心うく覚えて、ある時思ひ立ちて、ただひとり、徒歩より詣でけり。極楽寺・高良などを拝みて、かばかりと心得て帰りにけり。\n\nさて、かたへの人にあひて、『年比思ひつること、果し侍りぬ。聞きしにも過ぎて尊くこそおはしけれ。そも、参りたる人ごとに山へ登りしは、何事かありけん、ゆかしかりしかど、神へ参るこそ本意なれと思ひて、山までは見ず』とぞ言ひける。\n\n少しのことにも、先達はあらまほしき事なり。",
+      "body": "日本南北朝时代的随笔《徒然草》记着，京都仁和寺有位法师，年纪渐老，还从未参拜过石清水八幡宫。他对此一直遗憾，终于有一天独自徒步前往。\n\n走到山脚，他参拜极乐寺和高良神社，以为心愿已经完成，便原路回去。后来他告诉同伴，那地方果然比传闻中更庄严。\n\n他还说，同行的参拜者人人都继续往山上走，自己虽觉得好奇，却想参拜神明才是本意，因此没有跟上去。\n\n法师不知道，石清水八幡宫的主殿就在男山山上；他走了约二十公里，停在山脚的附属社前，满愿而归。",
+      "sources": "吉田兼好《徒然草》第五十二段原文，https://tsurezuregusa.com/052dan/；京都大学新闻社复走仁和寺至石清水八幡宫路线，https://www.kyoto-up.org/archives/7189"
+    },
+    {
+      "title": "歌声换回",
+      "origin": "world",
+      "sourceLabel": "拉封丹《鞋匠与财主》",
+      "originalLanguage": "法语",
+      "originalText": "Un savetier chantait du matin jusqu’au soir :\nC’était merveille de le voir,\nMerveille de l’ouïr ; il faisait des passages :\nPlus content qu’aucun des sept sages.\nSon voisin, au contraire, étant tout cousu d’or,\nChantait peu, dormait moins encor :\nC’était un homme de finance.\nSi sur le point du jour parfois il sommeillait,\nLe savetier alors en chantant l’éveillait.\n[…]\nLe financier, riant de sa naïveté,\nLui dit : Je vous veux mettre aujourd’hui sur le trône.\nPrenez ces cent écus ; gardez-les avec soin,\nPour vous en servir au besoin.\nLe savetier crut voir tout l’argent que la terre\nAvait depuis plus de cent ans,\nProduit pour l’usage des gens.\nIl retourne chez lui : dans sa cave il enserre\nL’argent, et sa joie à la fois.\nPlus de chant : il perdit la voix\nDu moment qu’il gagna ce qui cause nos peines.\nLe sommeil quitta son logis :\nIl eut pour hôtes les soucis,\nLes soupçons, les alarmes vaines.\nTout le jour il avait l’œil au guet ; et la nuit,\nSi quelque chat faisait du bruit,\nLe chat prenait l’argent. À la fin le pauvre homme\nS’en courut chez celui qu’il ne réveillait plus :\nRendez-moi, lui dit-il, mes chansons et mon somme ;\nEt reprenez vos cent écus.",
+      "body": "拉封丹寓言里，一位鞋匠从早到晚唱歌，虽然每天赚多少并不固定，却睡得安稳。隔壁的财主满屋金钱，唱得少，也睡得更少。\n\n财主把鞋匠叫来，问他一年收入多少。鞋匠说自己从不按年计算，只求每天挣到当天的面包。财主给了他一百枚银币，叫他留作急用。\n\n鞋匠回家，把钱藏进地窖，也把快乐一同锁了进去。他不再唱歌，整夜听着动静；猫稍有响声，他便以为有人来偷钱。\n\n最后，鞋匠跑去找那个再也不会被自己歌声吵醒的邻居。他把一百枚银币退回，说：『把我的歌和睡眠还给我。』",
+      "sources": "Jean de La Fontaine, Le Savetier et le Financier, Fables, Livre VIII, édition Bernardin-Béchet 1874, pp. 243–245；Wikisource，https://fr.wikisource.org/wiki/Fables_de_La_Fontaine_%28%C3%A9d._1874%29/Le_Savetier_et_le_Financier"
+    },
+    {
+      "title": "三虫俱失",
+      "origin": "world",
+      "sourceLabel": "达尔文《自传》",
+      "originalLanguage": "英语",
+      "originalText": "But no pursuit at Cambridge was followed with nearly so much eagerness or gave me so much pleasure as collecting beetles. It was the mere passion for collecting, for I did not dissect them and rarely compared their external characters with published descriptions, but got them named anyhow.\n\nI will give a proof of my zeal: one day, on tearing off some old bark, I saw two rare beetles and seized one in each hand; then I saw a third and new kind, which I could not bear to lose, so that I popped the one which I held in my right hand into my mouth. Alas it ejected some intensely acrid fluid, which burnt my tongue so that I was forced to spit the beetle out, which was lost, as well as the third one.",
+      "body": "达尔文在自传中回忆，剑桥求学时，没有什么活动比收集甲虫更让他兴奋。他追求的主要是拥有和命名标本，很少解剖，也很少逐项核对文献。\n\n一天，他掀开一块老树皮，看见两只稀有甲虫，左右手各捉一只。紧接着，第三只从树皮下出现，还是一种他不愿错过的新种。\n\n两只手都占着，达尔文便把右手那只塞进口中，腾手去抓第三只。\n\n口中的甲虫忽然喷出强烈辛辣的液体，灼痛他的舌头。他只得把它吐掉；混乱中，被吐出的那只和正要捕捉的第三只都跑了。",
+      "sources": "Charles Darwin, The Autobiography of Charles Darwin 1809–1882, ed. Nora Barlow, 1958, pp. 62–63；Darwin Online，https://darwin-online.org.uk/converted/published/1958_Autobiography_F1497/1958_Autobiography_F1497.html"
+    }
+  ]
+}

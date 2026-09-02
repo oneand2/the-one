@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">纳之不弃：船上伸向落后者的手</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 107C67 98 121 110 183 103C248 96 305 105 360 96V136H0Z" fill="#CDD6CC" opacity=".35"/>
+  <path d="M0 122C72 113 126 124 190 116C254 109 306 116 360 109" fill="none" stroke="#71857E" stroke-width="1" opacity=".28"/>
+  <g transform="translate(78 45)" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 49H176L160 70H26Z" fill="#C7D0C6" stroke-width="1.2" opacity=".82"/>
+    <path d="M37 49V33M92 49V29M139 49V35" stroke-width="1.1" opacity=".64"/>
+    <circle cx="37" cy="26" r="6" fill="#B79D80" stroke="none"/>
+    <circle cx="92" cy="22" r="6" fill="#A98274" stroke="none"/>
+    <circle cx="139" cy="28" r="6" fill="#B79D80" stroke="none"/>
+    <path d="M91 31C109 33 120 38 132 50M132 50L154 39" stroke-width="1.35" opacity=".78"/>
+    <circle cx="166" cy="34" r="6" fill="#A86456" stroke="none" opacity=".7"/>
+    <path d="M160 40L153 53M172 40L179 51" stroke-width="1.15"/>
+  </g>
+  <path d="M276 39L307 33M286 48L319 45M293 58L326 59" fill="none" stroke="#8B6B5F" stroke-width="1" stroke-linecap="round" opacity=".32"/>
+  <circle cx="52" cy="36" r="2" fill="#71857E" opacity=".35"/>
+</svg>

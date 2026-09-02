@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">临渊失射：弓箭手伏在崖边</title>
+  <rect width="360" height="136" fill="#F4F1E8"/>
+  <path d="M0 106C73 101 120 104 178 100L223 101L242 91L265 94L276 136H0Z" fill="#C8D0C7" opacity=".42"/>
+  <path d="M276 136L265 94L289 87L305 75L327 69L360 67V136Z" fill="#B79D80" opacity=".22"/>
+  <g fill="none" stroke="#58655C" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="190" cy="65" r="7" fill="#A98274" stroke="none" opacity=".72"/>
+    <path d="M183 74C170 77 159 85 154 98M183 74C198 77 208 84 216 94M166 86L186 96M206 85L226 89M154 98L140 110M216 94L228 105" stroke-width="1.35" opacity=".76"/>
+    <path d="M117 70C135 51 152 47 169 55C151 67 145 81 149 96C134 92 122 83 117 70Z" stroke-width="1.2" opacity=".56"/>
+    <path d="M93 107L129 74M101 76L132 104" stroke="#7C685A" stroke-width="1.6" opacity=".68"/>
+    <path d="M97 76C84 83 78 95 80 109" stroke-width="1" opacity=".38"/>
+    <path d="M270 100C287 98 301 93 314 83M279 109C297 106 314 99 329 87" stroke-width=".9" opacity=".34"/>
+  </g>
+  <path d="M238 102L248 106L243 113" fill="#A86456" opacity=".7"/>
+  <circle cx="72" cy="41" r="2" fill="#71857E" opacity=".36"/>
+</svg>

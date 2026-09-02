@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">歌声换回：鞋匠把钱袋推回门外</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M0 111C74 104 130 109 192 105C253 101 305 104 360 98V136H0Z" fill="#D7D1C5" opacity=".24"/>
+  <g transform="translate(66 35)" stroke="#6F655A" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M13 58C31 46 52 45 75 53L87 65C70 73 46 75 19 69Z" fill="#D8C3B2" stroke-width="1.15" opacity=".82"/>
+    <path d="M51 49C51 35 57 23 70 16C77 26 78 38 73 53" fill="#E4DDD0" stroke-width="1.05"/>
+    <path d="M21 69L16 82M73 71L78 82M9 82H83" fill="none" stroke-width="1" opacity=".55"/>
+    <path d="M29 57C43 62 57 62 70 57" fill="none" stroke-width=".9" opacity=".45"/>
+  </g>
+  <g transform="translate(210 42)" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 30C23 13 48 11 55 29L61 66C50 74 25 74 13 66Z" fill="#CDD6CC" stroke-width="1.1" opacity=".78"/>
+    <path d="M24 20C30 29 44 29 51 19M31 13L28 4M43 13L47 4" fill="none" stroke-width="1"/>
+    <circle cx="28" cy="46" r="4" fill="#B09F73" stroke="none" opacity=".8"/>
+    <circle cx="42" cy="50" r="4" fill="#B09F73" stroke="none" opacity=".8"/>
+    <circle cx="51" cy="40" r="4" fill="#A86456" stroke="none" opacity=".68"/>
+  </g>
+  <path d="M201 72H176M185 64L176 72L185 80" fill="none" stroke="#A86456" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+  <path d="M116 28C124 22 131 24 133 31C126 36 126 42 132 46M143 22C151 17 158 20 159 27" fill="none" stroke="#71857E" stroke-width="1" stroke-linecap="round" opacity=".42"/>
+  <circle cx="310" cy="30" r="2.3" fill="#71857E" opacity=".34"/>
+</svg>

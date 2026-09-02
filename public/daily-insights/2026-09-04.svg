@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
+  <title id="title">未到山上：在山脚折返的参拜者</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 112C62 106 119 110 181 106C248 101 305 104 360 99V136H0Z" fill="#CDD6CC" opacity=".24"/>
+  <g fill="none" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M205 115L219 103H238L252 91H270L284 79H303L317 67" stroke-width="1.2" opacity=".64"/>
+    <path d="M235 103V116M251 91V104M269 79V92M284 67V80M302 55V68" stroke-width=".9" opacity=".38"/>
+    <path d="M233 59H310M244 59V45M299 59V45M238 45H305M248 45V35M295 45V35M244 35H300" stroke-width="1.1" opacity=".55"/>
+    <path d="M269 35C278 26 290 21 306 19" stroke-width="1" opacity=".28"/>
+  </g>
+  <g transform="translate(86 48)" stroke="#75675B" stroke-linecap="round">
+    <circle cx="32" cy="15" r="7" fill="#B79D80" opacity=".72" stroke="none"/>
+    <path d="M22 66C23 40 26 25 32 24C40 25 44 43 43 66M25 42L12 56M40 42L55 51M27 66L23 82M39 66L44 82" fill="none" stroke-width="1.2"/>
+    <path d="M12 56L4 70" fill="none" stroke-width="1"/>
+  </g>
+  <path d="M158 88C178 86 193 90 209 101" fill="none" stroke="#A86456" stroke-width="1.1" stroke-linecap="round" stroke-dasharray="2 5" opacity=".56"/>
+  <path d="M201 94L210 101L199 103" fill="none" stroke="#A86456" stroke-linecap="round" opacity=".66"/>
+  <circle cx="326" cy="27" r="2.2" fill="#71857E" opacity=".35"/>
+</svg>

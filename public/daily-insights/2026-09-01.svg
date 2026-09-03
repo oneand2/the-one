@@ -1,21 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
-  <title id="title">所学何用：漩涡中的船、书卷与船桨</title>
-  <rect width="360" height="136" fill="#F2F0E8"/>
-  <g fill="none" stroke="#71857E" stroke-linecap="round">
-    <path d="M0 94C49 86 86 99 130 91C180 82 225 98 269 90C307 84 336 89 360 86" opacity=".34"/>
-    <path d="M0 108C53 100 96 113 145 105C200 96 246 111 299 102C323 98 343 99 360 99" opacity=".24"/>
-    <path d="M230 96C250 80 282 82 295 98C307 113 291 125 273 121C257 118 252 104 263 96C271 90 282 92 285 99" stroke-width="1.2" opacity=".6"/>
+  <title id="title">代价过高：零钱、哨子与失衡的天平</title>
+  <rect width="360" height="136" fill="#F3F1E9"/>
+  <path d="M0 110C68 104 128 110 192 105C253 100 310 104 360 99V136H0Z" fill="#D7D1C5" opacity=".24"/>
+  <g transform="translate(52 31)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 35H61L75 22H105V48H75L61 35" fill="#C8B496" stroke="#745E50" stroke-width="1.2" opacity=".82"/>
+    <path d="M20 35C20 27 26 21 34 21C42 21 48 27 48 35" stroke="#745E50" stroke-width="1" opacity=".56"/>
+    <circle cx="87" cy="35" r="5" stroke="#745E50" stroke-width="1" opacity=".6"/>
+    <path d="M0 35H9M-8 29L0 32M-8 41L0 38" stroke="#A86456" stroke-width="1.1" opacity=".68"/>
   </g>
-  <g transform="translate(68 38)">
-    <path d="M6 46H155L137 70H31Z" fill="#B79D80" stroke="#765F52" stroke-width="1.15" opacity=".72"/>
-    <path d="M31 46C48 37 67 36 84 41C102 34 123 36 142 46" fill="none" stroke="#765F52" stroke-width="1" opacity=".5"/>
-    <circle cx="57" cy="24" r="7" fill="#A98274" opacity=".72"/>
-    <circle cx="111" cy="24" r="7" fill="#7D8C82" opacity=".72"/>
-    <path d="M49 45C50 32 53 27 57 27C61 27 64 32 65 45M103 45C104 32 107 27 111 27C115 27 118 32 119 45" fill="none" stroke="#665E56" stroke-width="1.1" stroke-linecap="round"/>
-    <path d="M119 43L146 13" stroke="#59675E" stroke-width="1.5" stroke-linecap="round"/>
+  <g transform="translate(195 25)" fill="none" stroke="#59675E" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M62 10V77M20 77H104M31 31H93" stroke-width="1.15" opacity=".62"/>
+    <path d="M31 31L17 58M31 31L45 58M93 31L79 58M93 31L107 58" stroke-width="1" opacity=".5"/>
+    <path d="M7 58H47C45 70 36 77 27 77C18 77 9 70 7 58ZM69 58H109C107 70 98 77 89 77C80 77 71 70 69 58Z" fill="#D9D2C5" opacity=".55"/>
   </g>
-  <path d="M207 37C220 32 233 34 243 43V68C232 61 220 60 207 65Z" fill="#EEE8DA" stroke="#766957" stroke-width="1" opacity=".8"/>
-  <path d="M217 46H235M217 52H232" stroke="#766957" stroke-width=".9" stroke-linecap="round" opacity=".46"/>
-  <path d="M210 72C223 76 232 84 236 96" fill="none" stroke="#A86456" stroke-width="1" stroke-dasharray="2 5" opacity=".58"/>
-  <circle cx="237" cy="98" r="3" fill="#A86456" opacity=".68"/>
+  <g fill="#B09F73" stroke="#7A684C" stroke-width=".8" opacity=".76">
+    <circle cx="219" cy="75" r="6"/><circle cx="232" cy="75" r="6"/><circle cx="245" cy="75" r="6"/>
+    <circle cx="258" cy="75" r="6"/><circle cx="271" cy="75" r="6"/>
+  </g>
+  <circle cx="284" cy="82" r="3" fill="#A86456" opacity=".72"/>
+  <path d="M137 105C153 96 170 96 186 103" fill="none" stroke="#8D9A91" stroke-width="1" stroke-dasharray="1 5" opacity=".52"/>
 </svg>

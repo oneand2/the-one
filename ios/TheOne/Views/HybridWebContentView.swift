@@ -91,7 +91,11 @@ struct HybridWebContentView: UIViewRepresentable {
 
         let container = HybridWebViewContainer(webView: webView)
         context.coordinator.attach(container)
-        context.coordinator.start(screen: flow.screen, sessionIdentity: sessionIdentity)
+        // WKWebView 以零尺寸开始加载时，WebKit 偶尔会先按默认页面宽度排版，
+        // 随后用一个固定倍率适配真实宽度。等首个有效布局再加载，避免这个竞态。
+        container.onFirstValidLayout = { [weak coordinator = context.coordinator] in
+            coordinator?.start(screen: flow.screen, sessionIdentity: sessionIdentity)
+        }
         return container
     }
 
@@ -125,6 +129,9 @@ struct HybridWebContentView: UIViewRepresentable {
         scrollView.maximumZoomScale = 1
         scrollView.bouncesZoom = false
         scrollView.pinchGestureRecognizer?.isEnabled = false
+        if abs(scrollView.zoomScale - 1) > 0.001 {
+            scrollView.setZoomScale(1, animated: false)
+        }
 
         func disableZoomGestures(in view: UIView) {
             for recognizer in view.gestureRecognizers ?? [] {
@@ -135,9 +142,21 @@ struct HybridWebContentView: UIViewRepresentable {
                     recognizer.isEnabled = false
                 }
             }
+            // 智能双击缩放的 recognizer 挂在 WKContentView 等内部子视图上，
+            // 只检查 webView/scrollView 本身会漏掉它。
+            view.subviews.forEach(disableZoomGestures)
         }
         disableZoomGestures(in: webView)
-        disableZoomGestures(in: scrollView)
+    }
+
+    /// 同时校准原生滚动层与 WebKit 的 visual viewport。
+    /// 输入框聚焦缩放等情况下，visualViewport.scale 可能变化而 UIScrollView.zoomScale 仍为 1。
+    fileprivate static func normalizeWebViewZoom(_ webView: WKWebView) {
+        lockWebViewZoom(webView)
+        webView.evaluateJavaScript(
+            "window.__THEONE_RESET_VIEWPORT__ && window.__THEONE_RESET_VIEWPORT__();",
+            completionHandler: nil
+        )
     }
 
     private static let embedBootstrapScript = """
@@ -164,12 +183,45 @@ struct HybridWebContentView: UIViewRepresentable {
       document.addEventListener('DOMContentLoaded', applyViewport);
       const style = document.createElement('style');
       style.id = 'theone-ios-embed-style';
-      style.textContent = 'html,body{touch-action:pan-x pan-y}.web-auth-entry,.theone-install-prompt{display:none!important}[data-ios-embed="true"]::before,[data-ios-embed="true"]::after{display:none!important}';
+      style.textContent = `
+        html,body{
+          width:100%;max-width:100%;overflow-x:hidden;
+          touch-action:pan-x pan-y;-webkit-text-size-adjust:100%;
+        }
+        input:not([type="hidden"]),textarea,select,[contenteditable="true"]{
+          font-size:max(16px,1em)!important;
+        }
+        .web-auth-entry,.theone-install-prompt{display:none!important}
+        [data-ios-embed="true"]::before,[data-ios-embed="true"]::after{display:none!important}
+      `;
       (document.head || document.documentElement).appendChild(style);
       const stopGesture = (event) => { event.preventDefault(); };
       document.addEventListener('gesturestart', stopGesture, { capture: true, passive: false });
       document.addEventListener('gesturechange', stopGesture, { capture: true, passive: false });
       document.addEventListener('gestureend', stopGesture, { capture: true, passive: false });
+      let viewportResetPending = false;
+      const resetViewport = () => {
+        applyViewport();
+        const viewport = window.visualViewport;
+        if (!viewport || Math.abs(viewport.scale - 1) < 0.01 || viewportResetPending) return;
+        viewportResetPending = true;
+        const meta = document.querySelector('meta[name="viewport"]');
+        // 重新赋值相同 content 不会让 WebKit 重新计算；短暂改动 initial-scale
+        // 后再恢复，才能解除已经发生的聚焦/智能缩放。
+        meta.setAttribute('content', viewportContent.replace('initial-scale=1', 'initial-scale=1.0001'));
+        requestAnimationFrame(() => {
+          meta.setAttribute('content', viewportContent);
+          window.scrollTo(0, window.scrollY || 0);
+          // viewport 的 resize 事件可能由上面的 meta 更新再次触发，短暂保留锁，
+          // 避免 WebKit 在同一帧反复重排。
+          setTimeout(() => { viewportResetPending = false; }, 250);
+        });
+      };
+      window.__THEONE_RESET_VIEWPORT__ = resetViewport;
+      window.visualViewport?.addEventListener('resize', resetViewport, { passive: true });
+      window.visualViewport?.addEventListener('scroll', resetViewport, { passive: true });
+      document.addEventListener('focusin', () => requestAnimationFrame(resetViewport), true);
+      window.addEventListener('pageshow', resetViewport, { passive: true });
       const notify = (type) => {
         try { window.webkit.messageHandlers.theone.postMessage({ type }); } catch (e) {}
       };
@@ -282,6 +334,9 @@ struct HybridWebContentView: UIViewRepresentable {
             let becameActive = phase == .active && lastScenePhase != .active
             lastScenePhase = phase
             guard becameActive else { return }
+            if let webView {
+                HybridWebContentView.normalizeWebViewZoom(webView)
+            }
             resumeIfNeeded()
         }
 
@@ -477,7 +532,7 @@ struct HybridWebContentView: UIViewRepresentable {
             isLoadingPage = false
             pageReady = true
             loadState.markReady()
-            HybridWebContentView.lockWebViewZoom(webView)
+            HybridWebContentView.normalizeWebViewZoom(webView)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -485,7 +540,7 @@ struct HybridWebContentView: UIViewRepresentable {
             loadAttempts = 0
             pageReady = true
             loadState.markReady()
-            HybridWebContentView.lockWebViewZoom(webView)
+            HybridWebContentView.normalizeWebViewZoom(webView)
             synchronizeWebCookiesToNative()
         }
 
@@ -575,6 +630,7 @@ struct HybridWebContentView: UIViewRepresentable {
 @MainActor
 final class HybridWebViewContainer: UIView {
     let webView: WKWebView
+    var onFirstValidLayout: (@MainActor () -> Void)?
     private let topFade = HybridEdgeFadeView(edge: .top)
     private let modalTopFade = HybridEdgeFadeView(edge: .modalTop)
     private let bottomFade = HybridEdgeFadeView(edge: .bottom)
@@ -582,6 +638,7 @@ final class HybridWebViewContainer: UIView {
     private var contentOffsetObservation: NSKeyValueObservation?
     private var contentSizeObservation: NSKeyValueObservation?
     private var zoomScaleObservation: NSKeyValueObservation?
+    private var lastWebViewSize = CGSize.zero
 
     init(webView: WKWebView) {
         self.webView = webView
@@ -617,6 +674,15 @@ final class HybridWebViewContainer: UIView {
         super.layoutSubviews()
         guard bounds.width > 1, bounds.height > 1 else { return }
         webView.frame = bounds
+        let sizeChanged = webView.bounds.size != lastWebViewSize
+        lastWebViewSize = webView.bounds.size
+        if let onFirstValidLayout {
+            self.onFirstValidLayout = nil
+            onFirstValidLayout()
+        }
+        if sizeChanged {
+            HybridWebContentView.normalizeWebViewZoom(webView)
+        }
         topFade.frame = CGRect(x: 0, y: 0, width: bounds.width, height: 68)
         modalTopFade.frame = CGRect(x: 0, y: 0, width: bounds.width, height: 148)
         bottomFade.frame = CGRect(x: 0, y: max(0, bounds.height - 80), width: bounds.width, height: 80)

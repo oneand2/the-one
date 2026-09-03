@@ -9,6 +9,7 @@ import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
 import { GuanShiView } from '@/components/GuanShiView';
 import { GuanXinView } from '@/components/GuanXinView';
 import { JueXingCangView } from '@/components/JueXingCangView';
+import { JianZhongShengView } from '@/components/JianZhongShengView';
 import { mobileUI } from '@/generated/mobile-ui';
 import type { TabType } from '@/types/tabs';
 import { prefetchDailyHexagram } from '@/utils/dailyHexagram';
@@ -27,7 +28,7 @@ function tabTitle(tab: TabType): string {
 
 function tabSubtitle(tab: TabType): string {
   if (tab === 'guanshi') return '世间即道场，人生是修行';
-  if (tab === 'wendao') return '观点广场，待续';
+  if (tab === 'wendao') return '人间片刻，各有来处';
   if (tab === 'juexingcang') return '用之则行，舍之则藏';
   return '知己即知天，请成为自己的答案';
 }
@@ -280,21 +281,10 @@ const HomeContent: React.FC = () => {
               {visitedTabs.has('wendao') && (
                 <div
                   data-ios-tab-pane="wendao"
-                  className={
-                    activeTab === 'wendao'
-                      ? 'min-h-[320px] flex flex-col items-center justify-center py-16'
-                      : 'hidden'
-                  }
+                  className={activeTab === 'wendao' ? 'block' : 'hidden'}
                   aria-hidden={activeTab !== 'wendao'}
                 >
-                  <div className="w-12 h-px bg-stone-200/80 mb-6" />
-                  <p
-                    className="text-stone-500 text-sm font-serif tracking-wide text-center"
-                    style={{ fontFamily: '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif' }}
-                  >
-                    感谢您的支持<br />见众生功能正在开发中
-                  </p>
-                  <div className="w-8 h-px bg-stone-200/60 mt-6" />
+                  <JianZhongShengView />
                 </div>
               )}
               {visitedTabs.has('guanxin') && (

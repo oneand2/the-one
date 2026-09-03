@@ -3,6 +3,7 @@
   "stories": [
     {
       "title": "道不可言",
+      "origin": "china",
       "sourceLabel": "《庄子·天道》",
       "originalLanguage": "文言",
       "originalText": "桓公读书于堂上，轮扁斫轮于堂下，释椎凿而上，问桓公曰：“敢问公之所读者何言邪？”公曰：“圣人之言也。”曰：“圣人在乎？”公曰：“已死矣。”曰：“然则君之所读者，古人之糟魄已夫！”桓公曰：“寡人读书，轮人安得议乎！有说则可，无说则死。”轮扁曰：“臣也，以臣之事观之。斫轮，徐则甘而不固，疾则苦而不入。不徐不疾，得之于手而应于心，口不能言，有数存焉于其间。臣不能以喻臣之子，臣之子亦不能受之于臣，是以行年七十而老斫轮。”",
@@ -11,6 +12,7 @@
     },
     {
       "title": "不动而胜",
+      "origin": "china",
       "sourceLabel": "《庄子·达生》",
       "originalLanguage": "文言",
       "originalText": "纪渻子为王养斗鸡。十日而问：“鸡已乎？”曰：“未也，方虚憍而恃气。”十日又问，曰：“未也，犹应向景。”十日又问，曰：“未也，犹疾视而盛气。”十日又问，曰：“几矣。鸡虽有鸣者，已无变矣，望之似木鸡矣，其德全矣；异鸡无敢应者，反走矣。”",
@@ -19,6 +21,7 @@
     },
     {
       "title": "学无止境",
+      "origin": "china",
       "sourceLabel": "《列子·汤问》",
       "originalLanguage": "文言",
       "originalText": "薛谭学讴于秦青，未穷青之技，自谓尽之，遂辞归。秦青弗止，饯于郊衢，抚节悲歌，声振林木，响遏行云。薛谭乃谢求反，终身不敢言归。",
@@ -27,6 +30,7 @@
     },
     {
       "title": "心不在马",
+      "origin": "china",
       "sourceLabel": "《韩非子·喻老》",
       "originalLanguage": "文言",
       "originalText": "赵襄主学御于王子期，俄而与于期逐，三易马而三后。襄主曰：“子之教我御，术未尽也。”对曰：“术已尽，用之则过也。凡御之所贵：马体安于车，人心调于马，而后可以进速致远。今君后则欲逮臣，先则恐逮于臣。夫诱道争远，非先则后也。而先后心皆在于臣，尚何以调于马？此君之所以后也。”",
@@ -35,6 +39,7 @@
     },
     {
       "title": "定义之外",
+      "origin": "world",
       "sourceLabel": "《名哲言行录》",
       "originalLanguage": "古希腊语",
       "originalText": "Πλάτωνος ὁρισαμένου, Ἄνθρωπός ἐστι ζῷον δίπουν ἄπτερον, καὶ εὐδοκιμοῦντος, τίλας ἀλεκτρυόνα εἰσήνεγκεν εἰς τὴν σχολὴν καί φησιν, Οὗτός ἐστιν ὁ Πλάτωνος ἄνθρωπος. ὅθεν τῷ ὅρῳ προσετέθη τὸ πλατυώνυχον.",
@@ -43,6 +48,7 @@
     },
     {
       "title": "所学何用",
+      "origin": "world",
       "sourceLabel": "鲁米《玛斯纳维》",
       "originalLanguage": "波斯语",
       "originalText": "آن یکی نحوی به کشتی در نشست\nرو به کشتیبان نهاد آن خودپرست\nگفت هیچ از نحو خواندی گفت لا\nگفت نیم عمر تو شد در فنا\nدل‌شکسته گشت کشتیبان ز تاب\nلیک آن دم کرد خامش از جواب\nباد کشتی را به گردابی فکند\nگفت کشتیبان بدان نحوی بلند\nهیچ دانی آشنا کردن بگو\nگفت نی ای خوش‌جواب خوب‌رو\nگفت کل عمرت ای نحوی فناست\nزانک کشتی غرق این گردابهاست",
@@ -51,6 +57,7 @@
     },
     {
       "title": "代价过高",
+      "origin": "world",
       "sourceLabel": "富兰克林《哨子》",
       "originalLanguage": "英语",
       "originalText": "When I was a Child of seven Years old, my Friends on a Holiday fill’d my little Pocket with Halfpence. I went directly to a Shop where they sold Toys for Children; and being charm’d with the Sound of a Whistle that I met by the way, in the hands of another Boy, I voluntarily offer’d and gave all my Money for it.\n\nWhen I came home, whistling all over the House, much pleas’d with my Whistle, but disturbing all the Family, my Brothers, Sisters & Cousins, understanding the Bargain I had made, told me I had given four times as much for it as it was worth.\n\nThis however was afterwards of use to me, the Impression continuing on my Mind; so that often when I was tempted to buy some unnecessary thing, I said to my self, Do not give too much for the Whistle; and I sav’d my Money.",

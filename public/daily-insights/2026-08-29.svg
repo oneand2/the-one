@@ -1,21 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
-  <title id="title">学无止境：歌声穿过林木并停住行云</title>
-  <rect width="360" height="136" fill="#F3F1E9"/>
-  <path d="M0 110C79 103 145 110 212 105C268 101 314 104 360 100V136H0Z" fill="#D6D1C5" opacity=".24"/>
-  <g fill="none" stroke="#5C6B61" stroke-linecap="round">
-    <path d="M53 107V49M83 107V35M116 107V55M273 107V47M305 107V34M330 107V58" stroke-width="1.15" opacity=".56"/>
-    <path d="M53 64L41 54M53 75L65 64M83 53L69 43M83 63L97 49M116 72L103 62M273 65L260 53M305 51L291 39M305 61L318 48M330 75L341 64" stroke-width="1" opacity=".46"/>
+  <title id="title">不动而胜：安静站立的斗鸡与退开的鸡群</title>
+  <rect width="360" height="136" fill="#F2F0E8"/>
+  <path d="M0 105C72 99 139 108 204 103C260 99 309 101 360 97V136H0Z" fill="#CDD6CC" opacity=".28"/>
+  <g transform="translate(70 23)">
+    <path d="M64 22C48 24 38 35 38 51C38 66 48 78 65 80L73 98H84L78 79C95 76 106 65 106 50C106 36 96 25 82 22C83 13 77 7 69 7C62 7 57 12 57 18" fill="#A9B5AC" stroke="#56645A" stroke-width="1.2" opacity=".78"/>
+    <path d="M57 13L50 8M62 10L61 3M68 10L73 4M81 19L95 15L84 27" fill="none" stroke="#8A695E" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" opacity=".68"/>
+    <circle cx="72" cy="19" r="1.7" fill="#4F5752"/>
+    <path d="M49 52C59 45 72 46 79 56C69 64 56 63 49 52Z" fill="#F2F0E8" opacity=".42"/>
+    <path d="M73 98L69 109M84 98L90 109M65 109H74M86 109H95" fill="none" stroke="#56645A" stroke-width="1.2" stroke-linecap="round" opacity=".72"/>
   </g>
-  <g transform="translate(151 47)">
-    <circle cx="27" cy="13" r="7" fill="#A98274" opacity=".74"/>
-    <path d="M16 61C17 37 20 23 27 22C35 23 38 38 39 61M18 37L7 50M37 37L50 47M21 61L17 78M35 61L41 78" fill="none" stroke="#695F55" stroke-width="1.2" stroke-linecap="round"/>
-    <path d="M45 45L59 32M56 29L64 36" fill="none" stroke="#8C6D60" stroke-width="1.5" stroke-linecap="round"/>
+  <g fill="none" stroke="#718078" stroke-linecap="round" stroke-linejoin="round" opacity=".34">
+    <path d="M251 65C240 67 233 75 234 85C235 94 242 99 251 99L256 111M251 67C252 59 258 55 265 59L273 56L266 64M256 111H264"/>
+    <path d="M299 75C291 76 285 82 286 90C287 97 293 101 300 101L304 111M300 76C301 70 306 67 311 70L317 68L312 73M304 111H311"/>
+    <path d="M230 87L215 91M286 92L274 97" stroke-dasharray="2 5"/>
   </g>
-  <g fill="none" stroke="#A86456" stroke-linecap="round" opacity=".58">
-    <path d="M202 58C218 48 234 47 250 53"/>
-    <path d="M205 69C225 60 245 61 262 70"/>
-    <path d="M142 59C126 50 111 50 97 57"/>
-  </g>
-  <path d="M225 27C240 18 254 20 263 29C275 22 291 24 298 34C277 39 249 39 225 27Z" fill="#CDD6CC" opacity=".56"/>
-  <circle cx="205" cy="58" r="2.4" fill="#A86456" opacity=".72"/>
+  <circle cx="184" cy="36" r="4" fill="#A86456" opacity=".64"/>
 </svg>

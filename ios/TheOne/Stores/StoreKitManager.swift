@@ -1,5 +1,6 @@
 import Combine
 import StoreKit
+import UIKit
 
 struct AppleCreditResponse: Decodable {
     let ok: Bool
@@ -101,7 +102,7 @@ final class StoreKitManager: ObservableObject {
             product = products.first { $0.id == package.id }
         }
         guard let product else {
-            message = "暂时连不上 App Store 商品。请从 Xcode 运行以加载本地服务包，或改用真机沙盒账号。"
+            message = "暂时无法连接 App Store，请稍后重试。"
             return false
         }
         return await purchase(product)
@@ -111,9 +112,8 @@ final class StoreKitManager: ObservableObject {
         purchasingProductID = product.id
         defer { purchasingProductID = nil }
         do {
-            let result = try await withTimeout(seconds: 30) {
-                try await product.purchase()
-            }
+            // 不要给系统购买窗加短超时。审核员在 iPad 上输入沙盒账号时经常超过 30 秒。
+            let result = try await purchaseWithPresentation(product)
             switch result {
             case .success(let verification):
                 return try await deliver(verification)
@@ -125,13 +125,33 @@ final class StoreKitManager: ObservableObject {
             @unknown default:
                 return false
             }
-        } catch is CancellationError {
-            message = "模拟器里的购买确认窗可能没有弹出。请点右上角关闭后重试，或改用真机。"
-            return false
         } catch {
-            message = error.localizedDescription
+            message = Self.friendlyPurchaseError(error)
             return false
         }
+    }
+
+    private func purchaseWithPresentation(_ product: Product) async throws -> Product.PurchaseResult {
+        if let scene = Self.foregroundWindowScene {
+            if #available(iOS 18.2, *) {
+                return try await product.purchase(confirmIn: scene)
+            }
+        }
+        return try await product.purchase()
+    }
+
+    private static var foregroundWindowScene: UIWindowScene? {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        return scenes.first(where: { $0.activationState == .foregroundActive }) ?? scenes.first
+    }
+
+    private static func friendlyPurchaseError(_ error: Error) -> String {
+        let raw = error.localizedDescription
+        let lower = raw.lowercased()
+        if lower.contains("xcode") || raw.contains("模拟器") {
+            return "暂时无法完成购买，请稍后重试。"
+        }
+        return raw
     }
 
     func recoverUnfinishedTransactions() async {
@@ -170,22 +190,6 @@ final class StoreKitManager: ObservableObject {
 
         if !restored, message == nil {
             message = "没有找到可恢复的终身 VIP。铜币属于消耗型项目，不通过 Apple 恢复。"
-        }
-    }
-
-    private func withTimeout<T: Sendable>(
-        seconds: TimeInterval,
-        operation: @escaping @Sendable () async throws -> T
-    ) async throws -> T {
-        try await withThrowingTaskGroup(of: T.self) { group in
-            group.addTask { try await operation() }
-            group.addTask {
-                try await Task.sleep(for: .seconds(seconds))
-                throw CancellationError()
-            }
-            guard let value = try await group.next() else { throw CancellationError() }
-            group.cancelAll()
-            return value
         }
     }
 

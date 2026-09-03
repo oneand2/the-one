@@ -10,6 +10,7 @@
  *   "stories": [
  *     {
  *       "title": "道不可言",
+ *       "origin": "china",
  *       "sourceLabel": "《庄子·天道》",
  *       "originalLanguage": "文言",
  *       "originalText": "桓公读书于堂上……",
@@ -27,6 +28,10 @@ import { resolve } from 'node:path';
 import dotenv from 'dotenv';
 
 import { createAdminClient } from '../src/utils/supabase/admin';
+import {
+  arrangeWeeklyInsights,
+  type DailyInsightOrigin,
+} from '../src/utils/dailyInsights';
 
 dotenv.config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -35,6 +40,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 interface StoryItem {
   title: string;
+  origin: DailyInsightOrigin;
   sourceLabel: string;
   originalLanguage: string;
   originalText: string;
@@ -79,6 +85,12 @@ function validate(payload: StoryWeekFile) {
 
   const titles = new Set<string>();
   for (const story of payload.stories) {
+    if (story.origin !== 'china' && story.origin !== 'world') {
+      throw new Error(
+        `发布已中止：「${story.title}」的 origin 必须是 china 或 world`
+      );
+    }
+
     const titleLen = countChars(story.title);
     if (titleLen < 2 || titleLen > 5) {
       throw new Error(`发布已中止：标题「${story.title}」应为二到五字，实际 ${titleLen} 字`);
@@ -128,6 +140,14 @@ function validate(payload: StoryWeekFile) {
       throw new Error(`发布已中止：「${story.title}」缺少 sources`);
     }
   }
+
+  const chinaCount = payload.stories.filter((story) => story.origin === 'china').length;
+  const worldCount = payload.stories.filter((story) => story.origin === 'world').length;
+  if (chinaCount !== 4 || worldCount !== 3) {
+    throw new Error(
+      `发布已中止：七日周稿须为中国 4 则、外国 3 则（约 3:2），实际中国 ${chinaCount} 则、外国 ${worldCount} 则`
+    );
+  }
 }
 
 async function main() {
@@ -137,7 +157,8 @@ async function main() {
 
   validate(payload);
 
-  const rows = payload.stories.map((story, index) => ({
+  const orderedStories = arrangeWeeklyInsights(payload.stories);
+  const rows = orderedStories.map((story, index) => ({
     insight_date: addDays(payload.startDate, index),
     title: story.title,
     source_label: story.sourceLabel,

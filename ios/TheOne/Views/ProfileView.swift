@@ -38,7 +38,7 @@ struct ProfileView: View {
         .onChange(of: profile.profile?.nickname) { _, value in
             if let value { nicknameDraft = value }
         }
-        .sheet(isPresented: $showStore) { StoreView() }
+        .fullScreenCover(isPresented: $showStore) { StoreView() }
         .overlay {
             if showGetCoinsInfo {
                 GetCoinsInfoOverlay(showStore: $showStore, isPresented: $showGetCoinsInfo)
@@ -65,7 +65,7 @@ struct ProfileView: View {
                 Text("登录，继续你的记录")
                     .font(.webSerif(23))
                     .foregroundStyle(AppTheme.stone800)
-                Text("账户、铜币、排盘和测试记录会与网页及 Android 同步。")
+                Text("账户、铜币、排盘和测试记录会在本应用与网页之间同步。")
                     .font(.system(size: 12))
                     .foregroundStyle(AppTheme.stone500)
                     .multilineTextAlignment(.center)

@@ -110,7 +110,7 @@ struct ParityChatView: View {
                 showImport = false
             }
         }
-        .sheet(isPresented: $showStore) { StoreView() }
+        .fullScreenCover(isPresented: $showStore) { StoreView() }
         .overlay {
             if showCoinsModal, let needCoins {
                 InsufficientCoinsOverlay(needCoins: needCoins, onClose: { showCoinsModal = false }) {

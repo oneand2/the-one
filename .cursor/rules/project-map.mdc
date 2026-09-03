@@ -23,7 +23,7 @@ alwaysApply: true
 - 样式：Tailwind CSS 4，通过 `@tailwindcss/postcss` 接入；全局样式在 `src/app/globals.css`。
 - 鉴权/数据：Supabase，通过 `@supabase/ssr` 和 `@supabase/supabase-js` 使用。邮箱注册/找回密码验证码在配置了 `SMTP_*` 时由应用自己发信（`src/utils/authOtp.ts`），否则仍走 Supabase 内置邮件。
 - AI/API：Next Route Handlers 中使用 OpenAI 兼容 SDK；默认、推理、宗师模式模型由环境变量选择。宗师模式只读 `AI_MEDITATION_FALLBACK_*`，不再做主备切换。
-- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。原生 iOS 项目位于 `ios/`（当前 TestFlight build 9）；网页可用 `?embed=ios` 嵌入。iOS 终身 VIP 为非消耗型，可恢复；铜币为消耗型，购买后绑定账户、不经 Apple 恢复。
+- 移动端打包：Capacitor Android 项目位于 `android/`，配置文件是 `capacitor.config.ts`。原生 iOS 项目位于 `ios/`（当前 TestFlight build 10）；网页可用 `?embed=ios` 嵌入。iOS 终身 VIP 为非消耗型，可恢复；铜币为消耗型，购买后绑定账户、不经 Apple 恢复。
 
 ## 关键目录
 

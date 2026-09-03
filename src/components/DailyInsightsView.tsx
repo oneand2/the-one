@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
+import { arrangeWeeklyInsights } from '@/utils/dailyInsights';
 import localStoryWeek from '../../content/2026-08-27-week.json';
 
 const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
@@ -22,20 +23,22 @@ export interface DailyInsight {
 
 const formatUtcDate = (value: Date) => value.toISOString().slice(0, 10);
 
-const LOCAL_DAILY_INSIGHTS: DailyInsight[] = localStoryWeek.stories.map((story, index) => {
-  const start = new Date(`${localStoryWeek.startDate}T00:00:00Z`).getTime();
-  const date = formatUtcDate(new Date(start + index * DAY_MS));
-  return {
-    id: `local-${date}`,
-    insight_date: date,
-    title: story.title,
-    source_label: story.sourceLabel,
-    original_language: story.originalLanguage,
-    original_text: story.originalText,
-    body: story.body,
-    created_at: `${date}T00:00:00+08:00`,
-  };
-});
+const LOCAL_DAILY_INSIGHTS: DailyInsight[] = arrangeWeeklyInsights(localStoryWeek.stories).map(
+  (story, index) => {
+    const start = new Date(`${localStoryWeek.startDate}T00:00:00Z`).getTime();
+    const date = formatUtcDate(new Date(start + index * DAY_MS));
+    return {
+      id: `local-${date}`,
+      insight_date: date,
+      title: story.title,
+      source_label: story.sourceLabel,
+      original_language: story.originalLanguage,
+      original_text: story.originalText,
+      body: story.body,
+      created_at: `${date}T00:00:00+08:00`,
+    };
+  }
+);
 
 /** 本地周稿优先覆盖同日期内容，便于上线前预览。 */
 const mergeLocalInsights = (rows: DailyInsight[]) => {

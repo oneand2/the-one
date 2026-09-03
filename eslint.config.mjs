@@ -17,6 +17,15 @@ const eslintConfig = defineConfig([
     "public/**",
     "next/**",
     ".claude/**",
+    ".codex-work/**",
+    "tmp/**",
+    "output/**",
+    "app-store-assets/**",
+    "mockups/**",
+    "supabase/.temp/**",
+    "wechat-miniprogram/private.*",
+    "wechat-miniprogram/upload-ci.*",
+    "wechat-miniprogram/package*.json",
     "the-one@*/**",
     "test-*.js",
     "test-*.html",
@@ -24,6 +33,7 @@ const eslintConfig = defineConfig([
     "*.sql",
   ]),
   {
+    files: ["src/**/*.{js,jsx,ts,tsx}", "scripts/**/*.{js,mjs,cjs,ts,tsx}"],
     rules: {
       // The current app has legacy data-shaping and cached-state code that
       // predates the stricter React 19 / Next 16 lint defaults. Keep these

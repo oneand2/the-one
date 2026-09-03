@@ -13,6 +13,16 @@
 # testing
 /coverage
 
+# local work products
+/.codex-work/
+/tmp/
+/output/
+/supabase/.temp/
+/mockups/**/node_modules/
+/app-store-assets/**/*.xcarchive/
+/app-store-assets/export/
+*.ipa
+
 # next.js
 /.next/
 /out/

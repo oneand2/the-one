@@ -11,7 +11,15 @@ const Step = ({ number, title, children }: { number: number; title: string; chil
   </li>
 );
 
-export default function DownloadPage() {
+export default async function DownloadPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const embed = typeof params.embed === 'string' ? params.embed : undefined;
+  const isIOSEmbed = embed === 'ios';
+
   return (
     <main className="min-h-screen bg-[#FBF9F4] px-4 py-12">
       <div className="mx-auto max-w-3xl">
@@ -25,7 +33,7 @@ export default function DownloadPage() {
           </p>
         </header>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className={`grid gap-6 ${isIOSEmbed ? '' : 'md:grid-cols-2'}`}>
           <section className="rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100"><Smartphone className="h-5 w-5 text-stone-600" /></span>
@@ -41,20 +49,22 @@ export default function DownloadPage() {
             </ol>
           </section>
 
+          {!isIOSEmbed && (
           <section className="rounded-2xl border border-stone-200 bg-white p-7 shadow-sm">
             <div className="mb-6 flex items-center gap-3">
               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-stone-100"><Smartphone className="h-5 w-5 text-stone-600" /></span>
               <div>
-                <h2 className="text-xl font-serif text-stone-900">Android 手机</h2>
+                <h2 className="text-xl font-serif text-stone-900">其他手机浏览器</h2>
                 <p className="text-xs text-stone-500">推荐使用 Chrome 浏览器</p>
               </div>
             </div>
             <ol className="space-y-6">
-              <Step number={1} title="在 Chrome 中打开网站">使用 Chrome 访问本站并保持网络连接。</Step>
+              <Step number={1} title="在浏览器中打开网站">使用常用浏览器访问本站并保持网络连接。</Step>
               <Step number={2} title="打开浏览器菜单"><MoreVertical className="mr-1 inline h-4 w-4" />点击右上角菜单按钮。</Step>
               <Step number={3} title="选择安装或添加">点击“安装应用”或“添加到主屏幕”，再按提示确认。</Step>
             </ol>
           </section>
+          )}
         </div>
 
         <section className="mt-6 rounded-2xl border border-stone-200 bg-white/80 p-6">
@@ -67,9 +77,11 @@ export default function DownloadPage() {
           </div>
         </section>
 
+        {!isIOSEmbed && (
         <div className="mt-8 flex items-center justify-center gap-2 text-sm text-stone-500">
-          <CheckCircle2 className="h-4 w-4" /> 当前仅提供浏览器主屏幕入口，不提供 APK 文件下载。
+          <CheckCircle2 className="h-4 w-4" /> 当前仅提供浏览器主屏幕入口。
         </div>
+        )}
       </div>
     </main>
   );

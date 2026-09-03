@@ -1,0 +1,579 @@
+'use client';
+
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { jianZhongShengSpace, type JianZhongShengEntry } from '@/content/jianzhongsheng';
+
+const MIN_NOTE_LENGTH = 8;
+const MAX_NOTE_LENGTH = 600;
+const MAX_COMMENT_LENGTH = 500;
+
+type CommunityResponse = {
+  id: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  mine: boolean;
+};
+
+type DisplayEntry = JianZhongShengEntry & {
+  mine?: boolean;
+};
+
+type CommunityComment = {
+  id: string;
+  entryId: string;
+  authorId: string;
+  body: string;
+  createdAt: string;
+  mine: boolean;
+};
+
+type SaveState = 'idle' | 'saving' | 'shared' | 'local';
+
+function PaperGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 28 28" aria-hidden="true" className={className}>
+      <path d="M6.5 3.5h10.75l4.25 4.25V24.5h-15z" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
+      <path d="M17.25 3.5v4.25h4.25M10 12h8M10 16h8M10 20h5" fill="none" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function BackGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+      <path d="m14.5 5.5-6.5 6.5 6.5 6.5M8.5 12h8" fill="none" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function excerptFromBody(body: string) {
+  const compact = body.replace(/\s+/g, ' ').trim();
+  if (compact.length <= 92) return compact;
+  return `${compact.slice(0, 92).trim()}……`;
+}
+
+function bodyParagraphs(body: string) {
+  return body.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+}
+
+function commentTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).format(date);
+}
+
+export const JianZhongShengView: React.FC = () => {
+  const space = jianZhongShengSpace;
+  const reduceMotion = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+  const feedScrollPosition = useRef(0);
+  const storageKey = `jianzhongsheng:${space.id}:note`;
+  const [draft, setDraft] = useState('');
+  const [myNote, setMyNote] = useState('');
+  const [validationMessage, setValidationMessage] = useState('');
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [communityResponses, setCommunityResponses] = useState<CommunityResponse[]>([]);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [selectedEntry, setSelectedEntry] = useState<DisplayEntry | null>(null);
+  const [comments, setComments] = useState<CommunityComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentsUnavailable, setCommentsUnavailable] = useState(false);
+  const [canComment, setCanComment] = useState<boolean | null>(null);
+  const [commentDraft, setCommentDraft] = useState('');
+  const [commentMessage, setCommentMessage] = useState('');
+  const [commentSaving, setCommentSaving] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(storageKey)?.trim() ?? '';
+        if (stored) {
+          setDraft(stored);
+          setMyNote(stored);
+          setSaveState('local');
+        }
+      } catch {
+        // 隐私模式下 localStorage 可能不可用；不影响本次书写。
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [storageKey]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/jianzhongsheng?questionId=${encodeURIComponent(space.id)}`, {
+      credentials: 'include',
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: { answers?: CommunityResponse[] } | null) => {
+        const answers = payload?.answers ?? [];
+        setCommunityResponses(answers);
+        const mine = answers.find((answer) => answer.mine);
+        if (mine) {
+          setDraft(mine.body);
+          setMyNote(mine.body);
+          setSaveState('shared');
+        }
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [space.id]);
+
+  useEffect(() => {
+    if (!selectedEntry) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      setComments([]);
+      setCommentsLoading(true);
+      setCommentsUnavailable(false);
+      setCanComment(null);
+      setCommentDraft('');
+      setCommentMessage('');
+      fetch(`/api/jianzhongsheng/comments?entryId=${encodeURIComponent(selectedEntry.id)}`, {
+        credentials: 'include',
+        cache: 'no-store',
+        signal: controller.signal,
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error('comments unavailable');
+          return response.json() as Promise<{ comments?: CommunityComment[]; canComment?: boolean }>;
+        })
+        .then((payload) => {
+          setComments(payload.comments ?? []);
+          setCanComment(Boolean(payload.canComment));
+        })
+        .catch((error: unknown) => {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+          setCommentsUnavailable(true);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setCommentsLoading(false);
+        });
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [selectedEntry]);
+
+  const entries = useMemo<DisplayEntry[]>(() => {
+    const hasSharedNote = communityResponses.some((response) => response.mine);
+    const localEntry: DisplayEntry[] = myNote && !hasSharedNote
+      ? [{
+          id: 'my-local-note',
+          authorId: '我',
+          excerpt: excerptFromBody(myNote),
+          body: myNote,
+          mine: true,
+        }]
+      : [];
+    const sharedEntries = communityResponses.map((response) => ({
+      id: response.id,
+      authorId: response.mine ? '我' : response.authorId,
+      excerpt: excerptFromBody(response.body),
+      body: response.body,
+      mine: response.mine,
+    }));
+    return [...localEntry, ...sharedEntries, ...space.entries];
+  }, [communityResponses, myNote, space.entries]);
+
+  const saveLabel = saveState === 'shared'
+    ? '已发布'
+    : saveState === 'saving'
+      ? '正在发布'
+      : saveState === 'local'
+        ? '暂存于此设备'
+        : '';
+
+  const openEntry = (entry: DisplayEntry) => {
+    feedScrollPosition.current = window.scrollY;
+    setSelectedEntry(entry);
+    window.setTimeout(() => {
+      sectionRef.current?.scrollIntoView({
+        behavior: reduceMotion ? 'auto' : 'smooth',
+        block: 'start',
+      });
+    }, 0);
+  };
+
+  const closeEntry = () => {
+    setSelectedEntry(null);
+    window.setTimeout(() => {
+      window.scrollTo({
+        top: feedScrollPosition.current,
+        behavior: reduceMotion ? 'auto' : 'smooth',
+      });
+    }, 0);
+  };
+
+  const submitNote = async () => {
+    const note = draft.trim();
+    if (note.length < MIN_NOTE_LENGTH) {
+      setValidationMessage(`再写一点吧，至少留下 ${MIN_NOTE_LENGTH} 个字。`);
+      return;
+    }
+    setValidationMessage('');
+    setMyNote(note);
+    setComposerOpen(false);
+    setSaveState('saving');
+    try {
+      window.localStorage.setItem(storageKey, note);
+    } catch {
+      // 本次仍可展示；只是不跨刷新保存。
+    }
+    try {
+      const response = await fetch('/api/jianzhongsheng', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questionId: space.id, body: note }),
+      });
+      if (!response.ok) {
+        setSaveState('local');
+      } else {
+        const payload = await response.json() as { answer?: CommunityResponse };
+        if (payload.answer) {
+          setCommunityResponses((current) => [
+            ...current.filter((item) => item.id !== payload.answer?.id && !item.mine),
+            payload.answer as CommunityResponse,
+          ]);
+        }
+        setSaveState('shared');
+      }
+    } catch {
+      setSaveState('local');
+    }
+  };
+
+  const submitComment = async () => {
+    if (!selectedEntry) return;
+    const body = commentDraft.trim();
+    if (!body) {
+      setCommentMessage('写下一点内容再回应。');
+      return;
+    }
+    setCommentSaving(true);
+    setCommentMessage('');
+    try {
+      const response = await fetch('/api/jianzhongsheng/comments', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ entryId: selectedEntry.id, body }),
+      });
+      const payload = await response.json() as { comment?: CommunityComment; error?: string };
+      if (!response.ok || !payload.comment) {
+        setCommentMessage(payload.error || '回应暂时未能留下。');
+        return;
+      }
+      setComments((current) => [...current, payload.comment as CommunityComment]);
+      setCommentDraft('');
+      setCommentMessage('回应已经留下。');
+    } catch {
+      setCommentMessage('回应暂时未能留下。');
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+  return (
+    <section ref={sectionRef} className="w-full scroll-mt-5 pb-10">
+      <AnimatePresence initial={false} mode="wait">
+        {selectedEntry ? (
+          <motion.div
+            key={`entry-${selectedEntry.id}`}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <button
+              type="button"
+              onClick={closeEntry}
+              className="mb-7 flex min-h-11 items-center gap-2 font-sans text-[11px] tracking-[0.14em] text-stone-500 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+            >
+              <BackGlyph />
+              返回众生
+            </button>
+
+            <div className="mb-5 flex items-center gap-3">
+              <span className="font-sans text-[10px] tracking-[0.34em] text-stone-400">一 则 手 记</span>
+              <span className="h-px flex-1 bg-stone-200/80" />
+              <PaperGlyph className="h-5 w-5 text-stone-300" />
+            </div>
+
+            <article className="rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]" aria-labelledby="jianzhongsheng-entry-author">
+              <div className="relative overflow-hidden rounded-[17px] bg-[#fdfcf9] px-6 pb-8 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8">
+                <span aria-hidden="true" className="absolute right-4 top-4 h-7 w-7 rounded-tr-lg border-r border-t border-stone-300/60" />
+                <h2
+                  id="jianzhongsheng-entry-author"
+                  className="mb-8 text-[13px] tracking-[0.18em] text-stone-500"
+                  style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                >
+                  {selectedEntry.authorId}
+                </h2>
+                <div
+                  className="space-y-5 text-[15px] leading-[2.05] tracking-[0.015em] text-stone-700"
+                  style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                >
+                  {bodyParagraphs(selectedEntry.body).map((paragraph, index) => (
+                    <p key={`${selectedEntry.id}-${index}`}>{paragraph}</p>
+                  ))}
+                </div>
+                <div className="mt-9 flex items-center gap-3">
+                  <span className="h-px flex-1 bg-stone-200/70" />
+                  <span
+                    className="text-[12px] tracking-[0.16em] text-stone-500"
+                    style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                  >
+                    — {selectedEntry.authorId}
+                  </span>
+                </div>
+              </div>
+            </article>
+
+            <section className="mt-10" aria-labelledby="jianzhongsheng-comments-title">
+              <div className="mb-2 flex items-center gap-3">
+                <span id="jianzhongsheng-comments-title" className="font-sans text-[10px] tracking-[0.34em] text-stone-400">众 生 回 应</span>
+                <span className="h-px flex-1 bg-stone-200/80" />
+                <span className="font-sans text-[10px] tabular-nums text-stone-400">{comments.length}</span>
+              </div>
+              <p className="mb-5 font-sans text-[10px] leading-5 tracking-[0.05em] text-stone-400">
+                回应这则手记，也可以只是说说它让你想起了什么。
+              </p>
+
+              {commentsLoading ? (
+                <div className="space-y-4 py-2" aria-label="正在读取回应">
+                  {[0, 1].map((item) => (
+                    <div key={item} className="border-t border-stone-200/70 pt-4">
+                      <div className="mb-3 h-3 w-20 animate-pulse rounded bg-stone-100/80" />
+                      <div className="h-3.5 w-full animate-pulse rounded bg-stone-100/60" />
+                    </div>
+                  ))}
+                </div>
+              ) : commentsUnavailable ? (
+                <p className="border-t border-stone-200/70 py-5 font-sans text-[11px] leading-6 text-stone-400">
+                  回应暂时无法读取，稍后再来看看。
+                </p>
+              ) : comments.length > 0 ? (
+                <div>
+                  {comments.map((comment) => (
+                    <article key={comment.id} className="border-t border-stone-200/70 py-4">
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <span
+                          className="min-w-0 truncate text-[11px] tracking-[0.12em] text-stone-500"
+                          style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                        >
+                          {comment.mine ? '我' : comment.authorId}
+                        </span>
+                        <time className="shrink-0 font-sans text-[9px] tracking-[0.04em] text-stone-300" dateTime={comment.createdAt}>
+                          {commentTime(comment.createdAt)}
+                        </time>
+                      </div>
+                      <p className="whitespace-pre-wrap font-sans text-[13px] leading-6 tracking-[0.01em] text-stone-600">{comment.body}</p>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="border-t border-stone-200/70 py-5 font-sans text-[11px] leading-6 tracking-[0.04em] text-stone-400">
+                  还没有回应。你可以留下第一句。
+                </p>
+              )}
+
+              {!commentsUnavailable && canComment === true && (
+                <div className="mt-2 rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-4 pb-3 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors focus-within:border-stone-400/50">
+                  <label htmlFor="jianzhongsheng-comment" className="sr-only">回应这则手记</label>
+                  <textarea
+                    id="jianzhongsheng-comment"
+                    value={commentDraft}
+                    maxLength={MAX_COMMENT_LENGTH}
+                    onChange={(event) => {
+                      setCommentDraft(event.target.value);
+                      if (commentMessage) setCommentMessage('');
+                    }}
+                    placeholder="留下你的回应……"
+                    rows={3}
+                    className="min-h-20 w-full resize-none bg-transparent font-sans text-[13px] leading-6 text-stone-700 outline-none placeholder:text-stone-300"
+                  />
+                  <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
+                    <span className="font-sans text-[9px] text-stone-400" aria-live="polite">
+                      {commentMessage || `${commentDraft.length} / ${MAX_COMMENT_LENGTH}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void submitComment()}
+                      disabled={commentSaving}
+                      className="min-h-9 rounded-full bg-stone-800 px-4 font-sans text-[10px] tracking-[0.14em] text-[#fbf9f4] transition-colors duration-200 hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      {commentSaving ? '正在回应' : '留下回应'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!commentsUnavailable && canComment === false && (
+                <p className="mt-2 rounded-2xl border border-black/[0.06] bg-stone-900/[0.018] px-4 py-4 text-center font-sans text-[11px] tracking-[0.06em] text-stone-400">
+                  登录后，可以回应这则手记
+                </p>
+              )}
+            </section>
+
+            <button
+              type="button"
+              onClick={closeEntry}
+              className="mt-7 flex min-h-11 w-full items-center justify-center rounded-full border border-stone-300/70 font-sans text-[11px] tracking-[0.18em] text-stone-600 transition-colors duration-200 hover:bg-stone-900/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+            >
+              读完，回到众生
+            </button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="notes-feed"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="mb-2 flex items-center gap-3">
+              <span id="jianzhongsheng-notes-title" className="font-sans text-[10px] tracking-[0.34em] text-stone-400">众 生 手 记</span>
+              <span className="h-px flex-1 bg-stone-200/80" />
+            </div>
+            <p
+              className="mb-7 text-[14px] leading-7 tracking-[0.04em] text-stone-600"
+              style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+            >
+              众生各自在生活，我们偶然看见。
+            </p>
+
+            <div className="mb-9">
+              <AnimatePresence initial={false} mode="wait">
+                {composerOpen ? (
+                  <motion.div
+                    key="composer"
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <label htmlFor="jianzhongsheng-note" className="mb-3 block font-sans text-[11px] tracking-[0.2em] text-stone-500">
+                      此刻，你想留下些什么？
+                    </label>
+                    <div className="rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-4 pb-3 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors focus-within:border-stone-400/50">
+                      <textarea
+                        id="jianzhongsheng-note"
+                        value={draft}
+                        maxLength={MAX_NOTE_LENGTH}
+                        onChange={(event) => {
+                          setDraft(event.target.value);
+                          if (validationMessage) setValidationMessage('');
+                        }}
+                        placeholder="写下最近在你心中停留过的事……"
+                        rows={7}
+                        className="min-h-44 w-full resize-none bg-transparent font-sans text-[14px] leading-7 text-stone-700 outline-none placeholder:text-stone-300"
+                      />
+                      <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setValidationMessage('');
+                            setComposerOpen(false);
+                          }}
+                          className="min-h-10 px-2 font-sans text-[10px] tracking-[0.14em] text-stone-400 transition-colors hover:text-stone-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+                        >
+                          收起
+                        </button>
+                        <span className="font-sans text-[10px] text-stone-400" aria-live="polite">
+                          {validationMessage || `${draft.length} / ${MAX_NOTE_LENGTH}`}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void submitNote()}
+                          className="min-h-10 rounded-full bg-stone-800 px-5 font-sans text-[11px] tracking-[0.16em] text-[#fbf9f4] transition-colors duration-200 hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4] active:bg-stone-900"
+                        >
+                          发布手记
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.button
+                    key="open-composer"
+                    type="button"
+                    initial={reduceMotion ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    onClick={() => setComposerOpen(true)}
+                    className="group flex min-h-20 w-full items-center gap-4 rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-5 py-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors hover:bg-stone-900/[0.012] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-stone-900/[0.035] text-stone-500 ring-1 ring-inset ring-stone-900/[0.055]">
+                      <PaperGlyph className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-sans text-[12px] tracking-[0.13em] text-stone-600">写下此刻</span>
+                      <span className="mt-1 block truncate font-sans text-[10px] tracking-[0.04em] text-stone-400">
+                        {myNote ? saveLabel : '不必先想清楚，也不必得出结论'}
+                      </span>
+                    </span>
+                    <span className="font-sans text-[10px] tracking-[0.14em] text-stone-400 transition-colors group-hover:text-stone-600">
+                      {myNote ? '续写' : '写下'}
+                    </span>
+                  </motion.button>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="mb-5 flex items-center gap-3">
+              <span className="font-sans text-[10px] tracking-[0.34em] text-stone-400">近 日 所 见</span>
+              <span className="h-px flex-1 bg-stone-200/80" />
+            </div>
+
+            <div className="columns-2 gap-3" aria-labelledby="jianzhongsheng-notes-title">
+              {entries.map((entry, index) => (
+                <motion.button
+                  key={entry.id}
+                  type="button"
+                  aria-label={`阅读${entry.authorId}的手记`}
+                  initial={reduceMotion ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: reduceMotion ? 0 : Math.min(index * 0.025, 0.16) }}
+                  onClick={() => openEntry(entry)}
+                  className="group relative mb-3 inline-block w-full break-inside-avoid rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-4 pb-4 pt-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors hover:bg-stone-900/[0.012] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+                >
+                  <span aria-hidden="true" className="absolute right-3 top-3 h-4 w-4 rounded-tr-md border-r border-t border-stone-300/50" />
+                  <span
+                    className="block pr-2 text-[13px] leading-[1.95] tracking-[0.015em] text-stone-700"
+                    style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                  >
+                    {entry.excerpt}
+                  </span>
+                  <span className="mt-4 flex items-end justify-between gap-2 border-t border-stone-900/[0.055] pt-3">
+                    <span
+                      className="min-w-0 truncate text-[11px] tracking-[0.12em] text-stone-500"
+                      style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                    >
+                      {entry.authorId}
+                    </span>
+                    <span className="shrink-0 font-sans text-[8px] tracking-[0.12em] text-stone-300 transition-colors group-hover:text-stone-500">展开</span>
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+
+            <p className="mt-5 text-center font-sans text-[9px] leading-5 tracking-[0.08em] text-stone-300">
+              其中包含编辑创作的示例手记，用来示意这里可以如何说话
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+};

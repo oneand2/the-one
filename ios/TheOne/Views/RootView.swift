@@ -220,7 +220,7 @@ private struct MainTabView: View {
                 GetCoinsInfoOverlay(showStore: $showStore, isPresented: $showGetCoins)
             }
         }
-        .sheet(isPresented: $showStore) { StoreView() }
+        .fullScreenCover(isPresented: $showStore) { StoreView() }
     }
 
     private struct HybridLoadOverlay: View {

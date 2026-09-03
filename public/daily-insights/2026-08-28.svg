@@ -1,18 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-labelledby="title">
-  <title id="title">不动而胜：安静站立的斗鸡与退开的鸡群</title>
-  <rect width="360" height="136" fill="#F2F0E8"/>
-  <path d="M0 105C72 99 139 108 204 103C260 99 309 101 360 97V136H0Z" fill="#CDD6CC" opacity=".28"/>
-  <g transform="translate(70 23)">
-    <path d="M64 22C48 24 38 35 38 51C38 66 48 78 65 80L73 98H84L78 79C95 76 106 65 106 50C106 36 96 25 82 22C83 13 77 7 69 7C62 7 57 12 57 18" fill="#A9B5AC" stroke="#56645A" stroke-width="1.2" opacity=".78"/>
-    <path d="M57 13L50 8M62 10L61 3M68 10L73 4M81 19L95 15L84 27" fill="none" stroke="#8A695E" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round" opacity=".68"/>
-    <circle cx="72" cy="19" r="1.7" fill="#4F5752"/>
-    <path d="M49 52C59 45 72 46 79 56C69 64 56 63 49 52Z" fill="#F2F0E8" opacity=".42"/>
-    <path d="M73 98L69 109M84 98L90 109M65 109H74M86 109H95" fill="none" stroke="#56645A" stroke-width="1.2" stroke-linecap="round" opacity=".72"/>
+  <title id="title">定义之外：被带进讲堂的无羽鸡</title>
+  <rect width="360" height="136" fill="#F3F0E8"/>
+  <path d="M0 109C57 103 119 109 181 105C244 101 302 104 360 99V136H0Z" fill="#CDD6CC" opacity=".25"/>
+  <g transform="translate(67 25)">
+    <path d="M36 66C23 59 18 47 22 35C26 21 40 13 55 17C68 20 76 31 75 44C74 58 64 68 50 70L47 92H36L40 69Z" fill="#D8C3B2" stroke="#7B655A" stroke-width="1.15" opacity=".78"/>
+    <path d="M51 17C51 8 58 3 66 6C72 8 75 14 73 20L89 24L74 31" fill="#D8C3B2" stroke="#7B655A" stroke-width="1.15" stroke-linejoin="round"/>
+    <circle cx="65" cy="15" r="1.6" fill="#4E514D"/>
+    <path d="M38 93L34 103M47 93L52 103M29 103H39M48 103H58" fill="none" stroke="#7B655A" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M35 41C45 33 57 35 63 45C56 54 44 55 35 48" fill="none" stroke="#F3F0E8" stroke-width="1" opacity=".54"/>
   </g>
-  <g fill="none" stroke="#718078" stroke-linecap="round" stroke-linejoin="round" opacity=".34">
-    <path d="M251 65C240 67 233 75 234 85C235 94 242 99 251 99L256 111M251 67C252 59 258 55 265 59L273 56L266 64M256 111H264"/>
-    <path d="M299 75C291 76 285 82 286 90C287 97 293 101 300 101L304 111M300 76C301 70 306 67 311 70L317 68L312 73M304 111H311"/>
-    <path d="M230 87L215 91M286 92L274 97" stroke-dasharray="2 5"/>
+  <g transform="translate(218 24)" fill="none" stroke="#59675E" opacity=".58">
+    <path d="M13 10H91V91H13Z" fill="#EEE9DE" opacity=".62"/>
+    <circle cx="37" cy="38" r="10"/>
+    <path d="M26 70H48M31 59L25 70M43 59L49 70" stroke-linecap="round"/>
+    <circle cx="68" cy="38" r="10"/>
+    <path d="M58 70H79M63 59L57 70M73 59L80 70" stroke-linecap="round"/>
   </g>
-  <circle cx="184" cy="36" r="4" fill="#A86456" opacity=".64"/>
+  <path d="M184 62H214M205 56L215 62L205 68" fill="none" stroke="#A86456" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" opacity=".68"/>
+  <circle cx="184" cy="62" r="3" fill="#A86456" opacity=".7"/>
 </svg>

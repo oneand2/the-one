@@ -31,6 +31,20 @@ body {
   font-family: var(--ui-font-sans);
 }
 
+/* 见众生长文：桌面保留宋体；手机用完整的苹方中文字库，避免小字号宋体
+   在 iPhone 高密度屏幕上因笔画栅格化产生局部似粗体的视觉跳动。 */
+.jianzhongsheng-reading-text {
+  font-family: var(--ui-font-serif);
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+@media (max-width: 767px) {
+  .jianzhongsheng-reading-text {
+    font-family: "PingFang SC", -apple-system, BlinkMacSystemFont, "Hiragino Sans GB", sans-serif;
+  }
+}
+
 /* iOS 原生壳内由 SwiftUI 提供账户入口，嵌入页不重复显示网页入口。 */
 body:has([data-ios-embed="true"]) .web-auth-entry {
   display: none;

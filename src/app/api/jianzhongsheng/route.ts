@@ -5,8 +5,8 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 
 const TABLE = 'jianzhongsheng_answers';
-const MIN_LENGTH = 8;
-const MAX_LENGTH = 600;
+const MIN_LENGTH = 15;
+const MAX_LENGTH = 3000;
 
 type AnswerRow = {
   id: string;

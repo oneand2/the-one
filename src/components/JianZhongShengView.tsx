@@ -4,9 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { jianZhongShengSpace, type JianZhongShengEntry } from '@/content/jianzhongsheng';
 
-const MIN_NOTE_LENGTH = 8;
-const MAX_NOTE_LENGTH = 600;
-const MAX_COMMENT_LENGTH = 500;
+const MIN_NOTE_LENGTH = 15;
+const MAX_NOTE_LENGTH = 3000;
 
 type CommunityResponse = {
   id: string;
@@ -187,6 +186,15 @@ export const JianZhongShengView: React.FC = () => {
     return [...localEntry, ...sharedEntries, ...space.entries];
   }, [communityResponses, myNote, space.entries]);
 
+  const displayedComments = useMemo<CommunityComment[]>(() => {
+    const sampleComments = (selectedEntry?.sampleComments ?? []).map((comment) => ({
+      ...comment,
+      entryId: selectedEntry?.id ?? '',
+      mine: false,
+    }));
+    return [...sampleComments, ...comments];
+  }, [comments, selectedEntry]);
+
   const saveLabel = saveState === 'shared'
     ? '已发布'
     : saveState === 'saving'
@@ -197,6 +205,11 @@ export const JianZhongShengView: React.FC = () => {
 
   const openEntry = (entry: DisplayEntry) => {
     feedScrollPosition.current = window.scrollY;
+    setComments([]);
+    setCommentsUnavailable(false);
+    setCanComment(null);
+    setCommentDraft('');
+    setCommentMessage('');
     setSelectedEntry(entry);
     window.setTimeout(() => {
       sectionRef.current?.scrollIntoView({
@@ -208,6 +221,11 @@ export const JianZhongShengView: React.FC = () => {
 
   const closeEntry = () => {
     setSelectedEntry(null);
+    setComments([]);
+    setCommentsUnavailable(false);
+    setCanComment(null);
+    setCommentDraft('');
+    setCommentMessage('');
     window.setTimeout(() => {
       window.scrollTo({
         top: feedScrollPosition.current,
@@ -323,8 +341,8 @@ export const JianZhongShengView: React.FC = () => {
                   {selectedEntry.authorId}
                 </h2>
                 <div
-                  className="space-y-5 text-[15px] leading-[2] tracking-normal text-stone-700"
-                  style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, fontSynthesis: 'none' }}
+                  lang="zh-Hans"
+                  className="jianzhongsheng-reading-text space-y-5 text-[15px] leading-[2] tracking-normal text-stone-700"
                 >
                   {bodyParagraphs(selectedEntry.body).map((paragraph, index) => (
                     <p key={`${selectedEntry.id}-${index}`}>{paragraph}</p>
@@ -346,13 +364,13 @@ export const JianZhongShengView: React.FC = () => {
               <div className="mb-2 flex items-center gap-3">
                 <span id="jianzhongsheng-comments-title" className="font-sans text-[10px] tracking-[0.34em] text-stone-400">众 生 回 应</span>
                 <span className="h-px flex-1 bg-stone-200/80" />
-                <span className="font-sans text-[10px] tabular-nums text-stone-400">{comments.length}</span>
+                <span className="font-sans text-[10px] tabular-nums text-stone-400">{displayedComments.length}</span>
               </div>
               <p className="mb-5 font-sans text-[10px] leading-5 tracking-[0.05em] text-stone-400">
                 回应这则手记，也可以只是说说它让你想起了什么。
               </p>
 
-              {commentsLoading ? (
+              {commentsLoading && displayedComments.length === 0 ? (
                 <div className="space-y-4 py-2" aria-label="正在读取回应">
                   {[0, 1].map((item) => (
                     <div key={item} className="border-t border-stone-200/70 pt-4">
@@ -361,13 +379,13 @@ export const JianZhongShengView: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              ) : commentsUnavailable ? (
+              ) : commentsUnavailable && displayedComments.length === 0 ? (
                 <p className="border-t border-stone-200/70 py-5 font-sans text-[11px] leading-6 text-stone-400">
                   回应暂时无法读取，稍后再来看看。
                 </p>
-              ) : comments.length > 0 ? (
+              ) : displayedComments.length > 0 ? (
                 <div>
-                  {comments.map((comment) => (
+                  {displayedComments.map((comment) => (
                     <article key={comment.id} className="border-t border-stone-200/70 py-4">
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <span
@@ -383,6 +401,11 @@ export const JianZhongShengView: React.FC = () => {
                       <p className="whitespace-pre-wrap font-sans text-[13px] leading-6 tracking-[0.01em] text-stone-600">{comment.body}</p>
                     </article>
                   ))}
+                  {commentsUnavailable && (
+                    <p className="border-t border-stone-200/70 py-4 font-sans text-[10px] leading-5 text-stone-400">
+                      更多回应暂时无法读取。
+                    </p>
+                  )}
                 </div>
               ) : (
                 <p className="border-t border-stone-200/70 py-5 font-sans text-[11px] leading-6 tracking-[0.04em] text-stone-400">
@@ -396,18 +419,17 @@ export const JianZhongShengView: React.FC = () => {
                   <textarea
                     id="jianzhongsheng-comment"
                     value={commentDraft}
-                    maxLength={MAX_COMMENT_LENGTH}
                     onChange={(event) => {
                       setCommentDraft(event.target.value);
                       if (commentMessage) setCommentMessage('');
                     }}
                     placeholder="留下你的回应……"
                     rows={3}
-                    className="min-h-20 w-full resize-none bg-transparent font-sans text-[13px] leading-6 text-stone-700 outline-none placeholder:text-stone-300"
+                    className="min-h-20 w-full resize-none bg-transparent font-sans text-[16px] leading-6 text-stone-700 outline-none placeholder:text-stone-300 sm:text-[13px]"
                   />
                   <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
                     <span className="font-sans text-[9px] text-stone-400" aria-live="polite">
-                      {commentMessage || `${commentDraft.length} / ${MAX_COMMENT_LENGTH}`}
+                      {commentMessage}
                     </span>
                     <button
                       type="button"
@@ -479,7 +501,7 @@ export const JianZhongShengView: React.FC = () => {
                         }}
                         placeholder="写下最近在你心中停留过的事……"
                         rows={7}
-                        className="min-h-44 w-full resize-none bg-transparent font-sans text-[14px] leading-7 text-stone-700 outline-none placeholder:text-stone-300"
+                        className="min-h-44 w-full resize-none bg-transparent font-sans text-[16px] leading-7 text-stone-700 outline-none placeholder:text-stone-300 sm:text-[14px]"
                       />
                       <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
                         <button
@@ -493,7 +515,7 @@ export const JianZhongShengView: React.FC = () => {
                           收起
                         </button>
                         <span className="font-sans text-[10px] text-stone-400" aria-live="polite">
-                          {validationMessage || `${draft.length} / ${MAX_NOTE_LENGTH}`}
+                          {validationMessage || `至少 ${MIN_NOTE_LENGTH} 字 · ${draft.trim().length} / ${MAX_NOTE_LENGTH}`}
                         </span>
                         <button
                           type="button"
@@ -569,7 +591,7 @@ export const JianZhongShengView: React.FC = () => {
             </div>
 
             <p className="mt-5 text-center font-sans text-[9px] leading-5 tracking-[0.08em] text-stone-300">
-              其中包含编辑创作的示例手记，用来示意这里可以如何说话
+              其中包含编辑创作的示例手记与回应，用来示意这里可以如何说话
             </p>
           </motion.div>
         )}

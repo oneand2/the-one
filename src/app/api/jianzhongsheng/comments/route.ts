@@ -5,7 +5,6 @@ import { createClient } from '@/utils/supabase/server';
 export const dynamic = 'force-dynamic';
 
 const TABLE = 'jianzhongsheng_comments';
-const MAX_LENGTH = 500;
 
 type CommentRow = {
   id: string;
@@ -80,8 +79,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '手记编号无效' }, { status: 400 });
   }
   const body = typeof payload.body === 'string' ? payload.body.trim() : '';
-  if (!body || body.length > MAX_LENGTH) {
-    return NextResponse.json({ error: `回应需要在 1—${MAX_LENGTH} 字之间` }, { status: 400 });
+  if (!body) {
+    return NextResponse.json({ error: '写下一点内容再回应' }, { status: 400 });
   }
 
   const { data: profile } = await supabase

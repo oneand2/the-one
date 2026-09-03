@@ -323,8 +323,8 @@ export const JianZhongShengView: React.FC = () => {
                   {selectedEntry.authorId}
                 </h2>
                 <div
-                  className="space-y-5 text-[15px] leading-[2.05] tracking-[0.015em] text-stone-700"
-                  style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                  className="space-y-5 text-[15px] leading-[2] tracking-normal text-stone-700"
+                  style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, fontSynthesis: 'none' }}
                 >
                   {bodyParagraphs(selectedEntry.body).map((paragraph, index) => (
                     <p key={`${selectedEntry.id}-${index}`}>{paragraph}</p>

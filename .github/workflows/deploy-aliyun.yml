@@ -168,7 +168,7 @@ jobs:
           sudo docker exec the-one-nginx-1 nginx -t
           sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --no-build --remove-orphans
           sudo docker compose --project-directory "$DEPLOY_PATH" --env-file "$DEPLOY_PATH/.env.production" up -d --no-deps --force-recreate nginx
-          curl --fail --silent --show-error --max-time 20 --insecure \
+          curl --fail --silent --show-error --max-time 20 --retry 10 --retry-delay 2 --retry-all-errors --insecure \
             --resolve www.the-one-and-the-two.com:443:127.0.0.1 \
             https://www.the-one-and-the-two.com/ > /dev/null
           sudo docker compose --project-directory "$DEPLOY_PATH" ps

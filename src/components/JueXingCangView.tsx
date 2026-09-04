@@ -620,6 +620,10 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
 
   useEffect(() => {
     const onAuthChanged = () => {
+      // iOS 容器可能先以 guest 身份挂载网页，再异步恢复原生登录态。
+      // 首次会话请求此时会得到 401；登录 Cookie 同步完成后必须重新拉取，
+      // 否则历史列表会一直停留在空数组，看起来像聊天记录丢失。
+      void loadSessions();
       void resumePendingLiuYao();
     };
     window.addEventListener('theone:auth-changed', onAuthChanged);

@@ -312,9 +312,17 @@ struct HybridWebContentView: UIViewRepresentable {
             pendingChat: PendingChatRequest?
         ) {
             if sessionIdentity != currentSessionIdentity {
+                let hadResolvedIdentity = !currentSessionIdentity.isEmpty
                 currentSessionIdentity = sessionIdentity
                 synchronizeNativeCookiesToWeb { [weak self] in
-                    self?.notifyWebAuthChanged()
+                    guard let self else { return }
+                    self.notifyWebAuthChanged()
+                    // 原生登录恢复与首屏网页加载并行。若网页先以 guest 身份完成
+                    // /api/chat-sessions 请求，它会保留空列表；重新载入可保证服务端
+                    // 渲染和后续请求都使用刚同步完成的账号 Cookie。
+                    if hadResolvedIdentity {
+                        self.reloadHome(force: true)
+                    }
                 }
             }
             let tapped = tabSelectionTick != lastTabTick

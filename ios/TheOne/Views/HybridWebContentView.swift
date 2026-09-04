@@ -247,7 +247,7 @@ struct HybridWebContentView: UIViewRepresentable {
     """
 
     @MainActor
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler, WKHTTPCookieStoreObserver {
         private(set) var container: HybridWebViewContainer?
         private var webView: WKWebView? { container?.webView }
         private let loadState: HybridLoadState
@@ -282,6 +282,9 @@ struct HybridWebContentView: UIViewRepresentable {
 
         func attach(_ container: HybridWebViewContainer) {
             self.container = container
+            // 页面内的 fetch 也可能触发 Supabase 刷新令牌轮换，并不会经过
+            // didFinish。实时观察 Cookie 变化，避免原生 URLSession 留着旧令牌。
+            container.webView.configuration.websiteDataStore.httpCookieStore.add(self)
             urlObservation = container.webView.observe(\.url, options: [.new]) { [weak self] view, _ in
                 Task { @MainActor in
                     self?.handleEmbeddedURL(view.url)
@@ -343,7 +346,13 @@ struct HybridWebContentView: UIViewRepresentable {
         func handleScenePhase(_ phase: ScenePhase) {
             let becameActive = phase == .active && lastScenePhase != .active
             lastScenePhase = phase
-            guard becameActive else { return }
+            guard becameActive else {
+                // 用户清除后台前通常会经过 inactive/background，再做一次持久化兜底。
+                if phase == .inactive || phase == .background {
+                    synchronizeWebCookiesToNative()
+                }
+                return
+            }
             if let webView {
                 HybridWebContentView.normalizeWebViewZoom(webView)
             }
@@ -541,6 +550,14 @@ struct HybridWebContentView: UIViewRepresentable {
         private func synchronizeWebCookiesToNative() {
             guard let webView else { return }
             webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+                cookies
+                    .filter { Self.isFirstPartyHost($0.domain) }
+                    .forEach { HTTPCookieStorage.shared.setCookie($0) }
+            }
+        }
+
+        func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+            cookieStore.getAllCookies { cookies in
                 cookies
                     .filter { Self.isFirstPartyHost($0.domain) }
                     .forEach { HTTPCookieStorage.shared.setCookie($0) }

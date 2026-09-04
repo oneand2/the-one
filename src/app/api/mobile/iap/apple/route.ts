@@ -9,7 +9,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const BUNDLE_ID = process.env.APPLE_BUNDLE_ID?.trim() || 'com.theone.er';
-const APPLE_APP_ID = Number(process.env.APPLE_APP_ID || 0) || undefined;
+const APPLE_APP_ID = Number(process.env.APPLE_APP_ID || 6801478964);
 const PRODUCTS: Record<string, number> = {
   'com.theone.er.coins.100': 100,
   'com.theone.er.coins.360': 360,
@@ -70,9 +70,13 @@ export async function POST(request: NextRequest) {
     const quantity = Math.max(1, transaction.quantity ?? 1);
     const isLifetimeVipProduct = productId === APPLE_LIFETIME_VIP_PRODUCT_ID;
     const unitCoins = isLifetimeVipProduct ? 0 : PRODUCTS[productId];
+    const appAccountToken = transaction.appAccountToken?.toLowerCase();
 
     if (!transactionId || transaction.revocationDate || (!isLifetimeVipProduct && !unitCoins)) {
       return json({ error: '交易商品无效或已退款' }, { status: 400 });
+    }
+    if (appAccountToken && appAccountToken !== user.id.toLowerCase()) {
+      return json({ error: '这笔交易不属于当前登录账户' }, { status: 409 });
     }
 
     const admin = createAdminClient();
@@ -87,6 +91,9 @@ export async function POST(request: NextRequest) {
     });
     if (error) {
       console.error('credit Apple transaction failed:', error);
+      if (error.message?.includes('belongs to another account')) {
+        return json({ error: '这笔交易已绑定其他账户' }, { status: 409 });
+      }
       return json({ error: '交易已验证，但入账失败，请稍后重试' }, { status: 500 });
     }
 

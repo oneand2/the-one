@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { isVip } from '@/utils/vip';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData, QianchengImportData } from '@/types/import-data';
 import { retrieveRelevantNews } from '@/utils/newsRetrieval';
@@ -14,6 +15,31 @@ const COINS_MEDITATION = 20;
 const COINS_SEARCH = 2;
 const PROFILE_TABLE = 'user_profiles';
 const INITIAL_COINS = 300;
+
+async function deductCoins(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+  amount: number,
+  expectedBalance: number,
+) {
+  const result = await admin.rpc('consume_user_coins', {
+    p_user_id: userId,
+    p_amount: amount,
+  });
+  if (!result.error) {
+    return Boolean((result.data as Array<{ success?: boolean }> | null)?.[0]?.success);
+  }
+
+  // Compatibility while the database migration is being rolled out.
+  const fallback = await admin
+    .from(PROFILE_TABLE)
+    .update({ coins_balance: expectedBalance - amount })
+    .eq('user_id', userId)
+    .eq('coins_balance', expectedBalance)
+    .select('coins_balance')
+    .maybeSingle();
+  return !fallback.error && Boolean(fallback.data);
+}
 
 export async function POST(req: Request) {
   try {
@@ -36,9 +62,10 @@ export async function POST(req: Request) {
 
     // 管理员或 VIP 不消耗铜币
     const isAdmin = user.email === '892777353@qq.com';
-    let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance, vip_expires_at').eq('user_id', user.id).single();
+    const admin = createAdminClient();
+    let { data: profile } = await admin.from(PROFILE_TABLE).select('coins_balance, vip_expires_at').eq('user_id', user.id).single();
     if (!profile) {
-      await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
+      await admin.from(PROFILE_TABLE).insert({ user_id: user.id });
       profile = { coins_balance: INITIAL_COINS, vip_expires_at: null };
     }
     const vip = isVip((profile as { vip_expires_at?: string | null }).vip_expires_at);
@@ -429,12 +456,9 @@ export async function POST(req: Request) {
             }
           }
           if (!skipCoins && hasContent) {
-            const { error: deductErr } = await supabase
-              .from(PROFILE_TABLE)
-              .update({ coins_balance: balance - cost })
-              .eq('user_id', user.id);
-            if (deductErr) {
-              console.error('扣款失败:', deductErr);
+            const deducted = await deductCoins(admin, user.id, cost, balance);
+            if (!deducted) {
+              console.error('扣款失败：余额在并发请求中发生变化或数据库暂不可用');
             }
           }
           controller.close();

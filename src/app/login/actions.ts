@@ -7,7 +7,6 @@ import { requestRecoveryOtp, requestSignupOtp } from '@/utils/authOtp';
 export type AuthResult = { redirectUrl?: string; error?: string; otpEmail?: string };
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 300;
 const INVITE_REWARD = 200;
 
 const NO_EMAIL_SUFFIX = '@no-email.app';
@@ -72,7 +71,7 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   if ('error' in result) return { error: result.error };
   if ('sessionUserId' in result) {
     await supabase.from(PROFILE_TABLE).upsert(
-      { user_id: result.sessionUserId, nickname, coins_balance: INITIAL_COINS },
+      { user_id: result.sessionUserId, nickname },
       { onConflict: 'user_id', ignoreDuplicates: true },
     );
     return { redirectUrl: nextUrl };
@@ -100,7 +99,7 @@ export async function verifySignupOtp(formData: FormData): Promise<AuthResult> {
   await supabase
     .from(PROFILE_TABLE)
     .upsert(
-      { user_id: uid, nickname, coins_balance: INITIAL_COINS },
+      { user_id: uid, nickname },
       { onConflict: 'user_id', ignoreDuplicates: true },
     );
 

@@ -11,6 +11,8 @@ struct ProfileView: View {
     @State private var isSavingNickname = false
     @State private var isGeneratingInvite = false
     @State private var showGetCoinsInfo = false
+    @State private var meditationDefault = true
+    @State private var isSavingMeditationDefault = false
 
     var body: some View {
         ZStack {
@@ -34,9 +36,15 @@ struct ProfileView: View {
             }
         }
         .toolbar(.hidden, for: .navigationBar)
-        .onAppear { nicknameDraft = profile.profile?.nickname ?? "" }
+        .onAppear {
+            nicknameDraft = profile.profile?.nickname ?? ""
+            meditationDefault = profile.profile?.meditationDefaultEnabled ?? true
+        }
         .onChange(of: profile.profile?.nickname) { _, value in
             if let value { nicknameDraft = value }
+        }
+        .onChange(of: profile.profile?.juexingcangMeditationDefault) { _, value in
+            meditationDefault = value ?? true
         }
         .fullScreenCover(isPresented: $showStore) { StoreView() }
         .overlay {
@@ -90,10 +98,35 @@ struct ProfileView: View {
     private var authenticatedContent: some View {
         VStack(alignment: .leading, spacing: UIContract.Spacing.xl) {
             accountSection
+            preferenceSection
             inviteSection
             balanceSection
             routesSection
             accountActions
+        }
+    }
+
+    private var preferenceSection: some View {
+        VStack(alignment: .leading, spacing: UIContract.Spacing.sm) {
+            NativeSectionHeading(title: "使用偏好")
+            NativeSurface {
+                Toggle(isOn: Binding(
+                    get: { meditationDefault },
+                    set: { updateMeditationDefault($0) }
+                )) {
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("默认开启宗师模式")
+                            .font(.system(size: 13))
+                            .foregroundStyle(AppTheme.stone700)
+                        Text("关闭后，每次进入决行藏将从普通模式开始；仍可临时开启。")
+                            .font(.system(size: 10))
+                            .foregroundStyle(AppTheme.stone400)
+                            .lineSpacing(3)
+                    }
+                }
+                .tint(AppTheme.stone700)
+                .disabled(isSavingMeditationDefault)
+            }
         }
     }
 
@@ -304,6 +337,17 @@ struct ProfileView: View {
             isGeneratingInvite = true
             _ = await profile.generateInviteCode()
             isGeneratingInvite = false
+        }
+    }
+
+    private func updateMeditationDefault(_ enabled: Bool) {
+        let previous = meditationDefault
+        meditationDefault = enabled
+        Task {
+            isSavingMeditationDefault = true
+            let saved = await profile.updateMeditationDefault(enabled)
+            if !saved { meditationDefault = previous }
+            isSavingMeditationDefault = false
         }
     }
 }

@@ -46,6 +46,11 @@ struct StoreView: View {
                         VStack(spacing: 10) {
                             Button("恢复终身 VIP") {
                                 Task {
+                                    guard auth.isAuthenticated else {
+                                        dismiss()
+                                        auth.showsLogin = true
+                                        return
+                                    }
                                     await purchases.restoreLifetimeVIP()
                                     await profile.load()
                                 }
@@ -93,7 +98,12 @@ struct StoreView: View {
                 auth.showsLogin = true
                 return
             }
-            if await purchases.purchase(package: package) {
+            guard let userID = auth.user?.id,
+                  let appAccountToken = UUID(uuidString: userID) else {
+                purchases.message = "账户标识异常，请退出登录后重试。"
+                return
+            }
+            if await purchases.purchase(package: package, appAccountToken: appAccountToken) {
                 await profile.load()
             }
         }
@@ -104,9 +114,6 @@ struct StoreView: View {
             await purchases.prepare(force: attempt > 1)
             if !purchases.products.isEmpty { return }
             try? await Task.sleep(for: .seconds(1.5))
-        }
-        if purchases.products.isEmpty, purchases.message == nil {
-            purchases.message = "暂时无法连接 App Store，请稍后重试。"
         }
     }
 
@@ -187,7 +194,7 @@ private struct LifetimeVipCard: View {
                             if manager.purchasingProductID == package.id || (package.storeProduct == nil && manager.isLoading) {
                                 ProgressView().tint(.white)
                             } else {
-                                Text(package.storeProduct == nil ? "暂不可买" : "开通终身 VIP")
+                                Text(package.storeProduct == nil ? "重新获取" : "开通终身 VIP")
                                     .font(.system(size: 13, weight: .medium))
                             }
                         }
@@ -197,7 +204,7 @@ private struct LifetimeVipCard: View {
                         .background(AppTheme.stone800, in: Capsule())
                     }
                     .buttonStyle(.plain)
-                    .disabled(manager.purchasingProductID != nil || package.storeProduct == nil)
+                    .disabled(manager.purchasingProductID != nil || manager.isLoading)
                 }
             }
         }
@@ -236,7 +243,7 @@ private struct ProductCard: View {
                         if manager.purchasingProductID == package.id || (package.storeProduct == nil && manager.isLoading) {
                             ProgressView().tint(.white)
                         } else {
-                            Text(package.storeProduct == nil ? "暂不可买" : package.displayPrice)
+                            Text(package.storeProduct == nil ? "重新获取" : package.displayPrice)
                                 .font(.system(size: 13, weight: .medium))
                         }
                     }
@@ -246,7 +253,7 @@ private struct ProductCard: View {
                     .background(AppTheme.stone800, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(manager.purchasingProductID != nil || package.storeProduct == nil)
+                .disabled(manager.purchasingProductID != nil || manager.isLoading)
             }
         }
     }

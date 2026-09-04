@@ -85,9 +85,11 @@ struct HybridWebContentView: UIViewRepresentable {
         webView.allowsBackForwardNavigationGestures = false
         webView.overrideUserInterfaceStyle = .light
         Self.lockWebViewZoom(webView)
+#if DEBUG
         if #available(iOS 16.4, *) {
             webView.isInspectable = true
         }
+#endif
 
         let container = HybridWebViewContainer(webView: webView)
         context.coordinator.attach(container)
@@ -504,12 +506,21 @@ struct HybridWebContentView: UIViewRepresentable {
             }
             let store = webView.configuration.websiteDataStore.httpCookieStore
             let nativeCookies = HTTPCookieStorage.shared.cookies(for: APIClient.baseURL) ?? []
-            let setGroup = DispatchGroup()
-            nativeCookies.forEach { cookie in
-                setGroup.enter()
-                store.setCookie(cookie) { setGroup.leave() }
+            store.getAllCookies { webCookies in
+                let syncGroup = DispatchGroup()
+
+                // 原生登录态是 App 内的权威来源。先移除网页容器中的同域 Cookie，
+                // 避免退出登录后旧的 Supabase 会话仍残留在 WKWebView 中。
+                webCookies.filter { Self.isFirstPartyHost($0.domain) }.forEach { cookie in
+                    syncGroup.enter()
+                    store.delete(cookie) { syncGroup.leave() }
+                }
+                nativeCookies.forEach { cookie in
+                    syncGroup.enter()
+                    store.setCookie(cookie) { syncGroup.leave() }
+                }
+                syncGroup.notify(queue: .main) { completion() }
             }
-            setGroup.notify(queue: .main) { completion() }
         }
 
         private func notifyWebAuthChanged() {
@@ -660,8 +671,10 @@ final class HybridWebViewContainer: UIView {
             Task { @MainActor in self?.updateEdgeFades() }
         }
         zoomScaleObservation = webView.scrollView.observe(\.zoomScale, options: [.new]) { scrollView, _ in
-            guard abs(scrollView.zoomScale - 1) > 0.001 else { return }
-            scrollView.setZoomScale(1, animated: false)
+            Task { @MainActor in
+                guard abs(scrollView.zoomScale - 1) > 0.001 else { return }
+                scrollView.setZoomScale(1, animated: false)
+            }
         }
     }
 

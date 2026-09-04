@@ -13,10 +13,12 @@ type CommunityResponse = {
   body: string;
   createdAt: string;
   mine: boolean;
+  reportable?: boolean;
 };
 
 type DisplayEntry = JianZhongShengEntry & {
   mine?: boolean;
+  reportable?: boolean;
 };
 
 type CommunityComment = {
@@ -26,6 +28,13 @@ type CommunityComment = {
   body: string;
   createdAt: string;
   mine: boolean;
+  reportable?: boolean;
+};
+
+type SafetyTarget = {
+  contentType: 'answer' | 'comment';
+  id: string;
+  authorId: string;
 };
 
 type SaveState = 'idle' | 'saving' | 'shared' | 'local';
@@ -89,6 +98,11 @@ export const JianZhongShengView: React.FC = () => {
   const [commentDraft, setCommentDraft] = useState('');
   const [commentMessage, setCommentMessage] = useState('');
   const [commentSaving, setCommentSaving] = useState(false);
+  const [safetyTarget, setSafetyTarget] = useState<SafetyTarget | null>(null);
+  const [reportReason, setReportReason] = useState('harassment');
+  const [reportDetails, setReportDetails] = useState('');
+  const [safetyBusy, setSafetyBusy] = useState(false);
+  const [safetyMessage, setSafetyMessage] = useState('');
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -182,6 +196,7 @@ export const JianZhongShengView: React.FC = () => {
       excerpt: excerptFromBody(response.body),
       body: response.body,
       mine: response.mine,
+      reportable: response.reportable,
     }));
     return [...localEntry, ...sharedEntries, ...space.entries];
   }, [communityResponses, myNote, space.entries]);
@@ -191,6 +206,7 @@ export const JianZhongShengView: React.FC = () => {
       ...comment,
       entryId: selectedEntry?.id ?? '',
       mine: false,
+      reportable: false,
     }));
     return [...sampleComments, ...comments];
   }, [comments, selectedEntry]);
@@ -257,7 +273,10 @@ export const JianZhongShengView: React.FC = () => {
         body: JSON.stringify({ questionId: space.id, body: note }),
       });
       if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string };
         setSaveState('local');
+        setValidationMessage(payload.error || '手记暂时未能发布，已保存在此设备。');
+        setComposerOpen(true);
       } else {
         const payload = await response.json() as { answer?: CommunityResponse };
         if (payload.answer) {
@@ -270,6 +289,8 @@ export const JianZhongShengView: React.FC = () => {
       }
     } catch {
       setSaveState('local');
+      setValidationMessage('网络暂时不可用，手记已保存在此设备。');
+      setComposerOpen(true);
     }
   };
 
@@ -301,6 +322,99 @@ export const JianZhongShengView: React.FC = () => {
       setCommentMessage('回应暂时未能留下。');
     } finally {
       setCommentSaving(false);
+    }
+  };
+
+  const deleteContent = async (target: SafetyTarget) => {
+    const prompt = target.contentType === 'answer'
+      ? '确认删除这则手记？删除后无法恢复。'
+      : '确认删除这条回应？';
+    if (!window.confirm(prompt)) return;
+    setSafetyBusy(true);
+    setSafetyMessage('');
+    try {
+      if (target.contentType === 'answer' && target.id === 'my-local-note') {
+        try { window.localStorage.removeItem(storageKey); } catch {}
+        setMyNote('');
+        setDraft('');
+        setSaveState('idle');
+        closeEntry();
+        return;
+      }
+      const endpoint = target.contentType === 'answer' ? '/api/jianzhongsheng' : '/api/jianzhongsheng/comments';
+      const response = await fetch(`${endpoint}?id=${encodeURIComponent(target.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || '暂时无法删除');
+      if (target.contentType === 'answer') {
+        setCommunityResponses((current) => current.filter((item) => item.id !== target.id));
+        setMyNote('');
+        setDraft('');
+        setSaveState('idle');
+        try { window.localStorage.removeItem(storageKey); } catch {}
+        closeEntry();
+      } else {
+        setComments((current) => current.filter((item) => item.id !== target.id));
+        setSafetyMessage('回应已删除。');
+      }
+    } catch (error) {
+      setSafetyMessage(error instanceof Error ? error.message : '暂时无法删除');
+    } finally {
+      setSafetyBusy(false);
+    }
+  };
+
+  const blockAuthor = async (target: SafetyTarget) => {
+    if (!window.confirm(`屏蔽“${target.authorId}”后，你将不再看到此人的公开手记和回应。确认屏蔽？`)) return;
+    setSafetyBusy(true);
+    setSafetyMessage('');
+    try {
+      const response = await fetch('/api/jianzhongsheng/blocks', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contentType: target.contentType, contentId: target.id }),
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || '暂时无法屏蔽');
+      setCommunityResponses((current) => current.filter((item) => item.authorId !== target.authorId));
+      setComments((current) => current.filter((item) => item.authorId !== target.authorId));
+      setSafetyMessage(`已屏蔽“${target.authorId}”，可在个人设置中解除。`);
+      if (target.contentType === 'answer') closeEntry();
+    } catch (error) {
+      setSafetyMessage(error instanceof Error ? error.message : '暂时无法屏蔽');
+    } finally {
+      setSafetyBusy(false);
+    }
+  };
+
+  const submitReport = async () => {
+    if (!safetyTarget) return;
+    setSafetyBusy(true);
+    setSafetyMessage('');
+    try {
+      const response = await fetch('/api/jianzhongsheng/reports', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contentType: safetyTarget.contentType,
+          contentId: safetyTarget.id,
+          reason: reportReason,
+          details: reportDetails.trim(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || '暂时无法提交举报');
+      setSafetyTarget(null);
+      setReportDetails('');
+      setSafetyMessage('举报已收到，我们会尽快处理。');
+    } catch (error) {
+      setSafetyMessage(error instanceof Error ? error.message : '暂时无法提交举报');
+    } finally {
+      setSafetyBusy(false);
     }
   };
 
@@ -360,6 +474,50 @@ export const JianZhongShengView: React.FC = () => {
               </div>
             </article>
 
+            {(selectedEntry.mine || selectedEntry.reportable) && (
+              <div className="mt-3 flex min-h-10 items-center justify-end gap-4 px-1 font-sans text-[10px] tracking-[0.08em] text-stone-400">
+                {selectedEntry.mine ? (
+                  <button
+                    type="button"
+                    disabled={safetyBusy}
+                    onClick={() => void deleteContent({ contentType: 'answer', id: selectedEntry.id, authorId: selectedEntry.authorId })}
+                    className="min-h-9 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                  >
+                    删除手记
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={safetyBusy}
+                      onClick={() => {
+                        setReportReason('harassment');
+                        setReportDetails('');
+                        setSafetyTarget({ contentType: 'answer', id: selectedEntry.id, authorId: selectedEntry.authorId });
+                      }}
+                      className="min-h-9 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                    >
+                      举报
+                    </button>
+                    <button
+                      type="button"
+                      disabled={safetyBusy}
+                      onClick={() => void blockAuthor({ contentType: 'answer', id: selectedEntry.id, authorId: selectedEntry.authorId })}
+                      className="min-h-9 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                    >
+                      屏蔽此人
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {safetyMessage && (
+              <p className="mt-3 rounded-xl border border-stone-200/80 bg-stone-900/[0.018] px-4 py-3 font-sans text-[10px] leading-5 text-stone-500" role="status">
+                {safetyMessage}
+              </p>
+            )}
+
             <section className="mt-10" aria-labelledby="jianzhongsheng-comments-title">
               <div className="mb-2 flex items-center gap-3">
                 <span id="jianzhongsheng-comments-title" className="font-sans text-[10px] tracking-[0.34em] text-stone-400">众 生 回 应</span>
@@ -399,6 +557,43 @@ export const JianZhongShengView: React.FC = () => {
                         </time>
                       </div>
                       <p className="whitespace-pre-wrap font-sans text-[13px] leading-6 tracking-[0.01em] text-stone-600">{comment.body}</p>
+                      {(comment.mine || comment.reportable) && (
+                        <div className="mt-2 flex justify-end gap-4 font-sans text-[9px] tracking-[0.08em] text-stone-400">
+                          {comment.mine ? (
+                            <button
+                              type="button"
+                              disabled={safetyBusy}
+                              onClick={() => void deleteContent({ contentType: 'comment', id: comment.id, authorId: comment.authorId })}
+                              className="min-h-8 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                            >
+                              删除
+                            </button>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                disabled={safetyBusy}
+                                onClick={() => {
+                                  setReportReason('harassment');
+                                  setReportDetails('');
+                                  setSafetyTarget({ contentType: 'comment', id: comment.id, authorId: comment.authorId });
+                                }}
+                                className="min-h-8 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                              >
+                                举报
+                              </button>
+                              <button
+                                type="button"
+                                disabled={safetyBusy}
+                                onClick={() => void blockAuthor({ contentType: 'comment', id: comment.id, authorId: comment.authorId })}
+                                className="min-h-8 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30 disabled:opacity-40"
+                              >
+                                屏蔽此人
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </article>
                   ))}
                   {commentsUnavailable && (
@@ -425,11 +620,12 @@ export const JianZhongShengView: React.FC = () => {
                     }}
                     placeholder="留下你的回应……"
                     rows={3}
+                    maxLength={800}
                     className="min-h-20 w-full resize-none bg-transparent font-sans text-[16px] leading-6 text-stone-700 outline-none placeholder:text-stone-300 sm:text-[13px]"
                   />
                   <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
                     <span className="font-sans text-[9px] text-stone-400" aria-live="polite">
-                      {commentMessage}
+                      {commentMessage || `${commentDraft.length} / 800`}
                     </span>
                     <button
                       type="button"
@@ -503,6 +699,9 @@ export const JianZhongShengView: React.FC = () => {
                         rows={7}
                         className="min-h-44 w-full resize-none bg-transparent font-sans text-[16px] leading-7 text-stone-700 outline-none placeholder:text-stone-300 sm:text-[14px]"
                       />
+                      <p className="border-t border-stone-200/70 pt-3 font-sans text-[9px] leading-5 tracking-[0.03em] text-stone-400">
+                        公开内容会经过安全检查；请勿发布联系方式、骚扰或违法内容。
+                      </p>
                       <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
                         <button
                           type="button"
@@ -593,6 +792,91 @@ export const JianZhongShengView: React.FC = () => {
             <p className="mt-5 text-center font-sans text-[9px] leading-5 tracking-[0.08em] text-stone-300">
               其中包含编辑创作的示例手记与回应，用来示意这里可以如何说话
             </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {safetyTarget && (
+          <motion.div
+            className="fixed inset-0 z-[80] flex items-end justify-center bg-stone-950/20 px-3 pb-3 pt-16 backdrop-blur-[1px] sm:items-center"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="community-report-title"
+            onMouseDown={(event) => {
+              if (event.currentTarget === event.target && !safetyBusy) setSafetyTarget(null);
+            }}
+          >
+            <motion.div
+              initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-md rounded-[20px] border border-stone-900/[0.08] bg-[#fbf9f4] px-5 pb-5 pt-6 shadow-[0_18px_60px_rgba(38,35,31,0.16)]"
+            >
+              <div className="mb-5 flex items-center gap-3">
+                <h2 id="community-report-title" className="font-sans text-[12px] tracking-[0.2em] text-stone-700">举报不当内容</h2>
+                <span className="h-px flex-1 bg-stone-200" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-sm border border-[#b45546]/35 text-[12px] text-[#9b4a3d]" aria-hidden="true">察</span>
+              </div>
+              <p className="mb-4 font-sans text-[10px] leading-5 text-stone-500">
+                请选择最符合的原因。提交后，内容可能被暂时隐藏并进入人工复核。
+              </p>
+              <fieldset className="space-y-1">
+                <legend className="sr-only">举报原因</legend>
+                {[
+                  ['harassment', '骚扰、威胁或泄露隐私'],
+                  ['hate', '仇恨或歧视言论'],
+                  ['sexual', '色情或招揽性内容'],
+                  ['dangerous', '自伤或危险行为指导'],
+                  ['spam', '广告、诈骗或垃圾信息'],
+                  ['other', '其他不当内容'],
+                ].map(([value, label]) => (
+                  <label key={value} className="flex min-h-10 cursor-pointer items-center gap-3 border-b border-stone-200/70 px-1 font-sans text-[11px] text-stone-600 last:border-b-0">
+                    <input
+                      type="radio"
+                      name="community-report-reason"
+                      value={value}
+                      checked={reportReason === value}
+                      onChange={(event) => setReportReason(event.target.value)}
+                      className="h-3.5 w-3.5 accent-stone-700"
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </fieldset>
+              <label htmlFor="community-report-details" className="mt-4 block font-sans text-[10px] tracking-[0.08em] text-stone-500">补充说明（选填）</label>
+              <textarea
+                id="community-report-details"
+                value={reportDetails}
+                onChange={(event) => setReportDetails(event.target.value)}
+                maxLength={500}
+                rows={3}
+                className="mt-2 w-full resize-none rounded-xl border border-stone-200 bg-[#fdfcf9] px-3 py-2.5 font-sans text-[16px] leading-6 text-stone-700 outline-none transition-colors focus:border-stone-400 sm:text-[12px]"
+                placeholder="如有需要，可写下具体情况"
+              />
+              <div className="mt-5 flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={safetyBusy}
+                  onClick={() => setSafetyTarget(null)}
+                  className="min-h-10 px-4 font-sans text-[10px] tracking-[0.12em] text-stone-500 transition-colors hover:text-stone-700 disabled:opacity-40"
+                >
+                  取消
+                </button>
+                <button
+                  type="button"
+                  disabled={safetyBusy}
+                  onClick={() => void submitReport()}
+                  className="min-h-10 rounded-full bg-stone-800 px-5 font-sans text-[10px] tracking-[0.14em] text-[#fbf9f4] transition-colors hover:bg-stone-700 disabled:opacity-40"
+                >
+                  {safetyBusy ? '正在提交' : '提交举报'}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

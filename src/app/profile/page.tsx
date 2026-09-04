@@ -7,6 +7,12 @@ import { createClient } from '@/utils/supabase/client';
 import { ADMIN_EMAIL, isLifetimeVip } from '@/utils/vip';
 import { requestAppLogin } from '@/utils/iosEmbed';
 
+type BlockedAuthor = {
+  id: string;
+  authorId: string;
+  createdAt: string;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [nickname, setNickname] = useState('');
@@ -23,6 +29,10 @@ export default function ProfilePage() {
   const [vipSubmitting, setVipSubmitting] = useState(false);
   const [vipMessage, setVipMessage] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [meditationDefault, setMeditationDefault] = useState(true);
+  const [preferenceSaving, setPreferenceSaving] = useState(false);
+  const [blockedAuthors, setBlockedAuthors] = useState<BlockedAuthor[]>([]);
+  const [unblockingId, setUnblockingId] = useState<string | null>(null);
   const [wechatStatus, setWechatStatus] = useState<{
     configured: boolean;
     bound: boolean;
@@ -57,6 +67,7 @@ export default function ProfilePage() {
           setInviteCode(p.invite_code ?? null);
           setCoins(p.coins_balance ?? 0);
           setVipExpiresAt(p.vip_expires_at ?? null);
+          setMeditationDefault(p.juexingcang_meditation_default ?? true);
         })
         .catch((e) => setError(e instanceof Error ? e.message : '加载失败'))
         .finally(() => setLoading(false));
@@ -66,6 +77,11 @@ export default function ProfilePage() {
         .then((status) => {
           if (status) setWechatStatus(status);
         })
+        .catch(() => {});
+
+      fetch('/api/jianzhongsheng/blocks', { credentials: 'include', cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((payload: { blocks?: BlockedAuthor[] } | null) => setBlockedAuthors(payload?.blocks ?? []))
         .catch(() => {});
 
       const message = new URLSearchParams(window.location.search).get('message');
@@ -98,6 +114,48 @@ export default function ProfilePage() {
       setError(e instanceof Error ? e.message : '保存失败');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleMeditationDefault = async (nextValue: boolean) => {
+    const previous = meditationDefault;
+    setMeditationDefault(nextValue);
+    setPreferenceSaving(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ juexingcang_meditation_default: nextValue }),
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || '偏好暂时无法保存');
+      setNotice(nextValue ? '宗师模式将默认开启。' : '宗师模式将不再默认开启。');
+    } catch (e) {
+      setMeditationDefault(previous);
+      setError(e instanceof Error ? e.message : '偏好暂时无法保存');
+    } finally {
+      setPreferenceSaving(false);
+    }
+  };
+
+  const handleUnblock = async (blockId: string) => {
+    setUnblockingId(blockId);
+    setError(null);
+    try {
+      const response = await fetch(`/api/jianzhongsheng/blocks?id=${encodeURIComponent(blockId)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(payload.error || '暂时无法解除屏蔽');
+      setBlockedAuthors((current) => current.filter((item) => item.id !== blockId));
+      setNotice('已解除屏蔽。');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '暂时无法解除屏蔽');
+    } finally {
+      setUnblockingId(null);
     }
   };
 
@@ -166,6 +224,61 @@ export default function ProfilePage() {
               </button>
             </div>
           </div>
+
+          <section className="border-t border-stone-200/80 pt-6" aria-labelledby="usage-preferences-title">
+            <div className="mb-4 flex items-center gap-3">
+              <h2 id="usage-preferences-title" className="font-sans text-[11px] tracking-[0.18em] text-stone-600">使用偏好</h2>
+              <span className="h-px flex-1 bg-stone-200/80" />
+            </div>
+            <div className="flex items-center justify-between gap-5 rounded-2xl border border-black/[0.07] bg-[#FDFCF9] px-4 py-4 shadow-[0_1px_3px_rgba(0,0,0,0.035)]">
+              <div className="min-w-0">
+                <p className="font-sans text-[13px] text-stone-700">默认开启宗师模式</p>
+                <p className="mt-1 font-sans text-[10px] leading-5 text-stone-400">
+                  关闭后，每次进入决行藏将从普通模式开始；仍可临时开启宗师模式。
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={meditationDefault}
+                aria-label="默认开启宗师模式"
+                disabled={preferenceSaving}
+                onClick={() => void handleMeditationDefault(!meditationDefault)}
+                className={`relative h-7 w-12 shrink-0 rounded-full border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/35 disabled:opacity-50 ${meditationDefault ? 'border-stone-700 bg-stone-700' : 'border-stone-300 bg-stone-100'}`}
+              >
+                <span className={`absolute left-0 top-[3px] h-5 w-5 rounded-full bg-[#FBF9F4] shadow-sm transition-transform duration-200 ${meditationDefault ? 'translate-x-[23px]' : 'translate-x-[3px]'}`} />
+              </button>
+            </div>
+          </section>
+
+          <section className="border-t border-stone-200/80 pt-6" aria-labelledby="content-privacy-title">
+            <div className="mb-3 flex items-center gap-3">
+              <h2 id="content-privacy-title" className="font-sans text-[11px] tracking-[0.18em] text-stone-600">内容与隐私</h2>
+              <span className="h-px flex-1 bg-stone-200/80" />
+            </div>
+            <p className="mb-3 font-sans text-[10px] leading-5 text-stone-400">管理你在“见众生”中屏蔽的用户。</p>
+            {blockedAuthors.length === 0 ? (
+              <p className="rounded-xl border border-stone-200/70 px-4 py-3 font-sans text-[11px] text-stone-400">暂无屏蔽用户</p>
+            ) : (
+              <div className="divide-y divide-stone-200/70 rounded-2xl border border-stone-200/80 bg-[#FDFCF9] px-4">
+                {blockedAuthors.map((block) => (
+                  <div key={block.id} className="flex min-h-14 items-center justify-between gap-4">
+                    <span className="truncate text-[12px] tracking-[0.1em] text-stone-600" style={{ fontFamily: 'var(--ui-font-kaiti)' }}>
+                      {block.authorId}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={unblockingId === block.id}
+                      onClick={() => void handleUnblock(block.id)}
+                      className="min-h-9 shrink-0 font-sans text-[10px] tracking-[0.08em] text-stone-500 underline decoration-stone-300 underline-offset-4 transition-colors hover:text-stone-800 disabled:opacity-40"
+                    >
+                      {unblockingId === block.id ? '处理中' : '解除屏蔽'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
           {wechatStatus?.configured && (
             <div className="border-t border-stone-200 pt-6">
@@ -269,7 +382,13 @@ export default function ProfilePage() {
                 href="/admin/news"
                 className="block w-full px-4 py-3 bg-stone-800 text-white text-center font-sans text-sm rounded-lg hover:bg-stone-700 transition-colors"
               >
-                📰 发布新闻
+                发布新闻
+              </Link>
+              <Link
+                href="/admin/community"
+                className="block w-full rounded-lg border border-stone-300 px-4 py-3 text-center font-sans text-sm text-stone-700 transition-colors hover:bg-stone-50"
+              >
+                内容管理
               </Link>
               <div className="pt-4 border-t border-stone-100">
                 <p className="text-sm font-sans text-stone-700 mb-2">设置用户为 VIP</p>

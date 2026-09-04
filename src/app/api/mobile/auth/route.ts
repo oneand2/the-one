@@ -6,7 +6,6 @@ import { requestSignupOtp } from '@/utils/authOtp';
 export const dynamic = 'force-dynamic';
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 300;
 const NO_EMAIL_SUFFIX = '@no-email.app';
 
 type AuthBody = {
@@ -40,7 +39,6 @@ async function ensureProfile(
     {
       user_id: userId,
       nickname: nickname.trim().slice(0, 50),
-      coins_balance: INITIAL_COINS,
     },
     { onConflict: 'user_id', ignoreDuplicates: true },
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { isVip } from '@/utils/vip';
 
 const COINS_DIVINE = 6;
@@ -17,9 +18,10 @@ export async function POST(req: Request) {
 
     // 管理员或 VIP 不消耗铜币
     const isAdmin = user.email === '892777353@qq.com';
-    let { data: profile } = await supabase.from(PROFILE_TABLE).select('coins_balance, vip_expires_at').eq('user_id', user.id).single();
+    const admin = createAdminClient();
+    let { data: profile } = await admin.from(PROFILE_TABLE).select('coins_balance, vip_expires_at').eq('user_id', user.id).single();
     if (!profile) {
-      await supabase.from(PROFILE_TABLE).insert({ user_id: user.id, coins_balance: INITIAL_COINS });
+      await admin.from(PROFILE_TABLE).insert({ user_id: user.id });
       profile = { coins_balance: INITIAL_COINS, vip_expires_at: null };
     }
     const vip = isVip((profile as { vip_expires_at?: string | null }).vip_expires_at);
@@ -33,11 +35,22 @@ export async function POST(req: Request) {
           { status: 402 }
         );
       }
-      const { error: deductErr } = await supabase
-        .from(PROFILE_TABLE)
-        .update({ coins_balance: balance - COINS_DIVINE })
-        .eq('user_id', user.id);
+      const { data: deduction, error: deductErr } = await admin.rpc('consume_user_coins', {
+        p_user_id: user.id,
+        p_amount: COINS_DIVINE,
+      });
+      let deducted = !deductErr && Boolean((deduction as Array<{ success?: boolean }> | null)?.[0]?.success);
       if (deductErr) {
+        const fallback = await admin
+          .from(PROFILE_TABLE)
+          .update({ coins_balance: balance - COINS_DIVINE })
+          .eq('user_id', user.id)
+          .eq('coins_balance', balance)
+          .select('coins_balance')
+          .maybeSingle();
+        deducted = !fallback.error && Boolean(fallback.data);
+      }
+      if (!deducted) {
         return NextResponse.json({ error: '扣款失败，请重试' }, { status: 500 });
       }
     }

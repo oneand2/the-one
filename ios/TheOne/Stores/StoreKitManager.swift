@@ -80,40 +80,46 @@ final class StoreKitManager: ObservableObject {
 
     func prepare(force: Bool = false) async {
         if !force, !products.isEmpty { return }
+        message = nil
         isLoading = true
         defer { isLoading = false }
         do {
             let loaded = try await Product.products(for: Self.productIDs)
-            if !loaded.isEmpty {
-                products = loaded.sorted {
-                    (Self.productIDs.firstIndex(of: $0.id) ?? 0)
-                        < (Self.productIDs.firstIndex(of: $1.id) ?? 0)
-                }
+            products = loaded.sorted {
+                (Self.productIDs.firstIndex(of: $0.id) ?? 0)
+                    < (Self.productIDs.firstIndex(of: $1.id) ?? 0)
+            }
+            if loaded.isEmpty {
+                message = AppStore.canMakePayments
+                    ? "暂时未能从 App Store 获取商品，请轻触服务包重试。"
+                    : "此设备已关闭 App 内购买。"
             }
         } catch {
             message = "暂时无法连接 App Store：\(error.localizedDescription)"
         }
     }
 
-    func purchase(package: CoinPackage) async -> Bool {
+    func purchase(package: CoinPackage, appAccountToken: UUID) async -> Bool {
         var product = package.storeProduct
         if product == nil {
             await prepare(force: true)
             product = products.first { $0.id == package.id }
         }
         guard let product else {
-            message = "暂时无法连接 App Store，请稍后重试。"
+            message = AppStore.canMakePayments
+                ? "暂时未能从 App Store 获取商品，请稍后重试。"
+                : "此设备已关闭 App 内购买。"
             return false
         }
-        return await purchase(product)
+        return await purchase(product, appAccountToken: appAccountToken)
     }
 
-    func purchase(_ product: Product) async -> Bool {
+    func purchase(_ product: Product, appAccountToken: UUID) async -> Bool {
         purchasingProductID = product.id
         defer { purchasingProductID = nil }
         do {
             // 不要给系统购买窗加短超时。审核员在 iPad 上输入沙盒账号时经常超过 30 秒。
-            let result = try await purchaseWithPresentation(product)
+            let result = try await purchaseWithPresentation(product, appAccountToken: appAccountToken)
             switch result {
             case .success(let verification):
                 return try await deliver(verification)
@@ -131,13 +137,17 @@ final class StoreKitManager: ObservableObject {
         }
     }
 
-    private func purchaseWithPresentation(_ product: Product) async throws -> Product.PurchaseResult {
+    private func purchaseWithPresentation(
+        _ product: Product,
+        appAccountToken: UUID
+    ) async throws -> Product.PurchaseResult {
+        let options: Set<Product.PurchaseOption> = [.appAccountToken(appAccountToken)]
         if let scene = Self.foregroundWindowScene {
             if #available(iOS 18.2, *) {
-                return try await product.purchase(confirmIn: scene)
+                return try await product.purchase(confirmIn: scene, options: options)
             }
         }
-        return try await product.purchase()
+        return try await product.purchase(options: options)
     }
 
     private static var foregroundWindowScene: UIWindowScene? {
@@ -185,7 +195,12 @@ final class StoreKitManager: ObservableObject {
                   transaction.productID == Self.lifetimeVIPProductID else {
                 continue
             }
-            restored = ((try? await deliver(verification)) ?? false) || restored
+            do {
+                restored = try await deliver(verification) || restored
+            } catch {
+                message = "已找到购买记录，但恢复失败：\(error.localizedDescription)"
+                return
+            }
         }
 
         if !restored, message == nil {

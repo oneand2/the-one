@@ -30,6 +30,21 @@ final class ProfileStore: ObservableObject {
         }
     }
 
+    func updateMeditationDefault(_ enabled: Bool) async -> Bool {
+        do {
+            try await APIClient.shared.request(
+                "/api/user/profile",
+                method: .PATCH,
+                json: ["juexingcang_meditation_default": enabled]
+            )
+            await load()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     func generateInviteCode() async -> Bool {
         do {
             struct InviteResponse: Decodable {
@@ -50,4 +65,3 @@ final class ProfileStore: ObservableObject {
         errorMessage = nil
     }
 }
-

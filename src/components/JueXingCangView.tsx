@@ -130,19 +130,24 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
   const [liuyaoQuestion, setLiuyaoQuestion] = useState<string | null>(null);
   const [skipCoins, setSkipCoins] = useState(false);
   const wasActiveRef = useRef(isActive);
+  const meditationDefaultRef = useRef(true);
 
   useEffect(() => {
-    const loadVip = () => {
+    const loadProfile = (applyModeDefault: boolean) => {
       fetch('/api/user/profile', { credentials: 'include' })
         .then((response) => (response.ok ? response.json() : null))
         .then((profile) => {
           setSkipCoins(isVip(profile?.vip_expires_at));
+          const enabled = profile?.juexingcang_meditation_default ?? true;
+          meditationDefaultRef.current = enabled;
+          if (applyModeDefault) setMindMode(enabled ? 'meditation' : 'none');
         })
         .catch(() => undefined);
     };
-    loadVip();
-    window.addEventListener('coins-should-refresh', loadVip);
-    return () => window.removeEventListener('coins-should-refresh', loadVip);
+    const refreshBalance = () => loadProfile(false);
+    loadProfile(true);
+    window.addEventListener('coins-should-refresh', refreshBalance);
+    return () => window.removeEventListener('coins-should-refresh', refreshBalance);
   }, []);
 
   const normalizeSession = (session: any): ChatSession => {
@@ -177,6 +182,17 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       setShowSessionList(false);
       setShowDesktopSidebar(false);
       setSearchQuery('');
+      setMindMode(meditationDefaultRef.current ? 'meditation' : 'none');
+    } else if (!wasActiveRef.current && isActive) {
+      fetch('/api/user/profile', { credentials: 'include' })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((profile) => {
+          const enabled = profile?.juexingcang_meditation_default ?? true;
+          meditationDefaultRef.current = enabled;
+          setMindMode(enabled ? 'meditation' : 'none');
+          setSkipCoins(isVip(profile?.vip_expires_at));
+        })
+        .catch(() => undefined);
     }
     wasActiveRef.current = isActive;
   }, [isActive]);
@@ -931,6 +947,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     setImportData({});
     setLiuyaoQuestion(null);
     setInput('');
+    setMindMode(meditationDefaultRef.current ? 'meditation' : 'none');
   };
 
   const handleCopyMessage = (messageId: string, content: string) => {

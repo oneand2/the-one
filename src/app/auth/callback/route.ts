@@ -5,7 +5,6 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { cookies } from 'next/headers';
 
 const PROFILE_TABLE = 'user_profiles';
-const INITIAL_COINS = 300;
 const INVITE_REWARD = 200;
 
 /**
@@ -65,7 +64,7 @@ export async function GET(request: NextRequest) {
       const { error: insertErr } = await supabase
         .from(PROFILE_TABLE)
         .upsert(
-          { user_id: uid, nickname, coins_balance: INITIAL_COINS },
+          { user_id: uid, nickname },
           { onConflict: 'user_id', ignoreDuplicates: true },
         );
 

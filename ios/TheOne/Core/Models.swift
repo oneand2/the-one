@@ -18,13 +18,17 @@ struct Profile: Decodable {
     let coinsBalance: Int
     let inviteCode: String?
     let vipExpiresAt: String?
+    let juexingcangMeditationDefault: Bool?
 
     enum CodingKeys: String, CodingKey {
         case nickname
         case coinsBalance = "coins_balance"
         case inviteCode = "invite_code"
         case vipExpiresAt = "vip_expires_at"
+        case juexingcangMeditationDefault = "juexingcang_meditation_default"
     }
+
+    var meditationDefaultEnabled: Bool { juexingcangMeditationDefault ?? true }
 
     private static let lifetimeSentinel = "9999-12-31T23:59:59.999Z"
 

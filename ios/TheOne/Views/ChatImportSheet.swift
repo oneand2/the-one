@@ -24,8 +24,8 @@ struct ChatImportSheet: View {
                         importSection("八字", records: baziRecords, selection: $selectedBazi) { record in
                             baziLabel(record)
                         }
-                        importSection("八维", records: mbtiRecords, selection: $selectedMBTI) { record in
-                            "\(record.type) · \(shortDate(record.createdAt))"
+                        importSection("八卦人格", records: mbtiRecords, selection: $selectedMBTI) { record in
+                            "\(BaguaPersonality.personalityName(for: record.type)) · \(shortDate(record.createdAt))"
                         }
                         importSection("六爻", records: liuyaoRecords, selection: $selectedLiuYao) { record in
                             (record.question.isEmpty ? "未写所问" : record.question) + " · " + shortDate(record.createdAt)

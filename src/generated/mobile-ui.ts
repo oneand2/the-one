@@ -213,8 +213,8 @@ export const mobileUI = {
       "symbol": "solid-broken"
     },
     "mbti": {
-      "title": "荣格八维",
-      "subtitle": "知己即知天，请成为自己的答案",
+      "title": "八卦人格",
+      "subtitle": "八卦定其性，八门观其位",
       "symbol": "solid-broken"
     },
     "juexingcang": {

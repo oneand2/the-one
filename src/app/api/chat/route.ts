@@ -5,6 +5,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { isVip } from '@/utils/vip';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData, QianchengImportData } from '@/types/import-data';
 import { retrieveRelevantNews } from '@/utils/newsRetrieval';
+import { baguaDimensionLabel, personalityName } from '@/lib/baguaPersonality';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -199,16 +200,16 @@ export async function POST(req: Request) {
         });
       }
       
-      // 八维测试数据
+      // 八卦人格数据（底层字段沿用旧结构，仅在服务端兼容）
       if (mbtiList.length > 0) {
         mbtiList.forEach((mbti, index) => {
-          importContext += `### 荣格八维测试结果（第${index + 1}条）\n\n`;
-          importContext += `**MBTI类型**: ${mbti.mbtiType}\n\n`;
-          importContext += `**认知功能得分**:\n`;
+          importContext += `### 八卦人格测试结果（第${index + 1}条）\n\n`;
+          importContext += `**人格原型**: ${personalityName(mbti.mbtiType)}\n\n`;
+          importContext += `**八卦心势得分**:\n`;
           const sortedScores = Object.entries(mbti.functionScores)
             .sort((a, b) => (b[1] as number) - (a[1] as number));
           sortedScores.forEach(([func, score]) => {
-            importContext += `  - ${func}: ${(score as number).toFixed(1)}\n`;
+            importContext += `  - ${baguaDimensionLabel(func)}: ${(score as number).toFixed(1)}\n`;
           });
           importContext += '\n';
         });
@@ -280,12 +281,12 @@ export async function POST(req: Request) {
 
 ## 算命模式核心原则
 1. **格局与用神为纲（最重要）**：八字分析必须以「格局」和「用神」为核心抓手。开篇就要先把用户的**格局**（如正官格、食神格、从财格等）和**用神**（喜用五行/十神）讲清楚——明确说出"你是XX格、用神为XX"，并解释这意味着什么样的人生路数、什么能帮到你（用神）、什么会消耗你（忌神）。后续所有判断都要落回到格局与用神上，不能脱离它们空谈。
-2. **命理为基**：充分利用用户导入的八字、八维、六爻数据，从命理角度分析问题
+2. **命理为基**：充分利用用户导入的八字、八卦人格、六爻数据，从命理角度分析问题
 3. **见微知著**：从用户的命盘中看到他们的本性、倾向、优势和挑战
 4. **古今融合**：将传统命理学与现代心理学结合，给出既有深度又有实用价值的建议
 5. **因材施教**：根据用户的命理特征（尤其格局与用神），给出最适合他们的建议
 
-**重要**：用户导入的八字数据中不包含「八字推导的MBTI」。你不得根据八字或任何能量分布推算、分析或主动提及「八字推导的MBTI」；仅当用户单独导入了「荣格八维测试」结果时，才可基于该测试结果讨论MBTI。
+**重要**：八字数据中不包含人格测试结论，不得根据八字或能量分布反推人格类型。用户导入八卦人格结果时，只使用“八卦心势、人格原型、八门位置”的外显语言，不要输出底层类型字母、旧测试名称或旧功能代码。
 
 ## 回答原则
 1. 既要有高度，也要接地气

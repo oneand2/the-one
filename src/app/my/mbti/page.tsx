@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache';
 import { requestAppLogin } from '@/utils/iosEmbed';
+import { personalityName } from '@/lib/baguaPersonality';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,7 +49,7 @@ export default function MyMbtiPage() {
         const body = await r.json().catch(() => ({}));
         const msg = body?.error || '';
         if (r.status === 401) throw new Error('请先登录');
-        if (r.status >= 500) throw new Error('拉取失败，请确认数据库 daoyoushuju 表中包含 input_data (jsonb) 字段');
+        if (r.status >= 500) throw new Error('暂时无法读取记录，请稍后重试');
         throw new Error(msg || '拉取失败');
       })
       .then((data) => {
@@ -81,32 +82,27 @@ export default function MyMbtiPage() {
             ← 返回首页
           </Link>
         </div>
-        <h1 className="text-2xl font-serif text-stone-800 mb-2">我的八维结果</h1>
+        <h1 className="text-2xl font-serif text-stone-800 mb-2">我的八卦人格</h1>
         <p className="text-sm text-stone-500 font-sans mb-8">
-          点击某条记录可查看该次八维测试的完整报告
+          点击某条记录可查看该次八卦人格的完整心盘
         </p>
 
         {loading && (
           <div className="py-12 text-center text-stone-500 font-sans">加载中…</div>
         )}
         {error && (
-          <div className="py-6 px-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm font-sans space-y-3">
+          <div className="space-y-3 rounded-lg border border-stone-200 bg-white/55 px-4 py-6 font-sans text-sm text-stone-700">
             <p>{error}</p>
             {error.includes('请先登录') && (
               <Link href="/login?next=/my/mbti" className="inline-block text-stone-800 font-medium underline">
                 去登录 →
               </Link>
             )}
-            {error.includes('daoyoushuju') && (
-              <p className="text-xs text-stone-500 pt-2">
-                后端使用 <code className="bg-stone-200 px-1 rounded">daoyoushuju</code> 表，通过 <code className="bg-stone-200 px-1 rounded">type</code> 区分古典排盘（classical_bazi）与八维结果（mbti），详情存入 <code className="bg-stone-200 px-1 rounded">input_data</code>（JSONB）。
-              </p>
-            )}
           </div>
         )}
         {!loading && !error && list.length === 0 && (
           <div className="py-12 text-center text-stone-500 font-sans">
-            暂无八维测试记录，在「八维」中完成测试后点击「保存结果」即可在此查看
+            尚无八卦人格记录，完成测试后保存的心盘会留在这里
           </div>
         )}
         {!loading && !error && list.length > 0 && (
@@ -123,8 +119,8 @@ export default function MyMbtiPage() {
                   className="block px-4 py-4 bg-white/70 border border-stone-200 rounded-xl hover:border-stone-300 hover:shadow-sm transition-all font-sans"
                 >
                   <div className="flex justify-between items-center">
-                    <span className="text-stone-800 font-mono font-semibold tracking-wider">
-                      {item.type}
+                    <span className="font-serif text-stone-800 tracking-[0.08em]">
+                      {personalityName(item.type)}
                     </span>
                     <span className="text-stone-400 text-xs">
                       {new Date(item.created_at).toLocaleDateString('zh-CN')}

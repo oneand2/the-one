@@ -13,6 +13,7 @@ import { JianZhongShengView } from '@/components/JianZhongShengView';
 import { mobileUI } from '@/generated/mobile-ui';
 import type { TabType } from '@/types/tabs';
 import { prefetchDailyHexagram } from '@/utils/dailyHexagram';
+import { BaguaGlyph } from '@/components/BaguaGlyph';
 
 const VALID_TABS: TabType[] = ['guanshi', 'guanxin', 'bazi', 'mbti', 'wendao', 'juexingcang'];
 const LEGACY_TAB_ALIASES: Partial<Record<string, TabType>> = { bazi: 'guanxin' };
@@ -22,7 +23,7 @@ function tabTitle(tab: TabType): string {
   if (tab === 'wendao') return '见众生';
   if (tab === 'guanxin') return '见自己';
   if (tab === 'bazi') return '八字命理';
-  if (tab === 'mbti') return '荣格八维';
+  if (tab === 'mbti') return '八卦人格';
   return '决行藏';
 }
 
@@ -30,11 +31,21 @@ function tabSubtitle(tab: TabType): string {
   if (tab === 'guanshi') return '世间即道场，人生是修行';
   if (tab === 'wendao') return '人间片刻，各有来处';
   if (tab === 'juexingcang') return '用之则行，舍之则藏';
+  if (tab === 'mbti') return '八卦定其性，八门观其位';
   return '知己即知天，请成为自己的答案';
 }
 
 function TabGlyph({ tab }: { tab: TabType }) {
   const common = 'w-8 h-8 mx-auto text-[#2c2c2c] mb-4';
+  if (tab === 'mbti') {
+    return (
+      <div className="mx-auto mb-4 flex h-8 w-14 items-center justify-center gap-2 text-[#2c2c2c]" aria-label="坎离相济">
+        <BaguaGlyph code="Ni" className="h-8 w-6" decorative />
+        <span className="h-5 w-px bg-stone-300" aria-hidden />
+        <BaguaGlyph code="Se" className="h-8 w-6" decorative />
+      </div>
+    );
+  }
   if (tab === 'guanshi') {
     return (
       <svg viewBox="0 0 100 100" fill="currentColor" className={common}>

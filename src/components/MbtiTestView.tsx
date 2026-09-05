@@ -7,6 +7,17 @@ import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Responsi
 import questionsData from '../../questions.json';
 import mbtiDataRaw from '../../mbti_final_cleaned.json';
 import { clearCached, CACHE_KEYS } from '@/utils/cache';
+import { BaguaGlyph } from '@/components/BaguaGlyph';
+import {
+  BAGUA_CHART_ORDER,
+  BAGUA_DIMENSIONS,
+  BAGUA_DISPLAY_ORDER,
+  BAGUA_DOOR_POSITIONS,
+  baguaDimensionLabel,
+  personalityName,
+  presentPersonalityText,
+  type CognitiveFunctionCode,
+} from '@/lib/baguaPersonality';
 
 // 文本智能分段函数 - 在句号处分段，避免段落过长
 const formatTextToParagraphs = (text: string, maxLength: number = 150): string[] => {
@@ -43,6 +54,9 @@ const formatTextToParagraphs = (text: string, maxLength: number = 150): string[]
   
   return result;
 };
+
+const formatPresentedParagraphs = (text: string, maxLength: number = 150): string[] =>
+  formatTextToParagraphs(presentPersonalityText(text), maxLength);
 
 // MBTI类型定义
 const MBTI_TYPES = [
@@ -836,10 +850,10 @@ const generateInsights = (
   if (heroIsIntroverted === childIsIntroverted && 
       heroScore > 5 && childScore > 5 && 
       auxScore < heroScore * 0.5) {
-    const loopType = heroIsIntroverted ? '内倾死循环' : '外倾死循环';
+    const loopType = heroIsIntroverted ? '内收闭环' : '外放闭环';
     insights.push({
       type: 'loop',
-      title: `状态警报：${loopType} (${heroFunc}-${childFunc} Loop)`,
+      title: `状态警报：${loopType}（${heroFunc}与${childFunc}）`,
       description: typeTexts?.loopDescription || `你的能量在"${FUNCTION_NAMES[heroFunc]}"与"${FUNCTION_NAMES[childFunc]}"之间封闭循环，切断了与外界的${auxFunc}连接。`,
       severity: 'critical'
     });
@@ -873,7 +887,7 @@ const generateInsights = (
     const customText = typeTexts?.inferiorIntegration;
     insights.push({
       type: 'inferior_integration',
-      title: `成长亮点：劣势整合 (${inferiorFunc} Integration)`,
+      title: `成长亮点：景门整合（${inferiorFunc}）`,
       description: customText || `恭喜！你的劣势功能（${inferiorFunc}）已经成功整合进入核心能量圈。这意味着你在保持主导功能的同时，成功发展了这个通常较弱的能力。你的人格发展达到了罕见的成熟度。`,
       severity: 'positive'
     });
@@ -881,7 +895,7 @@ const generateInsights = (
     // 阴面得分高 = 压力态
     insights.push({
       type: 'grip',
-      title: `危局警报：暗夜逆流 (The Grip)`,
+      title: `危局警报：景门逆流`,
       description: typeTexts?.gripDescription || `你的灵魂正处于"颠倒"状态。平日里被你忽视的劣势功能（${inferiorFunc}）正在掌权。这并非堕落，而是灵魂在尖叫，要求你正视那些被忽视的需求。`,
       severity: 'critical'
     });
@@ -899,7 +913,7 @@ const generateInsights = (
     const customText = typeTexts?.blindspotIntegration;
     insights.push({
       type: 'blindspot_integration',
-      title: `成长亮点：盲点觉醒 (${blindspotFunc} Awakening)`,
+      title: `成长亮点：杜门点亮（${blindspotFunc}）`,
       description: customText || `你的盲点功能（${blindspotFunc}）已经被成功点亮。这极其罕见，说明你经历过特殊的成长历程，成功修补了灵魂最大的短板。这是深度自我发展的标志。`,
       severity: 'positive'
     });
@@ -907,7 +921,7 @@ const generateInsights = (
     // 阴面得分高 = 盲点过载（负面）
     insights.push({
       type: 'blindspot',
-      title: `失衡警报：盲点过载 (${blindspotFunc} Overload)`,
+      title: `失衡警报：杜门过载（${blindspotFunc}）`,
       description: `你的盲点功能（${blindspotFunc}）在阴面异常活跃，这可能导致认知失调和决策困难。建议暂时回归你的主导功能，重新找到平衡。`,
       severity: 'warning'
     });
@@ -925,7 +939,7 @@ const generateInsights = (
     const customText = typeTexts?.criticIntegration;
     insights.push({
       type: 'critic_integration',
-      title: `成长亮点：判官觉醒 (${criticFunc} Mastery)`,
+      title: `成长亮点：伤门通达（${criticFunc}）`,
       description: customText || `你成功觉醒了内在的判官功能（${criticFunc}）。这让你拥有了强大的自我觉察能力，能够建设性地审视自己而不陷入自我攻击。这是成熟人格的重要标志。`,
       severity: 'positive'
     });
@@ -933,7 +947,7 @@ const generateInsights = (
     // 阴面得分高 = 判官重压（负面）
     insights.push({
       type: 'critic',
-      title: `内耗警报：内在判官 (The Harsh Judge)`,
+      title: `内耗警报：伤门重压`,
       description: typeTexts?.criticDescription || `你的第六功能（${criticFunc}）异常活跃，化身为一个冷酷的审判者。这种过度的自我攻击正在消耗你的生命力。请记住：对自己慈悲，也是一种修行。`,
       severity: 'warning'
     });
@@ -951,7 +965,7 @@ const generateInsights = (
     const customText = typeTexts?.demonIntegration;
     insights.push({
       type: 'demon_integration',
-      title: `成长亮点：恶魔驯化 (${demonFunc} Tamed)`,
+      title: `成长亮点：死门转化（${demonFunc}）`,
       description: customText || `你成功驯化了内心深处的恶魔（${demonFunc}）。这股曾经黑暗的力量已经成为你涅槃重生的燃料。你获得了罕见的能力：将最深层的阴影转化为创造性的力量。`,
       severity: 'positive'
     });
@@ -959,7 +973,7 @@ const generateInsights = (
     // 阴面得分高 = 恶魔附体（负面）
     insights.push({
       type: 'demon',
-      title: `业力警报：虚无之火 (The Demonic Fire)`,
+      title: `失衡警报：死门灼心`,
       description: typeTexts?.demonDescription || `你心灵最深处的恶魔（${demonFunc}）已经苏醒。这股力量虽然危险，但若能善用，它将是你涅槃重生的燃料。`,
       severity: 'critical'
     });
@@ -984,14 +998,14 @@ const generateInsights = (
     if (allIntroverted) {
       insights.push({
         type: 'hermit',
-        title: `状态警报：深海孤岛 (The Hermit)`,
+        title: `状态警报：深潜失衡`,
         description: `检测到你的核心能量完全向内坍缩。你构建了一个庞大而精密的内心世界，却切断了通往外部现实的桥梁。虽然这带来了极致的深度，但也让你面临"孤芳自赏"甚至"现实解离"的风险。你需要一个锚点，将你拉回人间。`,
         severity: 'warning'
       });
     } else if (allExtroverted) {
       insights.push({
         type: 'manic',
-        title: `状态警报：狂奔不止 (The Manic)`,
+        title: `状态警报：外驰失衡`,
         description: `检测到你的核心能量完全向外发散。你活在一个永不停歇的外部世界中，但却切断了通往内心深处的道路。虽然这带来了极致的活力，但也让你面临"内在空虚"甚至"身份迷失"的风险。你需要一个静室，让灵魂喘息。`,
         severity: 'warning'
       });
@@ -1080,7 +1094,7 @@ function MbtiResultActions({
         fit_score: result.score,
         shadow_type: result.shadowType,
       };
-      console.log('保存MBTI数据:', payload);
+      console.log('保存八卦人格数据:', payload);
       const res = await fetch('/api/records/mbti', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1338,11 +1352,11 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           className="text-center py-6"
         >
           <h2 className="text-xl font-serif text-stone-800 mb-2">
-            我们为什么仍然需要新的八维测试？
+            八卦如何映照你的心智？
           </h2>
           <div className="flex items-center justify-center gap-2 text-xs text-stone-400">
             <div className="w-8 h-px bg-stone-300" />
-            <span>三个维度的突破</span>
+            <span>八卦为性 · 八门为位</span>
             <div className="w-8 h-px bg-stone-300" />
           </div>
         </motion.div>
@@ -1356,8 +1370,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             transition={{ delay: 0.15 }}
             className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-stone-200/50 hover:shadow-md transition-shadow"
           >
-            <div className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center mb-4">
-              <span className="text-white text-lg">↕</span>
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 bg-stone-50">
+              <BaguaGlyph code="Te" className="h-5 w-5 text-stone-700" decorative />
             </div>
             <h3 className="text-base font-serif text-stone-800 mb-2">
               测量的维度
@@ -1368,10 +1382,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="flex items-center justify-center gap-3 py-2">
                 <span className="text-sm text-stone-500 tracking-wide">强弱之分</span>
                 <span className="text-stone-300 text-lg">→</span>
-                <span className="text-sm text-stone-800 font-semibold tracking-wide">宫位之序</span>
+                <span className="text-sm tracking-wide text-stone-800">宫位之序</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed text-justify">
-                不止于测量功能强弱，更描绘心灵宫殿中的『坐席』——何者为主导，何者为阴影。
+                不止测量心势强弱，更描绘八门中的位置——何者自然通达，何者潜伏于阴影。
               </p>
             </div>
           </motion.div>
@@ -1383,8 +1397,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             transition={{ delay: 0.2 }}
             className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-stone-200/50 hover:shadow-md transition-shadow"
           >
-            <div className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center mb-4">
-              <span className="text-white text-lg">◉</span>
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 bg-stone-50">
+              <BaguaGlyph code="Ni" className="h-5 w-5 text-stone-700" decorative />
             </div>
             <h3 className="text-base font-serif text-stone-800 mb-2">
               觉察的深度
@@ -1395,10 +1409,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="flex items-center justify-center gap-3 py-2">
                 <span className="text-sm text-stone-500 tracking-wide">半像扫描</span>
                 <span className="text-stone-300 text-lg">→</span>
-                <span className="text-sm text-stone-800 font-semibold tracking-wide">全像透视</span>
+                <span className="text-sm tracking-wide text-stone-800">全像透视</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed text-justify">
-                不止观阳面功能，更照亮第5至8维的幽暗角落，完成真正的心理整合。
+                不止观照阳面四门，也照亮阴面四门的幽暗角落，理解心智如何彼此制衡。
               </p>
             </div>
           </motion.div>
@@ -1410,8 +1424,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             transition={{ delay: 0.25 }}
             className="bg-white/70 backdrop-blur-sm rounded-xl p-5 border border-stone-200/50 hover:shadow-md transition-shadow"
           >
-            <div className="w-10 h-10 rounded-full bg-stone-800 flex items-center justify-center mb-4">
-              <span className="text-white text-lg">✦</span>
+            <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 bg-stone-50">
+              <BaguaGlyph code="Ne" className="h-5 w-5 text-stone-700" decorative />
             </div>
             <h3 className="text-base font-serif text-stone-800 mb-2">
               成长的路径
@@ -1422,10 +1436,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="flex items-center justify-center gap-3 py-2">
                 <span className="text-sm text-stone-500 tracking-wide">静态标签</span>
                 <span className="text-stone-300 text-lg">→</span>
-                <span className="text-sm text-stone-800 font-semibold tracking-wide">动态成长</span>
+                <span className="text-sm tracking-wide text-stone-800">动态成长</span>
               </div>
               <p className="text-xs text-stone-600 leading-relaxed text-justify">
-                拒绝标签化人格，性格非牢笼，而是独特的『法门』。真正的成长往往来源于我们对自己阴影人格的整合。
+                人格不是牢笼，而是一张会变化的心盘。成长来自对阳面与阴面的共同理解。
               </p>
             </div>
           </motion.div>
@@ -1446,7 +1460,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               </div>
               <div className="space-y-2 text-sm text-stone-600 pl-4">
                 <p>• 强弱刻度的线性测量</p>
-                <p>• 显意识的四大功能</p>
+                <p>• 只看眼前的四种倾向</p>
                 <p>• 静态不变的人格标签</p>
               </div>
             </div>
@@ -1454,18 +1468,18 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-stone-800">
                 <div className="w-2 h-2 rounded-full bg-stone-800" />
-                <span className="text-xs tracking-wider font-medium">全新视角</span>
+                <span className="text-xs tracking-wider">全新视角</span>
               </div>
-              <div className="space-y-2 text-sm text-stone-700 pl-4 font-medium">
-                <p>• 功能坐席的宫位秩序</p>
-                <p>• 八维全谱的完整图景</p>
+              <div className="space-y-2 pl-4 text-sm text-stone-700">
+                <p>• 八门心位的内在秩序</p>
+                <p>• 八卦心势的完整图景</p>
                 <p>• 人生现场的成长指引</p>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* 八维功能 - 更紧凑的网格 */}
+        {/* 八卦心势 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1473,25 +1487,20 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           className="bg-white/60 backdrop-blur-sm rounded-xl p-5 border border-stone-200/50"
         >
           <div className="text-center mb-4">
-            <span className="text-xs text-stone-500 tracking-wider">八维认知功能</span>
+            <span className="text-xs text-stone-500 tracking-wider">八 卦 心 势</span>
           </div>
           
           <div className="grid grid-cols-4 gap-2">
-            {[
-              { code: 'Se', name: '外向感觉' },
-              { code: 'Si', name: '内向感觉' },
-              { code: 'Ne', name: '外向直觉' },
-              { code: 'Ni', name: '内向直觉' },
-              { code: 'Te', name: '外向思考' },
-              { code: 'Ti', name: '内向思考' },
-              { code: 'Fe', name: '外向情感' },
-              { code: 'Fi', name: '内向情感' },
-            ].map((func, i) => (
-              <div key={i} className="text-center p-2.5 bg-stone-50 rounded-lg hover:bg-stone-100 transition-colors">
-                <div className="font-mono text-sm text-stone-800 font-medium">{func.code}</div>
-                <div className="text-[10px] text-stone-500 mt-0.5">{func.name}</div>
+            {BAGUA_DISPLAY_ORDER.map((code) => {
+              const dimension = BAGUA_DIMENSIONS[code];
+              return (
+              <div key={code} className="flex flex-col items-center rounded-lg bg-stone-50 p-2.5 text-center transition-colors hover:bg-stone-100">
+                <BaguaGlyph code={code} className="h-7 w-7 text-stone-700" decorative />
+                <div className="mt-1 font-serif text-sm text-stone-800">{dimension.trigram}</div>
+                <div className="mt-0.5 text-[10px] text-stone-500">{dimension.name}</div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
 
@@ -1503,7 +1512,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           onClick={startTest}
           className="w-full py-4 bg-stone-800 hover:bg-stone-900 text-white rounded-xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-md hover:shadow-lg"
         >
-          <span className="font-sans text-sm tracking-wider">开始测试</span>
+          <span className="font-sans text-sm tracking-wider">开始观心</span>
           <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </motion.button>
 
@@ -1515,13 +1524,16 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           className="text-center space-y-2"
         >
           <p className="text-xs text-stone-600 leading-relaxed">
-            测试约需 <span className="font-medium text-stone-800">15 分钟</span>。本测试包含 <span className="font-medium text-stone-800">26 道题目</span>，你需要将 <span className="font-medium text-stone-800">5 分</span>分配给最符合的选项。
+            测试约需 <span className="text-stone-800">15 分钟</span>。共 <span className="text-stone-800">26 道题目</span>，请为符合自己的选项分配 0–5 分。
           </p>
           <div className="pt-2">
-            <span className="inline-block px-4 py-1.5 bg-amber-50/80 text-amber-900/90 text-xs rounded-full border border-amber-200/70 shadow-sm">
-              ✓ 本测试完全免费
+            <span className="inline-block rounded-full bg-stone-900/[0.045] px-4 py-1.5 text-xs tracking-[0.08em] text-stone-500">
+              借八卦与八门表达现代人格倾向
             </span>
           </div>
+          <p className="mx-auto max-w-lg text-[11px] leading-5 text-stone-400">
+            “阳面 / 阴面”仅指本测试中的心理层次，不等同于传统奇门遁甲的吉凶分类。
+          </p>
         </motion.div>
       </motion.div>
     );
@@ -1543,7 +1555,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           <div className="flex justify-between items-center text-xs text-stone-500">
             <span>问题 {currentQuestionIndex + 1} / {shuffledQuestions.length}</span>
             <div className="flex items-center gap-2">
-              <span className={totalAllocated > 0 ? 'text-stone-700 font-medium' : 'text-amber-600'}>
+              <span className={totalAllocated > 0 ? 'text-stone-700' : 'text-[#8a6a54]'}>
                 已分配 {totalAllocated} 分
               </span>
             </div>
@@ -1590,7 +1602,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                     {/* 分数显示 */}
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs text-stone-500">分配分数</span>
-                      <span className="text-base font-medium text-stone-800 tabular-nums">
+                      <span className="text-base tabular-nums text-stone-800">
                         {weight} 分
                       </span>
                     </div>
@@ -1707,8 +1719,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           className="space-y-8"
         >
           <div className="bg-white/60 backdrop-blur-sm rounded-lg p-10 shadow-sm border border-stone-200/50 text-center">
-            <div className="text-6xl font-bold text-stone-900 tracking-wider mb-3">
-              {result.type}
+            <div className="mb-3 font-serif text-4xl tracking-[0.12em] text-stone-900">
+              {personalityName(result.type)}
             </div>
             <p className="text-stone-600">暂无详细数据</p>
           </div>
@@ -1725,8 +1737,13 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
     // 展开的功能卡片状态
     const FunctionCard = ({ func, index }: { func: MBTIFunction; index: number }) => {
       const [isExpanded, setIsExpanded] = useState(false);
-      const logicParagraphs = formatTextToParagraphs(func.logic, 120);
-      const lessonParagraphs = formatTextToParagraphs(func.lesson, 100);
+      const logicParagraphs = formatPresentedParagraphs(func.logic, 120);
+      const lessonParagraphs = formatPresentedParagraphs(func.lesson, 100);
+      const dimensionCode = (COGNITIVE_FUNCTIONS.find((code) =>
+        new RegExp(`\\b${code}\\b`).test(`${func.title} ${func.logic}`)
+      ) ?? COGNITIVE_FUNCTIONS[index]) as CognitiveFunctionCode;
+      const dimension = BAGUA_DIMENSIONS[dimensionCode];
+      const door = BAGUA_DOOR_POSITIONS[index];
       
       return (
         <motion.div
@@ -1738,8 +1755,8 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             className={`
               relative overflow-hidden rounded-xl transition-all duration-300 cursor-pointer
               ${isExpanded 
-                ? 'bg-stone-800 text-white shadow-xl' 
-                : 'bg-white/80 hover:bg-white hover:shadow-md border border-stone-200/60'
+                ? 'border border-stone-300 bg-stone-900/[0.035] shadow-sm'
+                : 'border border-stone-200/70 bg-white/65 hover:bg-white/80'
               }
             `}
             onClick={() => setIsExpanded(!isExpanded)}
@@ -1749,20 +1766,20 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <span className={`
-                    text-xs font-mono px-2.5 py-1 rounded-full
-                    ${isExpanded ? 'bg-white/20 text-white/90' : 'bg-stone-100 text-stone-600'}
+                    text-xs px-2.5 py-1 rounded-full
+                    ${isExpanded ? 'bg-stone-200/70 text-stone-700' : 'bg-stone-100 text-stone-600'}
                   `}>
-                    {func.pos}
+                    {door.door} · {door.layer}
                   </span>
-                  <h4 className={`text-lg font-serif ${isExpanded ? 'text-white' : 'text-stone-800'}`}>
-                    {func.title}
+                  <h4 className="font-serif text-lg text-stone-800">
+                    {dimension.trigram} · {dimension.name}
                   </h4>
                 </div>
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ChevronDown className={`w-5 h-5 ${isExpanded ? 'text-white/60' : 'text-stone-400'}`} />
+                  <ChevronDown className="h-5 w-5 text-stone-400" />
                 </motion.div>
               </div>
             </div>
@@ -1783,7 +1800,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                       <div className="text-xs text-stone-400 tracking-wider uppercase">底层逻辑</div>
                       <div className="space-y-2.5">
                         {logicParagraphs.map((p, i) => (
-                          <p key={i} className="text-sm text-white/85 leading-relaxed">
+                          <p key={i} className="text-sm leading-relaxed text-stone-700">
                             {p}
                           </p>
                         ))}
@@ -1791,14 +1808,14 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                     </div>
                     
                     {/* 分隔线 */}
-                    <div className="h-px bg-white/10" />
+                    <div className="h-px bg-stone-200" />
                     
                     {/* 炼心课题 */}
                     <div className="space-y-3">
-                      <div className="text-xs text-amber-400/80 tracking-wider uppercase">炼心课题</div>
-                      <div className="space-y-2.5 pl-4 border-l-2 border-amber-500/30">
+                      <div className="text-xs tracking-wider text-[#806a48]">炼心课题</div>
+                      <div className="space-y-2.5 border-l border-[#9a7b4f]/30 pl-4">
                         {lessonParagraphs.map((p, i) => (
-                          <p key={i} className="text-sm text-white/80 leading-relaxed italic">
+                          <p key={i} className="text-sm leading-relaxed text-stone-700">
                             {p}
                           </p>
                         ))}
@@ -1813,6 +1830,11 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
       );
     };
 
+    const primaryCode = MBTI_FUNCTION_STACKS[result.type][0];
+    const supportingCode = MBTI_FUNCTION_STACKS[result.type][1];
+    const primaryDimension = BAGUA_DIMENSIONS[primaryCode];
+    const supportingDimension = BAGUA_DIMENSIONS[supportingCode];
+
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -1823,64 +1845,53 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         {/* ═══════════════════════════════════════════════════════════
             1. 顶部 Hero 区域 - 大气的名片式设计
         ═══════════════════════════════════════════════════════════ */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="relative rounded-2xl overflow-hidden"
+          className="w-full rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]"
         >
-          {/* 渐变背景 */}
-          <div className="absolute inset-0 bg-gradient-to-br from-stone-800 via-stone-900 to-stone-950" />
-          
-          {/* 装饰性图案 */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-radial from-white/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-radial from-white/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2" />
-          </div>
-          
-          {/* 背景水印 ID */}
-          <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-            <div className="text-[16rem] font-black text-white/[0.03] tracking-widest select-none">
-              {detailData.id}
+          <div className="relative overflow-hidden rounded-[17px] bg-[#fbf9f4] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+            <div className="mb-6 flex items-center gap-3">
+              <span className="font-sans text-[10px] tracking-[0.34em] text-stone-400">你 的 心 象</span>
+              <span className="h-px flex-1 bg-stone-200/80" />
             </div>
-          </div>
 
-          <div className="relative z-10 px-8 py-14 text-center">
-            {/* 来源注解 */}
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="mb-8"
-            >
-              <span className="inline-block px-4 py-1.5 bg-white/10 backdrop-blur-sm rounded-full text-xs text-stone-300 tracking-wide">
-                {detailData.origin}
-              </span>
-            </motion.div>
-            
-            {/* 主标题 */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.4, type: "spring", stiffness: 200 }}
-            >
-              <h1 className="text-5xl md:text-7xl font-bold text-white tracking-wider mb-4">
-                {detailData.name}
-              </h1>
-              <div className="text-2xl md:text-3xl font-mono text-stone-400 tracking-[0.3em] mb-6">
-                {detailData.id}
+            <div className="mx-auto mb-6 flex max-w-[240px] items-center justify-center gap-8 text-stone-700">
+              <div className="flex flex-col items-center gap-2">
+                <BaguaGlyph code={primaryCode} className="h-12 w-12" />
+                <span className="font-sans text-[10px] tracking-[0.14em] text-stone-400">开门</span>
               </div>
-            </motion.div>
-            
-            {/* Slogan */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-base md:text-lg text-stone-300 font-serif leading-relaxed max-w-xl mx-auto"
-            >
-              {detailData.slogan}
-            </motion.p>
+              <span className="h-12 w-px bg-stone-200" aria-hidden />
+              <div className="flex flex-col items-center gap-2">
+                <BaguaGlyph code={supportingCode} className="h-12 w-12" />
+                <span className="font-sans text-[10px] tracking-[0.14em] text-stone-400">休门</span>
+              </div>
+            </div>
+
+            <h1 className="mb-3 font-serif text-4xl tracking-[0.14em] text-stone-900">
+              {detailData.name}
+            </h1>
+            <p className="mb-5 font-sans text-[11px] tracking-[0.16em] text-stone-500">
+              {primaryDimension.trigram}·{primaryDimension.name} 为主　{supportingDimension.trigram}·{supportingDimension.name} 为辅
+            </p>
+            <p className="mx-auto max-w-xl font-serif text-[15px] leading-7 text-stone-600">
+              {presentPersonalityText(detailData.slogan)}
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <span className="rounded-full bg-stone-900/[0.045] px-3 py-1 font-sans text-[10px] tracking-[0.08em] text-stone-500">
+                契合度 {Math.round(result.fitScore || 0)}%
+              </span>
+              <span className="rounded-full bg-stone-900/[0.045] px-3 py-1 font-sans text-[10px] tracking-[0.08em] text-stone-500">
+                阴影原型 · {personalityName(result.shadowType)}
+              </span>
+              {detailData.origin && (
+                <span className="rounded-full bg-stone-900/[0.045] px-3 py-1 font-sans text-[10px] tracking-[0.08em] text-stone-500">
+                  {presentPersonalityText(detailData.origin)}
+                </span>
+              )}
+            </div>
           </div>
         </motion.div>
 
@@ -1904,7 +1915,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           </div>
           
           <div className="space-y-4">
-            {formatTextToParagraphs(detailData.guide, 140).map((p, i) => (
+            {formatPresentedParagraphs(detailData.guide, 140).map((p, i) => (
               <p key={i} className="text-sm text-stone-700 leading-[1.8]">
                 {p}
               </p>
@@ -1927,7 +1938,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             <h3 className="text-sm text-stone-500 tracking-wider uppercase mb-5">深度侧写</h3>
             
             <div className="space-y-4">
-              {formatTextToParagraphs(detailData.deep_profile, 130).map((p, i) => (
+              {formatPresentedParagraphs(detailData.deep_profile, 130).map((p, i) => (
                 <p key={i} className="text-sm text-stone-700 leading-[1.85] first:text-base first:text-stone-800">
                   {p}
                 </p>
@@ -1945,18 +1956,18 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-gradient-to-br from-emerald-50/90 to-teal-50/80 rounded-xl p-6 border border-emerald-200/50"
+            className="rounded-xl border border-stone-200/70 bg-white/55 p-6"
           >
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-                <Sun className="w-4 h-4 text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#5f765f]/10">
+                <Sun className="h-4 w-4 text-[#5f765f]" />
               </div>
-              <h4 className="text-base font-serif text-emerald-900">天赋优势</h4>
+              <h4 className="font-serif text-base text-stone-800">天赋优势</h4>
             </div>
             
             <div className="space-y-3">
-              {formatTextToParagraphs(detailData.strengths, 100).map((p, i) => (
-                <p key={i} className="text-sm text-emerald-800 leading-relaxed">
+              {formatPresentedParagraphs(detailData.strengths, 100).map((p, i) => (
+                <p key={i} className="text-sm leading-relaxed text-stone-700">
                   {p}
                 </p>
               ))}
@@ -1968,18 +1979,18 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-gradient-to-br from-amber-50/90 to-orange-50/80 rounded-xl p-6 border border-amber-200/50"
+            className="rounded-xl border border-stone-200/70 bg-white/55 p-6"
           >
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center">
-                <Moon className="w-4 h-4 text-white" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8a6a54]/10">
+                <Moon className="h-4 w-4 text-[#8a6a54]" />
               </div>
-              <h4 className="text-base font-serif text-amber-900">阴影盲区</h4>
+              <h4 className="font-serif text-base text-stone-800">阴影盲区</h4>
             </div>
             
             <div className="space-y-3">
-              {formatTextToParagraphs(detailData.weaknesses, 100).map((p, i) => (
-                <p key={i} className="text-sm text-amber-800 leading-relaxed">
+              {formatPresentedParagraphs(detailData.weaknesses, 100).map((p, i) => (
+                <p key={i} className="text-sm leading-relaxed text-stone-700">
                   {p}
                 </p>
               ))}
@@ -1992,15 +2003,15 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.55 }}
-          className="bg-stone-900/95 rounded-xl p-6 text-white"
+          className="rounded-xl border border-stone-200/70 bg-stone-900/[0.035] p-6"
         >
           <div className="flex items-center gap-3 mb-4">
-            <Zap className="w-5 h-5 text-amber-400" />
-            <h4 className="text-sm text-stone-300 tracking-wider">阴影触发机制</h4>
+            <Zap className="h-5 w-5 text-[#8a6a54]" />
+            <h4 className="text-sm tracking-wider text-stone-600">阴影触发机制</h4>
           </div>
           <div className="space-y-3 pl-8">
-            {formatTextToParagraphs(detailData.shadow, 120).map((p, i) => (
-              <p key={i} className="text-sm text-stone-300 leading-relaxed">
+            {formatPresentedParagraphs(detailData.shadow, 120).map((p, i) => (
+              <p key={i} className="text-sm leading-relaxed text-stone-700">
                 {p}
               </p>
             ))}
@@ -2017,10 +2028,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           className="bg-white/70 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-sm border border-stone-200/50"
         >
           <h3 className="text-center text-lg font-serif text-stone-800 mb-2">
-            能量图谱
+            八卦心势图
           </h3>
           <p className="text-center text-xs text-stone-500 mb-2">
-            你的实测强度 vs 标准{result.type}的理论强度
+            你的当下心势与人格原型参照
           </p>
           <div className="flex items-center justify-center gap-6 mb-4">
             <div className="flex items-center gap-2">
@@ -2029,22 +2040,22 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full border-2 border-amber-500 bg-transparent" />
-              <span className="text-xs text-stone-500">标准{result.type}</span>
+              <span className="text-xs text-stone-500">原型参照</span>
             </div>
           </div>
           
           <div className="w-full h-72 md:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={COGNITIVE_FUNCTIONS.map(func => ({
-                function: func,
-                name: FUNCTION_NAMES[func],
+              <RadarChart data={BAGUA_CHART_ORDER.map(func => ({
+                label: BAGUA_DIMENSIONS[func].trigram,
+                name: baguaDimensionLabel(func),
                 userStrength: result.functionStrengths?.[func] || 0,
                 idealStrength: result.idealStrengths?.[func] || 0,
               }))}>
                 <PolarGrid stroke="#d6d3d1" strokeWidth={1} />
                 <PolarAngleAxis 
-                  dataKey="function" 
-                  tick={{ fill: '#57534e', fontSize: 13, fontWeight: 500 }}
+                  dataKey="label"
+                  tick={{ fill: '#57534e', fontSize: 13, fontWeight: 400 }}
                 />
                 <PolarRadiusAxis 
                   angle={90} 
@@ -2062,7 +2073,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                 />
                 {/* 标准类型理论强度 - 虚线轮廓 */}
                 <Radar 
-                  name={`标准${result.type}`}
+                  name="人格原型"
                   dataKey="idealStrength" 
                   stroke="#d97706" 
                   fill="transparent" 
@@ -2079,7 +2090,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         </motion.div>
 
         {/* ═══════════════════════════════════════════════════════════
-            5.5 心灵星盘 / 曼陀罗 (Soul Mandala)
+            5.5 八门心盘
         ═══════════════════════════════════════════════════════════ */}
         {result.userSlots && (
           <motion.div
@@ -2089,73 +2100,76 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             className="bg-white/70 backdrop-blur-sm rounded-xl p-6 md:p-8 shadow-sm border border-stone-200/50"
           >
             <h3 className="text-center text-lg font-serif text-stone-800 mb-2">
-              心灵星盘
+              八门心盘
             </h3>
             <p className="text-center text-xs text-stone-500 mb-6">
-              你在每个心理位置上的主导功能
+              八卦为心势，八门为其作用位置
             </p>
             
-            {/* 八宫格布局 */}
-            <div className="grid grid-cols-4 gap-3 max-w-lg mx-auto">
+            {/* 八门布局 */}
+            <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto sm:grid-cols-4">
               {SLOT_NAMES.map((slotName, index) => {
                 const slot = result.userSlots?.[index];
-                const isLight = index < 4; // 前四个是光明面
+                const door = BAGUA_DOOR_POSITIONS[index];
+                const slotCode = slot?.function as CognitiveFunctionCode | undefined;
+                const slotDimension = slotCode ? BAGUA_DIMENSIONS[slotCode] : null;
+                const conflictCode = slot?.conflictWith as CognitiveFunctionCode | undefined;
+                const conflictDimension = conflictCode ? BAGUA_DIMENSIONS[conflictCode] : null;
+                const isLight = door.layer === '阳面';
                 const standardFunc = MBTI_FUNCTION_STACKS[result.type][index];
                 const isDeviation = slot?.function !== standardFunc;
                 
                 return (
                   <motion.div
-                    key={slotName}
+                    key={door.door}
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.65 + index * 0.05 }}
                     className={`
-                      relative p-3 rounded-xl text-center transition-all
+                      relative min-h-36 rounded-xl border p-3 text-center transition-all
                       ${isLight 
-                        ? 'bg-stone-50 border border-stone-200' 
-                        : 'bg-stone-100/50 border border-stone-200/50'
+                        ? 'border-stone-200 bg-[#FBF9F4]'
+                        : 'border-stone-300/60 bg-stone-100/45'
                       }
-                      ${slot?.hasConflict ? 'ring-2 ring-amber-400/50' : ''}
+                      ${slot?.hasConflict ? 'ring-1 ring-[#9a7b4f]/55' : ''}
                       ${isDeviation && !slot?.hasConflict ? 'ring-1 ring-stone-300' : ''}
                     `}
                   >
                     {/* 位置名称 */}
-                    <div className={`text-[10px] tracking-wider mb-1 ${isLight ? 'text-stone-500' : 'text-stone-400'}`}>
-                      {index + 1}. {slotName === 'Hero' ? '主导' : 
-                        slotName === 'Parent' ? '辅助' :
-                        slotName === 'Child' ? '儿童' :
-                        slotName === 'Inferior' ? '劣势' :
-                        slotName === 'Nemesis' ? '对立' :
-                        slotName === 'Critic' ? '批评' :
-                        slotName === 'Trickster' ? '盲点' : '恶魔'}
+                    <div className={`mb-2 text-[10px] tracking-[0.16em] ${isLight ? 'text-stone-500' : 'text-stone-400'}`}>
+                      {door.layer} · {door.door}
                     </div>
-                    
-                    {/* 功能显示 */}
-                    <div className="flex items-center justify-center gap-1">
-                      <span className={`text-lg font-mono font-bold ${isLight ? 'text-stone-800' : 'text-stone-600'}`}>
-                        {slot?.function || '-'}
-                      </span>
-                      
-                      {/* 冲突标记 */}
-                      {slot?.hasConflict && slot.conflictWith && (
+                    <div className="mb-2 text-xs text-stone-500">{door.role}</div>
+
+                    {/* 卦象显示 */}
+                    <div className="flex min-h-12 items-center justify-center gap-2">
+                      {slotDimension ? (
                         <>
-                          <span className="text-amber-500 text-xs">⚡</span>
-                          <span className={`text-lg font-mono font-bold ${isLight ? 'text-stone-800' : 'text-stone-600'}`}>
-                            {slot.conflictWith}
+                          <BaguaGlyph code={slotCode!} className={`h-7 w-7 ${isLight ? 'text-stone-800' : 'text-stone-600'}`} />
+                          <span className={`font-serif text-base ${isLight ? 'text-stone-800' : 'text-stone-600'}`}>
+                            {slotDimension.trigram}·{slotDimension.name}
                           </span>
                         </>
+                      ) : (
+                        <span className="text-stone-400">未定</span>
                       )}
                     </div>
+
+                    {slot?.hasConflict && conflictDimension && (
+                      <div className="mt-2 border-t border-stone-200/80 pt-2 text-[10px] text-[#7d6748]">
+                        并见 {conflictDimension.trigram}·{conflictDimension.name}
+                      </div>
+                    )}
                     
                     {/* 得分 */}
-                    <div className="text-[10px] text-stone-400 mt-1">
+                    <div className="mt-2 text-[10px] text-stone-400">
                       {slot?.score?.toFixed(1) || '0'}分
                     </div>
                     
                     {/* 偏离标准标记 */}
                     {isDeviation && !slot?.hasConflict && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-stone-400 rounded-full flex items-center justify-center">
-                        <span className="text-white text-[8px]">!</span>
+                      <div className="mt-2 text-[10px] tracking-wider text-stone-400">
+                        原型之外
                       </div>
                     )}
                   </motion.div>
@@ -2164,18 +2178,13 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
             </div>
             
             {/* 图例说明 */}
-            <div className="flex items-center justify-center gap-4 mt-6 text-xs text-stone-500">
-              <div className="flex items-center gap-1">
-                <span className="text-amber-500">⚡</span>
-                <span>核心冲突</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 bg-stone-400 rounded-full flex items-center justify-center">
-                  <span className="text-white text-[6px]">!</span>
-                </div>
-                <span>偏离标准</span>
-              </div>
+            <div className="mt-6 flex items-center justify-center gap-4 text-xs text-stone-500">
+              <span className="border-b border-[#9a7b4f]/45 pb-0.5">并见：同一门中两象并存</span>
+              <span className="border-b border-stone-300 pb-0.5">原型之外：实测次序不同</span>
             </div>
+            <p className="mx-auto mt-5 max-w-md text-center text-[11px] leading-5 text-stone-400">
+              “阳面 / 阴面”仅指本测试中的心理层次，不等同于传统奇门遁甲的吉凶分类。
+            </p>
           </motion.div>
         )}
 
@@ -2198,12 +2207,12 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
               {positiveInsights.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-center gap-3 mb-4">
-                    <div className="h-px flex-1 bg-emerald-200" />
-                    <h3 className="text-sm text-emerald-600 tracking-wider px-4 flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-emerald-500" />
+                    <div className="h-px flex-1 bg-stone-200" />
+                    <h3 className="flex items-center gap-2 px-4 text-sm tracking-wider text-[#5f765f]">
+                      <Sparkles className="h-4 w-4" />
                       成长亮点
                     </h3>
-                    <div className="h-px flex-1 bg-emerald-200" />
+                    <div className="h-px flex-1 bg-stone-200" />
                   </div>
                   
                   {positiveInsights.map((insight, index) => (
@@ -2212,18 +2221,18 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.7 + index * 0.1 }}
-                      className="rounded-xl p-5 border transition-all bg-emerald-50/80 border-emerald-200/60"
+                      className="rounded-xl border border-stone-200/70 bg-white/55 p-5 transition-all"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500">
-                          <Sparkles className="w-3.5 h-3.5 text-white" />
+                        <div className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-[#5f765f]/10">
+                          <Sparkles className="h-3.5 w-3.5 text-[#5f765f]" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium mb-2 text-emerald-900">
-                            🌟 {insight.title}
+                          <h4 className="mb-2 text-sm text-stone-800">
+                            {presentPersonalityText(insight.title)}
                           </h4>
-                          <p className="text-sm leading-relaxed text-emerald-800/80">
-                            {insight.description}
+                          <p className="text-sm leading-relaxed text-stone-600">
+                            {presentPersonalityText(insight.description)}
                           </p>
                         </div>
                       </div>
@@ -2238,7 +2247,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                   <div className="flex items-center justify-center gap-3 mb-4">
                     <div className="h-px flex-1 bg-stone-200" />
                     <h3 className="text-sm text-stone-500 tracking-wider px-4 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                      <AlertTriangle className="h-4 w-4 text-[#8a6a54]" />
                       潜在风险
                     </h3>
                     <div className="h-px flex-1 bg-stone-200" />
@@ -2253,10 +2262,10 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                       className={`
                         rounded-xl p-5 border transition-all
                         ${insight.severity === 'critical' 
-                          ? 'bg-red-50/80 border-red-200/60' 
+                          ? 'bg-white/55 border-[#8a4a4a]/25'
                           : insight.severity === 'warning'
-                          ? 'bg-amber-50/80 border-amber-200/60'
-                          : 'bg-stone-50/80 border-stone-200/60'
+                          ? 'bg-white/55 border-[#9a7b4f]/25'
+                          : 'bg-white/55 border-stone-200/60'
                         }
                       `}
                     >
@@ -2264,36 +2273,36 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
                         <div className={`
                           mt-0.5 w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0
                           ${insight.severity === 'critical' 
-                            ? 'bg-red-500' 
+                            ? 'bg-[#8a4a4a]/10 text-[#8a4a4a]'
                             : insight.severity === 'warning'
-                            ? 'bg-amber-500'
-                            : 'bg-stone-500'
+                            ? 'bg-[#9a7b4f]/10 text-[#806a48]'
+                            : 'bg-stone-200 text-stone-600'
                           }
                         `}>
-                          <AlertTriangle className="w-3.5 h-3.5 text-white" />
+                          <AlertTriangle className="h-3.5 w-3.5" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className={`
-                            text-sm font-medium mb-2
+                            mb-2 text-sm
                             ${insight.severity === 'critical' 
-                              ? 'text-red-900' 
+                              ? 'text-[#704242]'
                               : insight.severity === 'warning'
-                              ? 'text-amber-900'
+                              ? 'text-[#705d40]'
                               : 'text-stone-800'
                             }
                           `}>
-                            ⚠️ {insight.title}
+                            {presentPersonalityText(insight.title)}
                           </h4>
                           <p className={`
                             text-sm leading-relaxed
                             ${insight.severity === 'critical' 
-                              ? 'text-red-800/80' 
+                              ? 'text-stone-700'
                               : insight.severity === 'warning'
-                              ? 'text-amber-800/80'
+                              ? 'text-stone-700'
                               : 'text-stone-600'
                             }
                           `}>
-                            {insight.description}
+                            {presentPersonalityText(insight.description)}
                           </p>
                         </div>
                       </div>
@@ -2306,7 +2315,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         })()}
 
         {/* ═══════════════════════════════════════════════════════════
-            6. 八维功能卡片 - 可展开设计
+            6. 八卦心势卡片
         ═══════════════════════════════════════════════════════════ */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -2315,7 +2324,7 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
         >
           <div className="flex items-center justify-center gap-3 mb-5">
             <div className="h-px flex-1 bg-stone-200" />
-            <h3 className="text-sm text-stone-500 tracking-wider px-4">八维认知功能详解</h3>
+            <h3 className="text-sm text-stone-500 tracking-wider px-4">八卦心势详解</h3>
             <div className="h-px flex-1 bg-stone-200" />
           </div>
           
@@ -2335,19 +2344,20 @@ export const MbtiTestView: React.FC<{ initialResult?: TestResult; onStandaloneRe
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8 }}
-          className="relative rounded-xl overflow-hidden"
+          className="relative overflow-hidden rounded-xl border border-stone-200/70 bg-white/45"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-stone-700 via-stone-800 to-stone-900" />
+          <div className="absolute inset-0 z-[1] bg-[#fbf9f4]" />
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMtOS45NDEgMC0xOCA4LjA1OS0xOCAxOHM4LjA1OSAxOCAxOCAxOCAxOC04LjA1OSAxOC0xOC04LjA1OS0xOC0xOC0xOHptMCAzMmMtNy43MzIgMC0xNC02LjI2OC0xNC0xNHM2LjI2OC0xNCAxNCAxNCAxNCA2LjI2OCAxNCAxNC02LjI2OCAxNC0xNCAxNHoiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iLjAyIi8+PC9nPjwvc3ZnPg==')] opacity-30" />
           
           <div className="relative z-10 px-8 py-10 text-center">
-            <div className="inline-block px-4 py-1 bg-white/10 rounded-full text-xs text-stone-400 tracking-wider mb-5">
+            <div className="mb-5 inline-block rounded-full border border-stone-200 px-4 py-1 text-xs tracking-wider text-stone-400">
               证道箴言
             </div>
             
             <div className="max-w-2xl mx-auto space-y-4">
-              {formatTextToParagraphs(detailData.advice, 80).map((p, i) => (
-                <p key={i} className="text-base md:text-lg text-white/90 leading-relaxed font-serif">
+              {formatPresentedParagraphs(detailData.advice, 80).map((p, i) => (
+                <p key={i} className="font-serif text-base leading-relaxed text-stone-700 md:text-lg">
                   {p}
                 </p>
               ))}

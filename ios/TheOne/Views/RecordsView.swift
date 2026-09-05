@@ -20,7 +20,7 @@ struct RecordsView: View {
                             .buttonStyle(.plain)
                             recordDivider
                             NavigationLink(destination: MBTIRecordsList()) {
-                                NativeMenuRow(title: "我的八维结果", detail: "荣格认知功能", icon: "brain.head.profile", tint: AppTheme.water)
+                                NativeMenuRow(title: "我的八卦人格", detail: "八象观心 · 八门定位", icon: "brain.head.profile", tint: AppTheme.water)
                             }
                             .buttonStyle(.plain)
                             recordDivider
@@ -430,7 +430,7 @@ struct MBTIRecordsList: View {
                 if isLoading { NativeRecordsLoading(title: "正在整理结果…") }
                 else if let errorMessage { NativeRecordsError(message: errorMessage) }
                 else if items.isEmpty {
-                    NativeEmptyState(symbol: .guanxin, title: "尚无八维结果", detail: "完成八维测试并保存后，将在这里留存。")
+                    NativeEmptyState(symbol: .guanxin, title: "尚无八卦人格结果", detail: "完成八卦人格测试并保存后，将在这里留存。")
                 } else {
                     ScrollView(showsIndicators: false) {
                         LazyVStack(spacing: UIContract.Spacing.sm) {
@@ -440,9 +440,9 @@ struct MBTIRecordsList: View {
                                 } label: {
                                     NativeSurface(padding: 16) {
                                         HStack {
-                                            Text(item.type)
-                                                .font(.system(size: 18, weight: .medium, design: .monospaced))
-                                                .tracking(2.4)
+                                            Text(BaguaPersonality.personalityName(for: item.type))
+                                                .font(.kaiti(18))
+                                                .tracking(1.6)
                                                 .foregroundStyle(AppTheme.stone800)
                                             Spacer()
                                             Text(shortDate(item.createdAt))
@@ -464,7 +464,7 @@ struct MBTIRecordsList: View {
                 }
             }
         }
-        .navigationTitle("我的八维结果")
+        .navigationTitle("我的八卦人格")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .toolbarBackground(AppTheme.background, for: .navigationBar)
@@ -560,7 +560,7 @@ struct MBTIRecordDetailView: View {
             }
         }
         .background(AppTheme.background)
-        .navigationTitle("八维报告")
+        .navigationTitle("八卦人格报告")
         .task { await load() }
     }
 

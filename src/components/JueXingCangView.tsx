@@ -14,6 +14,7 @@ import { getCached, setCached, CACHE_KEYS, RECORDS_TTL_MS } from '@/utils/cache'
 import { fetchWithRetry } from '@/utils/fetchWithRetry';
 import { requestAppLogin, homeHref } from '@/utils/iosEmbed';
 import { isVip } from '@/utils/vip';
+import { personalityName } from '@/lib/baguaPersonality';
 
 interface Message {
   id: string;
@@ -2031,7 +2032,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                       <span className="text-[10px] tracking-[0.15em] text-stone-600 font-light">
                         {importData.bazi?.length ? `八字×${importData.bazi.length}` : ''}
                         {importData.bazi?.length && importData.mbti?.length ? '　' : ''}
-                        {importData.mbti?.length ? `八维×${importData.mbti.length}` : ''}
+                        {importData.mbti?.length ? `八卦人格×${importData.mbti.length}` : ''}
                         {(importData.bazi?.length || importData.mbti?.length) && importData.liuyao?.length ? '　' : ''}
                         {importData.liuyao?.length ? `六爻×${importData.liuyao.length}` : ''}
                       </span>
@@ -2101,7 +2102,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                     </div>
                   </button>
                   <span className="text-[10px] text-stone-400 font-light tracking-wider px-1">
-                    八字·八维·六爻
+                    八字·八卦人格·六爻
                   </span>
                 </div>
               </motion.div>
@@ -2646,7 +2647,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
                 <div>
                   <h4 className="text-sm font-serif text-stone-700 mb-3 flex items-center gap-2">
                     <span className="w-1 h-1 rounded-full bg-stone-500" />
-                    荣格八维测试
+                    八卦人格测试
                   </h4>
                   {mbtiRecords.length === 0 ? (
                     <p className="text-xs text-stone-400 pl-4">暂无记录</p>
@@ -2676,8 +2677,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ open, onClose, onImport, curr
                             className="w-4 h-4"
                           />
                           <div className="flex-1 text-sm">
-                            <div className="text-stone-700 font-serif font-medium">
-                              {record.type}
+                            <div className="text-stone-700 font-serif">
+                              {personalityName(record.type)}
                             </div>
                             <div className="text-xs text-stone-500 mt-1">
                               {formatDate(record.created_at)}

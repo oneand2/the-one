@@ -554,20 +554,24 @@ struct MBTIParityEntryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Text("荣格八维").font(.kaiti(17)).tracking(1.7)
-                Text("COGNITIVE").font(.system(size: 9)).tracking(2.52).foregroundStyle(AppTheme.stone400)
+                Text("八卦人格").font(.kaiti(17)).tracking(1.7)
+                Text("EIGHT TRIGRAMS").font(.system(size: 9)).tracking(1.8).foregroundStyle(AppTheme.stone400)
             }
-            Text("认知功能 · 心智图谱").font(.system(size: 11)).tracking(1.76).foregroundStyle(AppTheme.stone400).padding(.top, 16)
+            Text("乾坤坎离 · 八象观心").font(.system(size: 11)).tracking(1.76).foregroundStyle(AppTheme.stone400).padding(.top, 16)
             HStack(spacing: 0) {
-                ForEach(["Ni", "Ne", "Si", "Se", "Ti", "Te", "Fi", "Fe"], id: \.self) { item in
-                    Text(item).font(.system(size: 11)).tracking(0.66).foregroundStyle(AppTheme.stone500).frame(maxWidth: .infinity)
+                ForEach(BaguaPersonality.displayOrder, id: \.self) { item in
+                    VStack(spacing: 4) {
+                        NativeBaguaGlyph(code: item, width: 18, lineHeight: 1.4, color: AppTheme.stone600)
+                        Text(BaguaPersonality.dimension(for: item)?.trigram ?? "—").font(.kaiti(10)).foregroundStyle(AppTheme.stone500)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }.frame(height: 38.5).overlay(alignment: .top) { Divider().overlay(AppTheme.hairline) }
                 .overlay(alignment: .bottom) { Divider().overlay(AppTheme.hairline) }.padding(.top, 16).padding(.bottom, 16)
-            Text("从八个认知功能开始，观察你如何感知、判断、行动与回避。")
+            Text("以八卦为八种心智倾向，观察你如何感知、判断、行动与回避。")
                 .font(.kaiti(12.5)).foregroundStyle(AppTheme.stone600).lineSpacing(11).frame(height: 56, alignment: .topLeading)
             Button { flow.openMBTI() } label: {
-                HStack(spacing: 8) { Text("开始测试").font(.system(size: 13)).tracking(1.82); Image(systemName: "arrow.right").font(.system(size: 16)) }
+                HStack(spacing: 8) { Text("开始观心").font(.system(size: 13)).tracking(1.82); Image(systemName: "arrow.right").font(.system(size: 16)) }
                     .frame(maxWidth: .infinity).foregroundStyle(AppTheme.background).frame(height: 43.5)
                     .background(AppTheme.ink, in: RoundedRectangle(cornerRadius: 9))
             }.buttonStyle(.plain).padding(.top, 20)

@@ -267,7 +267,7 @@ struct ParityChatView: View {
     private var importChips: [(key: String, label: String)] {
         var chips: [(key: String, label: String)] = []
         if let items = importData["bazi"] as? [Any], !items.isEmpty { chips.append(("bazi", "八字×\(items.count)")) }
-        if let items = importData["mbti"] as? [Any], !items.isEmpty { chips.append(("mbti", "八维×\(items.count)")) }
+        if let items = importData["mbti"] as? [Any], !items.isEmpty { chips.append(("mbti", "八卦人格×\(items.count)")) }
         if let items = importData["liuyao"] as? [Any], !items.isEmpty { chips.append(("liuyao", "六爻×\(items.count)")) }
         if importData["qiancheng"] != nil { chips.append(("qiancheng", "占问前程")) }
         return chips
@@ -275,7 +275,7 @@ struct ParityChatView: View {
 
     private var importSummary: String {
         let labels = importChips.map(\.label)
-        return labels.isEmpty ? "八字 · 八维 · 六爻" : labels.joined(separator: "　")
+        return labels.isEmpty ? "八字 · 八卦人格 · 六爻" : labels.joined(separator: "　")
     }
 
     private var legacyAmber: Color { Color(red: 180 / 255, green: 83 / 255, blue: 9 / 255) }

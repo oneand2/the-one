@@ -278,7 +278,7 @@ export function AuthButton() {
                 className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 font-sans"
               >
                 <Brain className="w-4 h-4 text-stone-500" />
-                我的八维结果
+                我的八卦人格
               </Link>
               <Link
                 href="/my/liuyao"

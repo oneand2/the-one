@@ -54,7 +54,7 @@ function ReportMbtiContent() {
         return r.json();
       })
       .then((data) => {
-        console.log('读取到的MBTI数据:', data);
+        console.log('读取到的八卦人格数据:', data);
         setResult(buildTestResult(data));
       })
       .catch((e) => setError(e.message))

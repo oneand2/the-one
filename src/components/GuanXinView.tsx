@@ -17,6 +17,8 @@ import {
   type DailyHexagramEntry,
 } from '@/utils/dailyHexagram';
 import { requestAppLogin } from '@/utils/iosEmbed';
+import { BaguaGlyph } from '@/components/BaguaGlyph';
+import { BAGUA_DISPLAY_ORDER, BAGUA_DIMENSIONS } from '@/lib/baguaPersonality';
 
 const KAITI = '"Kaiti SC", KaiTi, STKaiti, "华文楷体", "楷体", Georgia, serif';
 
@@ -352,22 +354,23 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
         <div className="absolute inset-x-5 top-0 h-px bg-stone-300/70" />
         <div className="mb-4 flex items-baseline gap-2">
           <h3 className="text-[17px] leading-none tracking-[0.1em] text-stone-900" style={{ fontFamily: KAITI }}>
-            荣格八维
+            八卦人格
           </h3>
-          <span className="font-sans text-[9px] uppercase tracking-[0.28em] text-stone-400">COGNITIVE</span>
+          <span className="font-sans text-[9px] uppercase tracking-[0.28em] text-stone-400">EIGHT TRIGRAMS</span>
         </div>
-        <p className="font-sans text-[11px] tracking-[0.16em] text-stone-400">认知功能 · 心智图谱</p>
+        <p className="font-sans text-[11px] tracking-[0.16em] text-stone-400">乾坤坎离 · 八象观心</p>
 
         <div className="my-4 grid grid-cols-8 gap-px border-y border-stone-200/80 py-2.5">
-          {['Ni', 'Ne', 'Si', 'Se', 'Ti', 'Te', 'Fi', 'Fe'].map((item) => (
-            <div key={item} className="text-center font-sans text-[11px] tracking-[0.06em] text-stone-500">
-              {item}
+          {BAGUA_DISPLAY_ORDER.map((code) => (
+            <div key={code} className="flex flex-col items-center gap-1 text-center text-stone-500">
+              <BaguaGlyph code={code} className="h-5 w-5" decorative />
+              <span className="font-sans text-[10px] tracking-[0.06em]">{BAGUA_DIMENSIONS[code].trigram}</span>
             </div>
           ))}
         </div>
 
         <p className="text-[12.5px] leading-7 text-stone-600" style={{ fontFamily: KAITI }}>
-          从八个认知功能开始，观察你如何感知、判断、行动与回避。
+          以八卦为八种心智倾向，观察你如何感知、判断、行动与回避。
         </p>
 
         <button
@@ -375,7 +378,7 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
           onClick={() => onNavigate('mbti')}
           className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#3d3935] px-4 py-3 font-sans text-[13px] tracking-[0.14em] text-[#f7f3ec] shadow-sm transition-colors duration-200 hover:bg-stone-700 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400"
         >
-          开始测试
+          开始观心
           <ArrowRight className="h-4 w-4" strokeWidth={1.7} aria-hidden />
         </button>
       </motion.section>

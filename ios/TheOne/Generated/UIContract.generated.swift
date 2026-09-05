@@ -132,7 +132,7 @@ enum UIContract {
         "wendao": Screen(title: "见众生", subtitle: "观点广场，待续", symbol: "broken-solid"),
         "guanxin": Screen(title: "见自己", subtitle: "知己即知天，请成为自己的答案", symbol: "solid-broken"),
         "bazi": Screen(title: "八字命理", subtitle: "知己即知天，请成为自己的答案", symbol: "solid-broken"),
-        "mbti": Screen(title: "荣格八维", subtitle: "知己即知天，请成为自己的答案", symbol: "solid-broken"),
+        "mbti": Screen(title: "八卦人格", subtitle: "八卦定其性，八门观其位", symbol: "solid-broken"),
         "juexingcang": Screen(title: "决行藏", subtitle: "用之则行，舍之则藏", symbol: "solid-solid")
     ]
 }

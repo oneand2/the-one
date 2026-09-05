@@ -30,14 +30,14 @@ struct MBTIView: View {
                 VStack(spacing: 0) {
                     LegacyPageHeader(
                         symbol: .guanxin,
-                        title: "荣格八维",
-                        subtitle: "知己即知天，请成为自己的答案"
+                        title: "八卦人格",
+                        subtitle: "八卦定其性，八门观其位"
                     )
                     .id("mbti-top")
 
                     Group {
                         if isLoading {
-                            ProgressView("正在展开八维题卷…")
+                            ProgressView("正在展开观心题卷…")
                                 .font(.kaiti(12))
                                 .padding(.top, 80)
                         } else if let result {
@@ -266,46 +266,63 @@ private struct MBTIOptionCard: View {
 struct MBTIResultContent: View {
     let value: MBTITestResult
 
-    private let slotNames = ["主导", "辅助", "儿童", "劣势", "对立", "批评", "盲点", "恶魔"]
-    private let functions = ["Se", "Si", "Ne", "Ni", "Te", "Ti", "Fe", "Fi"]
+    private var primaryCode: String { BaguaPersonality.stacks[value.type]?.first ?? "Ni" }
+    private var supportingCode: String { BaguaPersonality.stacks[value.type]?.dropFirst().first ?? "Fe" }
 
     var body: some View {
         VStack(spacing: 18) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(LinearGradient(colors: [AppTheme.stone800, Color.black.opacity(0.88)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                VStack(spacing: 14) {
+            VStack(spacing: 16) {
+                HStack(spacing: 34) {
+                    VStack(spacing: 7) {
+                        Text("开门").font(.system(size: 9)).tracking(1.8).foregroundStyle(AppTheme.stone400)
+                        NativeBaguaGlyph(code: primaryCode, width: 36, lineHeight: 2.5)
+                        Text(BaguaPersonality.label(for: primaryCode)).font(.kaiti(12)).foregroundStyle(AppTheme.stone600)
+                    }
+                    Rectangle().fill(AppTheme.hairline).frame(width: 1, height: 54)
+                    VStack(spacing: 7) {
+                        Text("休门").font(.system(size: 9)).tracking(1.8).foregroundStyle(AppTheme.stone400)
+                        NativeBaguaGlyph(code: supportingCode, width: 36, lineHeight: 2.5)
+                        Text(BaguaPersonality.label(for: supportingCode)).font(.kaiti(12)).foregroundStyle(AppTheme.stone600)
+                    }
+                }
+                if let detail = value.detail {
+                    Text(detail.name).font(.webSerif(32)).foregroundStyle(AppTheme.ink)
                     if let origin = value.detail?.origin, !origin.isEmpty {
                         Text(origin)
                             .font(.system(size: 11)).tracking(1.2)
-                            .foregroundStyle(Color.white.opacity(0.72))
+                            .foregroundStyle(AppTheme.stone500)
                             .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.white.opacity(0.10), in: Capsule())
+                            .overlay { Capsule().stroke(AppTheme.hairline) }
                     }
-                    if let detail = value.detail {
-                        Text(detail.name).font(.webSerif(32)).foregroundStyle(.white)
-                    }
-                    Text(value.type)
-                        .font(.system(size: 22, weight: .medium, design: .monospaced))
-                        .tracking(6)
-                        .foregroundStyle(Color.white.opacity(0.62))
-                    if let detail = value.detail {
-                        Text(detail.slogan).font(.kaiti(14)).foregroundStyle(Color.white.opacity(0.78)).multilineTextAlignment(.center)
-                    }
-                    Text("拟合度 \(Int(value.fitScore.rounded()))% · 阴影人格 \(value.shadowType)")
-                        .font(.system(size: 11)).tracking(1).foregroundStyle(Color.white.opacity(0.50))
+                    Text(BaguaPersonality.present(detail.slogan))
+                        .font(.kaiti(14)).foregroundStyle(AppTheme.stone600).multilineTextAlignment(.center)
                 }
-                .padding(.horizontal, 24).padding(.vertical, 36)
+                Text("拟合度 \(Int(value.fitScore.rounded()))% · 阴影原型 \(BaguaPersonality.personalityName(for: value.shadowType))")
+                    .font(.system(size: 11)).tracking(0.8).foregroundStyle(AppTheme.stone400)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24).padding(.vertical, 32)
+            .background(AppTheme.background, in: RoundedRectangle(cornerRadius: 14))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14).stroke(AppTheme.stone300.opacity(0.72))
+                    .padding(4)
+                    .overlay { RoundedRectangle(cornerRadius: 17).stroke(AppTheme.hairline) }
             }
 
-            CognitiveRadar(values: functions.map { value.functionStrengths[$0] ?? 0 }, labels: functions)
+            VStack(spacing: 8) {
+                Text("八卦心势图").font(.webSerif(16)).foregroundStyle(AppTheme.stone800)
+                CognitiveRadar(
+                    values: BaguaPersonality.chartOrder.map { value.functionStrengths[$0] ?? 0 },
+                    labels: BaguaPersonality.chartOrder.map { BaguaPersonality.dimension(for: $0)?.trigram ?? "—" }
+                )
                 .frame(height: 240)
-                .padding(16)
-                .background(Color.white.opacity(0.62), in: RoundedRectangle(cornerRadius: 12))
-                .overlay { RoundedRectangle(cornerRadius: 12).stroke(AppTheme.stone200.opacity(0.55)) }
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.54), in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).stroke(AppTheme.stone200.opacity(0.55)) }
 
             VStack(spacing: 13) {
-                ForEach(functions, id: \.self) { function in
+                ForEach(BaguaPersonality.chartOrder, id: \.self) { function in
                     CognitiveFunctionBar(
                         function: function,
                         value: value.functionStrengths[function] ?? 0,
@@ -319,29 +336,40 @@ struct MBTIResultContent: View {
 
             if !value.userSlots.isEmpty {
                 VStack(spacing: 10) {
-                    Text("心灵星盘").font(.webSerif(16)).foregroundStyle(AppTheme.stone800)
-                    Text("你在每个心理位置上的主导功能").font(.system(size: 11)).foregroundStyle(AppTheme.stone500)
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                    Text("八门心盘").font(.webSerif(16)).foregroundStyle(AppTheme.stone800)
+                    Text("八卦为心势，八门为其作用位置").font(.system(size: 11)).foregroundStyle(AppTheme.stone500)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2), spacing: 8) {
                         ForEach(0..<8, id: \.self) { index in
                             let slot = value.userSlots["\(index)"]
-                            VStack(spacing: 4) {
-                                Text("\(index + 1). \(slotNames[index])")
-                                    .font(.system(size: 10)).foregroundStyle(index < 4 ? AppTheme.stone500 : AppTheme.stone400)
-                                HStack(spacing: 2) {
-                                    Text(slot?.function ?? "—").font(.system(size: 16, design: .monospaced)).foregroundStyle(AppTheme.stone800)
-                                    if slot?.hasConflict == true, let other = slot?.conflictWith, !other.isEmpty {
-                                        Text("⚡").font(.system(size: 10))
-                                        Text(other).font(.system(size: 16, design: .monospaced)).foregroundStyle(AppTheme.stone600)
+                            let door = BaguaPersonality.doors[index]
+                            let isDeviation = slot?.function != BaguaPersonality.stacks[value.type]?[index]
+                            VStack(spacing: 7) {
+                                Text("\(door.layer) · \(door.door)")
+                                    .font(.system(size: 9)).tracking(1.2).foregroundStyle(index < 4 ? AppTheme.stone500 : AppTheme.stone400)
+                                Text(door.role).font(.system(size: 10)).foregroundStyle(AppTheme.stone500)
+                                if let code = slot?.function, BaguaPersonality.dimension(for: code) != nil {
+                                    HStack(spacing: 7) {
+                                        NativeBaguaGlyph(code: code, width: 24, lineHeight: 1.8, color: index < 4 ? AppTheme.stone800 : AppTheme.stone600)
+                                        Text(BaguaPersonality.label(for: code)).font(.kaiti(13)).foregroundStyle(index < 4 ? AppTheme.stone800 : AppTheme.stone600)
                                     }
                                 }
                                 Text(String(format: "%.1f分", slot?.score ?? 0)).font(.system(size: 10)).foregroundStyle(AppTheme.stone400)
+                                if slot?.hasConflict == true, let other = slot?.conflictWith, !other.isEmpty {
+                                    Text("并见 \(BaguaPersonality.label(for: other))").font(.system(size: 9)).foregroundStyle(AppTheme.gold)
+                                } else if isDeviation {
+                                    Text("原型之外").font(.system(size: 9)).tracking(0.8).foregroundStyle(AppTheme.stone400)
+                                }
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
+                            .frame(minHeight: 128)
+                            .padding(.vertical, 12)
                             .background(index < 4 ? Color(red: 250 / 255, green: 250 / 255, blue: 249 / 255) : Color(red: 245 / 255, green: 245 / 255, blue: 244 / 255), in: RoundedRectangle(cornerRadius: 10))
                             .overlay { RoundedRectangle(cornerRadius: 10).stroke(slot?.hasConflict == true ? AppTheme.gold.opacity(0.50) : AppTheme.stone200) }
                         }
                     }
+                    Text("“阳面 / 阴面”仅指本测试中的心理层次，不等同于传统奇门遁甲的吉凶分类。")
+                        .font(.kaiti(10.5)).foregroundStyle(AppTheme.stone400).lineSpacing(4).multilineTextAlignment(.center)
+                        .padding(.top, 5)
                 }
                 .padding(18)
                 .background(Color.white.opacity(0.70), in: RoundedRectangle(cornerRadius: 12))
@@ -349,20 +377,26 @@ struct MBTIResultContent: View {
             }
 
             if let detail = value.detail {
-                MBTITextSection(title: "本 命 指 引", text: detail.guide)
-                MBTITextSection(title: "深 层 画 像", text: detail.deepProfile)
-                MBTITextSection(title: "天 赋", text: detail.strengths)
-                MBTITextSection(title: "功 课", text: detail.weaknesses)
-                MBTITextSection(title: "阴 影", text: detail.shadow)
-                MBTITextSection(title: "修 行 建 议", text: detail.advice)
+                MBTITextSection(title: "本 命 指 引", text: BaguaPersonality.present(detail.guide))
+                MBTITextSection(title: "深 层 画 像", text: BaguaPersonality.present(detail.deepProfile))
+                MBTITextSection(title: "天 赋", text: BaguaPersonality.present(detail.strengths))
+                MBTITextSection(title: "功 课", text: BaguaPersonality.present(detail.weaknesses))
+                MBTITextSection(title: "阴 影", text: BaguaPersonality.present(detail.shadow))
+                MBTITextSection(title: "修 行 建 议", text: BaguaPersonality.present(detail.advice))
 
-                ForEach(detail.functions) { function in
+                ForEach(Array(detail.functions.enumerated()), id: \.offset) { index, function in
+                    let door = BaguaPersonality.doors[min(index, BaguaPersonality.doors.count - 1)]
+                    let stack = BaguaPersonality.stacks[value.type] ?? []
+                    let code = stack.indices.contains(index) ? stack[index] : nil
                     VStack(alignment: .leading, spacing: 12) {
-                        Text(function.pos).font(.system(size: 10)).tracking(2).foregroundStyle(AppTheme.stone400)
-                        Text(function.title).font(.webSerif(18)).foregroundStyle(AppTheme.stone800)
-                        Text(function.logic).font(.kaiti(13)).foregroundStyle(AppTheme.stone600).lineSpacing(7)
+                        Text("\(door.layer) · \(door.door) · \(door.role)").font(.system(size: 10)).tracking(1.4).foregroundStyle(AppTheme.stone400)
+                        HStack(spacing: 10) {
+                            if let code { NativeBaguaGlyph(code: code, width: 27, lineHeight: 2) }
+                            Text(BaguaPersonality.label(for: code)).font(.webSerif(18)).foregroundStyle(AppTheme.stone800)
+                        }
+                        Text(BaguaPersonality.present(function.logic)).font(.kaiti(13)).foregroundStyle(AppTheme.stone600).lineSpacing(7)
                         Divider().overlay(AppTheme.stone200)
-                        Text(function.lesson).font(.kaiti(13)).foregroundStyle(AppTheme.stone700).lineSpacing(7)
+                        Text(BaguaPersonality.present(function.lesson)).font(.kaiti(13)).foregroundStyle(AppTheme.stone700).lineSpacing(7)
                     }
                     .padding(20)
                     .background(Color.white.opacity(0.52), in: RoundedRectangle(cornerRadius: 12))
@@ -421,7 +455,11 @@ private struct CognitiveFunctionBar: View {
     let maximum: Double
     var body: some View {
         HStack(spacing: 12) {
-            Text(function).font(.system(size: 12, design: .monospaced)).frame(width: 24)
+            HStack(spacing: 7) {
+                NativeBaguaGlyph(code: function, width: 20, lineHeight: 1.5, color: AppTheme.stone600)
+                Text(BaguaPersonality.label(for: function)).font(.kaiti(11)).foregroundStyle(AppTheme.stone600)
+            }
+            .frame(width: 78, alignment: .leading)
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule().fill(AppTheme.stone200)

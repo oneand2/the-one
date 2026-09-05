@@ -384,7 +384,7 @@ private struct MainTabView: View {
                 accountMenuButton("我的八字排盘", icon: "calendar") {
                     closeMenu(); recordsKind = .classical
                 }
-                accountMenuButton("我的八维结果", icon: "brain.head.profile") {
+                accountMenuButton("我的八卦人格", icon: "brain.head.profile") {
                     closeMenu(); recordsKind = .mbti
                 }
                 accountMenuButton("我的周易解卦", icon: "sparkles") {

@@ -10,16 +10,51 @@ final class AuthStore: ObservableObject {
     @Published var errorMessage: String?
     @Published var showsLogin = false
 
+    private static let cachedUserKey = "theone.native-auth.cached-user"
+    private var sessionCheckInFlight = false
+
+    init() {
+        if let data = UserDefaults.standard.data(forKey: Self.cachedUserKey),
+           let cachedUser = try? JSONDecoder().decode(NativeUser.self, from: data) {
+            user = cachedUser
+        } else {
+            user = nil
+        }
+    }
+
     var isAuthenticated: Bool { user != nil }
 
     func restoreSession() async {
-        // 先进入主界面，避免登录探测卡住时一直停在启动页。
-        isRestoring = false
-        do {
-            let response: AuthResponse = try await APIClient.shared.request("/api/mobile/auth")
-            user = response.user
-        } catch {
-            user = nil
+        guard !sessionCheckInFlight else { return }
+        sessionCheckInFlight = true
+        isRestoring = true
+        defer {
+            sessionCheckInFlight = false
+            isRestoring = false
+        }
+
+        let retryDelays: [Duration] = [.zero, .milliseconds(700), .seconds(2)]
+        for (attempt, delay) in retryDelays.enumerated() {
+            if delay != .zero {
+                try? await Task.sleep(for: delay)
+            }
+            do {
+                let response: AuthResponse = try await APIClient.shared.request("/api/mobile/auth")
+                setUser(response.user)
+                return
+            } catch let error as APIError where error.statusCode == 401 {
+                // 另一容器可能刚好完成令牌轮换；只要本机仍有认证 Cookie，
+                // 给双向同步一次机会，避免用竞态中的旧请求误判为退出。
+                if attempt < retryDelays.count - 1, !APIClient.authenticationCookies().isEmpty {
+                    continue
+                }
+                invalidateSession()
+                return
+            } catch {
+                // 断网、超时、限流或服务暂时不可用都不是退出登录。
+                // 保留上次验证过的本地身份，等待前台恢复时再次校验。
+                if attempt == retryDelays.count - 1 { return }
+            }
         }
     }
 
@@ -30,7 +65,7 @@ final class AuthStore: ObservableObject {
                 method: .POST,
                 json: ["action": "login", "email": email, "password": password]
             )
-            self.user = response.user
+            self.setUser(response.user)
         }
     }
 
@@ -43,7 +78,7 @@ final class AuthStore: ObservableObject {
                 "nickname": nickname, "inviteCode": inviteCode
             ]
         )
-        user = response.user
+        setUser(response.user)
         return response.needsVerification == true
     }
 
@@ -54,7 +89,7 @@ final class AuthStore: ObservableObject {
                 method: .POST,
                 json: ["action": "verify-signup", "email": email, "token": token, "nickname": nickname]
             )
-            self.user = response.user
+            self.setUser(response.user)
         }
     }
 
@@ -65,20 +100,26 @@ final class AuthStore: ObservableObject {
                 method: .POST,
                 json: ["action": "apple", "identityToken": identityToken, "nonce": nonce, "nickname": nickname]
             )
-            self.user = response.user
+            self.setUser(response.user)
         }
     }
 
     func logout() async {
         try? await APIClient.shared.request("/api/mobile/auth", method: .POST, json: ["action": "logout"])
-        user = nil
+        APIClient.clearAuthenticationCookies()
+        invalidateSession()
     }
 
     func deleteAccount() async -> Bool {
         await perform {
             try await APIClient.shared.request("/api/mobile/auth", method: .DELETE)
-            self.user = nil
+            APIClient.clearAuthenticationCookies()
+            self.invalidateSession()
         }
+    }
+
+    func invalidateSession() {
+        setUser(nil)
     }
 
     func requireAuthentication() -> Bool {
@@ -95,6 +136,15 @@ final class AuthStore: ObservableObject {
         } catch {
             errorMessage = Self.friendlyMessage(error)
             return false
+        }
+    }
+
+    private func setUser(_ newUser: NativeUser?) {
+        user = newUser
+        if let newUser, let data = try? JSONEncoder().encode(newUser) {
+            UserDefaults.standard.set(data, forKey: Self.cachedUserKey)
+        } else {
+            UserDefaults.standard.removeObject(forKey: Self.cachedUserKey)
         }
     }
 
@@ -122,4 +172,3 @@ final class AuthStore: ObservableObject {
         SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 }
-

@@ -40,13 +40,17 @@ struct HybridWebContentView: UIViewRepresentable {
     let onTabChanged: @MainActor (AppScreen) -> Void
     let onLoginRequested: @MainActor () -> Void
     let onStoreRequested: @MainActor () -> Void
+    let onSessionRefreshRequested: @MainActor () -> Void
+    let onSessionInvalidated: @MainActor () -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
             loadState: loadState,
             onTabChanged: onTabChanged,
             onLoginRequested: onLoginRequested,
-            onStoreRequested: onStoreRequested
+            onStoreRequested: onStoreRequested,
+            onSessionRefreshRequested: onSessionRefreshRequested,
+            onSessionInvalidated: onSessionInvalidated
         )
     }
 
@@ -254,6 +258,8 @@ struct HybridWebContentView: UIViewRepresentable {
         private let onTabChanged: @MainActor (AppScreen) -> Void
         private let onLoginRequested: @MainActor () -> Void
         private let onStoreRequested: @MainActor () -> Void
+        private let onSessionRefreshRequested: @MainActor () -> Void
+        private let onSessionInvalidated: @MainActor () -> Void
         private var currentScreen: AppScreen?
         private var lastTabTick = 0
         private var lastPendingChatID: UUID?
@@ -265,18 +271,24 @@ struct HybridWebContentView: UIViewRepresentable {
         private var lastLoginRequestAt = Date.distantPast
         private var urlObservation: NSKeyValueObservation?
         private var retryWorkItem: DispatchWorkItem?
+        private var webCookieSyncWorkItem: DispatchWorkItem?
         private var lastScenePhase: ScenePhase = .inactive
+        private var suppressesWebCookieObserver = false
 
         init(
             loadState: HybridLoadState,
             onTabChanged: @escaping @MainActor (AppScreen) -> Void,
             onLoginRequested: @escaping @MainActor () -> Void,
-            onStoreRequested: @escaping @MainActor () -> Void
+            onStoreRequested: @escaping @MainActor () -> Void,
+            onSessionRefreshRequested: @escaping @MainActor () -> Void,
+            onSessionInvalidated: @escaping @MainActor () -> Void
         ) {
             self.loadState = loadState
             self.onTabChanged = onTabChanged
             self.onLoginRequested = onLoginRequested
             self.onStoreRequested = onStoreRequested
+            self.onSessionRefreshRequested = onSessionRefreshRequested
+            self.onSessionInvalidated = onSessionInvalidated
             super.init()
         }
 
@@ -285,6 +297,18 @@ struct HybridWebContentView: UIViewRepresentable {
             // 页面内的 fetch 也可能触发 Supabase 刷新令牌轮换，并不会经过
             // didFinish。实时观察 Cookie 变化，避免原生 URLSession 留着旧令牌。
             container.webView.configuration.websiteDataStore.httpCookieStore.add(self)
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(nativeAuthCookiesDidChange),
+                name: .theOneNativeAuthCookiesDidChange,
+                object: nil
+            )
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(nativeAuthenticationRejected),
+                name: .theOneNativeAuthenticationRejected,
+                object: nil
+            )
             urlObservation = container.webView.observe(\.url, options: [.new]) { [weak self] view, _ in
                 Task { @MainActor in
                     self?.handleEmbeddedURL(view.url)
@@ -303,8 +327,10 @@ struct HybridWebContentView: UIViewRepresentable {
             loadState.retryHandler = { [weak self] in
                 self?.reloadHome(force: true)
             }
-            synchronizeNativeCookiesToWeb { [weak self] in
-                self?.loadInitialPage(screen: screen)
+            reconcileAuthenticationCookies { [weak self] in
+                guard let self else { return }
+                self.onSessionRefreshRequested()
+                self.loadInitialPage(screen: screen)
             }
         }
 
@@ -353,10 +379,14 @@ struct HybridWebContentView: UIViewRepresentable {
                 }
                 return
             }
-            if let webView {
-                HybridWebContentView.normalizeWebViewZoom(webView)
+            reconcileAuthenticationCookies { [weak self] in
+                guard let self else { return }
+                if let webView = self.webView {
+                    HybridWebContentView.normalizeWebViewZoom(webView)
+                }
+                self.onSessionRefreshRequested()
+                self.resumeIfNeeded()
             }
-            resumeIfNeeded()
         }
 
         func resumeIfNeeded() {
@@ -506,7 +536,18 @@ struct HybridWebContentView: UIViewRepresentable {
             let now = Date()
             guard now.timeIntervalSince(lastLoginRequestAt) > 1 else { return }
             lastLoginRequestAt = now
-            onLoginRequested()
+            // 网页端认为未登录时，先尝试从较新的原生 Cookie 自愈。
+            // 若两边都没有凭证，才真正展示登录页。
+            reconcileAuthenticationCookies { [weak self] in
+                guard let self else { return }
+                if APIClient.authenticationCookies().isEmpty {
+                    self.onLoginRequested()
+                } else {
+                    self.onSessionRefreshRequested()
+                    self.notifyWebAuthChanged()
+                    self.reloadHome(force: true)
+                }
+            }
         }
 
         private func requestStore() {
@@ -517,18 +558,22 @@ struct HybridWebContentView: UIViewRepresentable {
         }
 
         private func synchronizeNativeCookiesToWeb(completion: @escaping @MainActor () -> Void) {
-            guard let webView, APIClient.baseURL.host != nil else {
+            guard let webView else {
                 completion()
                 return
             }
             let store = webView.configuration.websiteDataStore.httpCookieStore
-            let nativeCookies = HTTPCookieStorage.shared.cookies(for: APIClient.baseURL) ?? []
+            let nativeCookies = APIClient.authenticationCookies()
             store.getAllCookies { webCookies in
+                let currentAuthCookies = webCookies.filter(APIClient.isAuthenticationCookie)
+                guard !Self.cookiesAreEquivalent(currentAuthCookies, nativeCookies) else {
+                    completion()
+                    return
+                }
                 let syncGroup = DispatchGroup()
 
-                // 原生登录态是 App 内的权威来源。先移除网页容器中的同域 Cookie，
-                // 避免退出登录后旧的 Supabase 会话仍残留在 WKWebView 中。
-                webCookies.filter { Self.isFirstPartyHost($0.domain) }.forEach { cookie in
+                self.suppressesWebCookieObserver = true
+                currentAuthCookies.forEach { cookie in
                     syncGroup.enter()
                     store.delete(cookie) { syncGroup.leave() }
                 }
@@ -536,7 +581,33 @@ struct HybridWebContentView: UIViewRepresentable {
                     syncGroup.enter()
                     store.setCookie(cookie) { syncGroup.leave() }
                 }
-                syncGroup.notify(queue: .main) { completion() }
+                syncGroup.notify(queue: .main) {
+                    self.suppressesWebCookieObserver = false
+                    completion()
+                }
+            }
+        }
+
+        /// 两个 Cookie 容器可能各自刷新 Supabase 令牌。恢复前台时以过期时间
+        /// 更晚的一组为准，避免旧 refresh token 覆盖已经轮换的新 token。
+        private func reconcileAuthenticationCookies(completion: @escaping @MainActor () -> Void) {
+            guard let webView else {
+                completion()
+                return
+            }
+            let nativeCookies = APIClient.authenticationCookies()
+            webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { webCookies in
+                let webAuthCookies = webCookies.filter(APIClient.isAuthenticationCookie)
+                if Self.cookiesAreEquivalent(nativeCookies, webAuthCookies) {
+                    completion()
+                    return
+                }
+                if webAuthCookies.isEmpty || (!nativeCookies.isEmpty && Self.cookieFreshness(nativeCookies) > Self.cookieFreshness(webAuthCookies)) {
+                    self.synchronizeNativeCookiesToWeb(completion: completion)
+                } else {
+                    self.replaceNativeAuthenticationCookies(with: webAuthCookies)
+                    completion()
+                }
             }
         }
 
@@ -547,21 +618,63 @@ struct HybridWebContentView: UIViewRepresentable {
             )
         }
 
-        private func synchronizeWebCookiesToNative() {
-            guard let webView else { return }
+        private func synchronizeWebCookiesToNative(completion: (@MainActor () -> Void)? = nil) {
+            guard let webView else {
+                completion?()
+                return
+            }
             webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
-                cookies
-                    .filter { Self.isFirstPartyHost($0.domain) }
-                    .forEach { HTTPCookieStorage.shared.setCookie($0) }
+                self.replaceNativeAuthenticationCookies(
+                    with: cookies.filter(APIClient.isAuthenticationCookie)
+                )
+                completion?()
             }
         }
 
         func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
-            cookieStore.getAllCookies { cookies in
-                cookies
-                    .filter { Self.isFirstPartyHost($0.domain) }
-                    .forEach { HTTPCookieStorage.shared.setCookie($0) }
+            guard !suppressesWebCookieObserver else { return }
+            // Supabase 会连续写入分片 Cookie。稍作防抖后整组替换，避免原生端
+            // 短暂读到一半新、一半旧的令牌。
+            webCookieSyncWorkItem?.cancel()
+            let work = DispatchWorkItem { [weak self] in
+                self?.synchronizeWebCookiesToNative()
             }
+            webCookieSyncWorkItem = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15, execute: work)
+        }
+
+        @objc private func nativeAuthCookiesDidChange() {
+            synchronizeNativeCookiesToWeb { [weak self] in
+                self?.notifyWebAuthChanged()
+            }
+        }
+
+        @objc private func nativeAuthenticationRejected() {
+            reconcileAuthenticationCookies { [weak self] in
+                self?.onSessionRefreshRequested()
+            }
+        }
+
+        private func replaceNativeAuthenticationCookies(with cookies: [HTTPCookie]) {
+            let currentCookies = APIClient.authenticationCookies()
+            guard !Self.cookiesAreEquivalent(currentCookies, cookies) else { return }
+            currentCookies.forEach { HTTPCookieStorage.shared.deleteCookie($0) }
+            cookies.forEach { HTTPCookieStorage.shared.setCookie($0) }
+            if !currentCookies.isEmpty, cookies.isEmpty {
+                onSessionInvalidated()
+            }
+        }
+
+        private static func cookiesAreEquivalent(_ lhs: [HTTPCookie], _ rhs: [HTTPCookie]) -> Bool {
+            cookieSignature(lhs) == cookieSignature(rhs)
+        }
+
+        private static func cookieSignature(_ cookies: [HTTPCookie]) -> [String] {
+            cookies.map { "\($0.name)|\($0.domain)|\($0.path)|\($0.value)" }.sorted()
+        }
+
+        private static func cookieFreshness(_ cookies: [HTTPCookie]) -> TimeInterval {
+            cookies.compactMap(\.expiresDate).map(\.timeIntervalSince1970).max() ?? 0
         }
 
         func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {

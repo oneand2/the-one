@@ -33,6 +33,8 @@ export function createMobileAuthClient(request: NextRequest) {
 
   function json(body: unknown, init?: ResponseInit) {
     const response = NextResponse.json(body, init);
+    response.headers.set('Cache-Control', 'private, no-store');
+    response.headers.set('Pragma', 'no-cache');
     pendingCookies.forEach(({ name, value, options }) => {
       response.cookies.set(name, value, options);
     });
@@ -41,4 +43,3 @@ export function createMobileAuthClient(request: NextRequest) {
 
   return { supabase, json };
 }
-

@@ -192,7 +192,13 @@ private struct MainTabView: View {
                         loadState: webLoad,
                         onTabChanged: { flow.screen = $0 },
                         onLoginRequested: { auth.showsLogin = true },
-                        onStoreRequested: { showStore = true }
+                        onStoreRequested: { showStore = true },
+                        onSessionRefreshRequested: {
+                            Task { await auth.restoreSession() }
+                        },
+                        onSessionInvalidated: {
+                            auth.invalidateSession()
+                        }
                     )
                     if !webLoad.isReady {
                         HybridLoadOverlay(state: webLoad)

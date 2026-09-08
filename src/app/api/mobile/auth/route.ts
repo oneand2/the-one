@@ -47,9 +47,18 @@ async function ensureProfile(
 export async function GET(request: NextRequest) {
   const { supabase, json } = createMobileAuthClient(request);
   const {
-    data: { user },
+    data: { user }, error,
   } = await supabase.auth.getUser();
 
+  if (error) {
+    const status = 'status' in error && typeof error.status === 'number' ? error.status : 0;
+    const definitiveRejection = status === 400 || status === 401 || status === 403 || error.name === 'AuthSessionMissingError';
+    if (!definitiveRejection) {
+      console.error('native session check temporarily unavailable:', { name: error.name, status });
+      return json({ error: '登录服务暂时不可用，请稍后重试' }, { status: 503 });
+    }
+    return json({ authenticated: false }, { status: 401 });
+  }
   if (!user) return json({ authenticated: false }, { status: 401 });
   return json({
     authenticated: true,

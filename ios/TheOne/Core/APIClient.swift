@@ -1,5 +1,10 @@
 import Foundation
 
+extension Notification.Name {
+    static let theOneNativeAuthCookiesDidChange = Notification.Name("theone.native-auth-cookies-did-change")
+    static let theOneNativeAuthenticationRejected = Notification.Name("theone.native-authentication-rejected")
+}
+
 enum HTTPMethod: String { case GET, POST, PATCH, DELETE }
 
 struct APIError: LocalizedError {
@@ -59,7 +64,7 @@ final class APIClient: @unchecked Sendable {
     ) async throws -> T {
         let request = try makeRequest(path, method: method, json: json, query: query)
         let (data, response) = try await perform(request)
-        try validate(response, data: data)
+        try validate(response, data: data, request: request)
         do {
             return try decoder.decode(T.self, from: data)
         } catch {
@@ -76,12 +81,15 @@ final class APIClient: @unchecked Sendable {
     ) async throws {
         let request = try makeRequest(path, method: method, json: json, query: query)
         let (data, response) = try await perform(request)
-        try validate(response, data: data)
+        try validate(response, data: data, request: request)
     }
 
     private func perform(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        let cookieFingerprint = Self.authenticationCookieFingerprint()
         do {
-            return try await session.data(for: request)
+            let result = try await session.data(for: request)
+            Self.publishAuthenticationCookieChange(ifDifferentFrom: cookieFingerprint)
+            return result
         } catch let error as URLError {
             throw APIError(statusCode: 0, message: Self.describe(error))
         }
@@ -117,7 +125,9 @@ final class APIClient: @unchecked Sendable {
         let bytes: URLSession.AsyncBytes
         let response: URLResponse
         do {
+            let cookieFingerprint = Self.authenticationCookieFingerprint()
             (bytes, response) = try await session.bytes(for: request)
+            Self.publishAuthenticationCookieChange(ifDifferentFrom: cookieFingerprint)
         } catch let error as URLError {
             throw APIError(statusCode: 0, message: Self.describe(error))
         }
@@ -127,7 +137,7 @@ final class APIClient: @unchecked Sendable {
         guard (200..<300).contains(http.statusCode) else {
             var data = Data()
             for try await byte in bytes { data.append(byte) }
-            try validate(http, data: data)
+            try validate(http, data: data, request: request)
             return
         }
         // 网页端 /api/chat 是纯文本字节流（非 SSE、非按行）。
@@ -189,11 +199,16 @@ final class APIClient: @unchecked Sendable {
         return request
     }
 
-    private func validate(_ response: URLResponse, data: Data) throws {
+    private func validate(_ response: URLResponse, data: Data, request: URLRequest? = nil) throws {
         guard let http = response as? HTTPURLResponse else {
             throw APIError(statusCode: 0, message: "服务器响应无效")
         }
         guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 401, request?.url?.path != "/api/mobile/auth" {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .theOneNativeAuthenticationRejected, object: nil)
+                }
+            }
             if let envelope = try? decoder.decode(ErrorEnvelope.self, from: data),
                let message = envelope.error, !message.isEmpty {
                 throw APIError(statusCode: http.statusCode, message: message, needCoins: envelope.needCoins)
@@ -216,6 +231,46 @@ final class APIClient: @unchecked Sendable {
             return "服务器内部错误（\(statusCode)），请稍后重试"
         default:
             return "请求失败（HTTP \(statusCode)），请稍后重试"
+        }
+    }
+
+    static func isAuthenticationCookie(_ cookie: HTTPCookie) -> Bool {
+        let name = cookie.name.lowercased()
+        guard name.hasPrefix("sb-"), name.contains("-auth-token") else { return false }
+        guard let expectedHost = baseURL.host?.lowercased() else { return false }
+        let domain = cookie.domain.trimmingCharacters(in: CharacterSet(charactersIn: ".")).lowercased()
+        if domain == expectedHost { return true }
+        let loopback: Set<String> = ["localhost", "127.0.0.1", "0.0.0.0", "::1"]
+        return loopback.contains(domain) && loopback.contains(expectedHost)
+    }
+
+    static func authenticationCookies() -> [HTTPCookie] {
+        (HTTPCookieStorage.shared.cookies(for: baseURL) ?? [])
+            .filter(isAuthenticationCookie)
+    }
+
+    static func clearAuthenticationCookies() {
+        let cookies = authenticationCookies()
+        cookies.forEach { HTTPCookieStorage.shared.deleteCookie($0) }
+        guard !cookies.isEmpty else { return }
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .theOneNativeAuthCookiesDidChange, object: nil)
+        }
+    }
+
+    private static func authenticationCookieFingerprint() -> [String] {
+        authenticationCookies()
+            .map { cookie in
+                let expiry = cookie.expiresDate?.timeIntervalSince1970 ?? 0
+                return "\(cookie.name)|\(cookie.domain)|\(cookie.path)|\(expiry)|\(cookie.value)"
+            }
+            .sorted()
+    }
+
+    private static func publishAuthenticationCookieChange(ifDifferentFrom previous: [String]) {
+        guard authenticationCookieFingerprint() != previous else { return }
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .theOneNativeAuthCookiesDidChange, object: nil)
         }
     }
 }

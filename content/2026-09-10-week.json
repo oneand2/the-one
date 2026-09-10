@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-09-10",
+  "stories": [
+    {
+      "title": "苗已枯",
+      "origin": "china",
+      "sourceLabel": "《孟子·公孙丑上》",
+      "originalLanguage": "文言",
+      "originalText": "必有事焉而勿正，心勿忘，勿助長也。無若宋人然：宋人有閔其苗之不長而揠之者，芒芒然歸。謂其人曰：『今日病矣，予助苗長矣。』其子趨而往視之，苗則槁矣。天下之不助苗長者寡矣。以為無益而舍之者，不耘苗者也；助之長者，揠苗者也。非徒無益，而又害之。",
+      "body": "《孟子·公孙丑上》谈如何养成浩然之气时，说心里要始终有事可做，却不可预先等着成效，更不能强催它长成。\n\n孟子接着讲了一个宋人的故事。那人忧虑田里的苗长得太慢，便把每棵苗都往上拔了一截。忙完以后，他疲惫地回家，对家人说：『今天累坏了，我帮禾苗长高了。』\n\n他的儿子急忙跑到田里查看，只见禾苗已经全都枯萎。\n\n孟子说，世上很少有人不去『帮助』禾苗生长：觉得养护无用而丢开它，像是不耘田；用力催它长高，则正是这位拔苗的人。这样做没有益处，还会伤害它。",
+      "sources": "中国哲学书电子化计划《孟子·公孙丑上》2.14 原文及平行文本，https://ctext.org/text.pl?if=gb&node=13085&show=parallel"
+    },
+    {
+      "title": "道旁苦李",
+      "origin": "china",
+      "sourceLabel": "《世说新语·雅量》",
+      "originalLanguage": "文言",
+      "originalText": "王戎七歲，嘗與諸小兒遊。看道邊李樹多子折枝。諸兒競走取之，唯戎不動。人問之，答曰：『樹在道邊而多子，此必苦李。』取之，信然。",
+      "body": "《世说新语·雅量》记着，王戎七岁时，曾和一群孩子在外玩耍。\n\n路边有一棵李树，果实多得压弯了枝条。孩子们看见后争先恐后地跑去摘，只有王戎留在原处，没有跟着动。\n\n有人问他为什么不去。王戎回答：『树长在道路旁，果子却还这么多，这一定是苦李。』\n\n旁人摘下一颗尝了尝，果然如他所说。",
+      "sources": "中国哲学书电子化计划《世说新语·雅量》原文，https://ctext.org/shi-shuo-xin-yu/ya-liang/zh；对应条目平行文本，https://ctext.org/text.pl?if=gb&node=91107&show=parallel"
+    },
+    {
+      "title": "织不可断",
+      "origin": "china",
+      "sourceLabel": "《后汉书·列女传》",
+      "originalLanguage": "文言",
+      "originalText": "一年來歸，妻跪問其故。羊子曰：『久行懷思，無它異也。』妻乃引刀趨機而言曰：『此織生自蠶繭，成於機杼，一絲而累，以至於寸，累寸不已，遂成丈匹。今若斷斯織也，則捐失成功，稽廢時月。夫子積學，當日知其所亡，以就懿德。若中道而歸，何異斷斯織乎？』羊子感其言，復還終業，遂七年不反。妻常躬勤養姑，又遠饋羊子。",
+      "body": "《后汉书·列女传》记着，河南乐羊子外出求学，一年后忽然回家。妻子跪坐着问他缘故，他说离家太久，思念家人，并没有别的事。\n\n妻子走到织机前，拿起刀说：一匹布从蚕茧抽丝开始，一丝一丝累积成寸，再不断累积，才织成丈匹。此时若一刀割断，这些时日的成果也就丢了。\n\n她问，求学原也要每天知道自己从前所不知，渐渐成就德业；半途回家，与割断这匹布有什么分别？\n\n乐羊子听后又回去完成学业，七年没有返家。妻子亲自奉养婆母，也从远处给他送去所需。",
+      "sources": "中国哲学书电子化计划《后汉书·列女传·乐羊子妻》原文及平行文本，https://ctext.org/text.pl?if=gb&node=77563&show=parallel；《后汉书》卷一百十四列女传底本页，https://ctext.org/wiki.pl?chapter=476199&if=gb"
+    },
+    {
+      "title": "舟行剑止",
+      "origin": "china",
+      "sourceLabel": "《吕氏春秋·察今》",
+      "originalLanguage": "文言",
+      "originalText": "楚人有涉江者，其劍自舟中墜於水，遽契其舟曰：『是吾劍之所從墜。』舟止，從其所契者入水求之。舟已行矣，而劍不行，求劍若此，不亦惑乎？",
+      "body": "《吕氏春秋·察今》写过一个渡江的楚人。他的剑从船上掉进水里，他立刻在船舷刻下一道记号，说：『我的剑是从这里落下去的。』\n\n船仍在江面前行，那道刻痕也随船移动。楚人没有立刻入水，只等船靠岸停下。\n\n船停后，他便从刻痕所在的位置下水寻找。\n\n原文随后点破其中的错位：船已经向前走了，剑却没有跟着走。照着移动后的记号求一把停在原处的剑，怎么会找得到？",
+      "sources": "中国哲学书电子化计划《吕氏春秋·慎大览·察今》原文，https://ctext.org/lv-shi-chun-qiu/cha-jin/zhs；对应条目平行文本，https://ctext.org/text.pl?if=gb&node=23676&remap=gb&show=parallel"
+    },
+    {
+      "title": "鼻未曾改",
+      "origin": "world",
+      "sourceLabel": "瓦萨里《艺苑名人传》",
+      "originalLanguage": "意大利语",
+      "originalText": "Nacque in questo mentre che, vistolo sù Pier Soderini, il quale, piaciutogli assai, et in quel mentre che lo ritoccava in certi luoghi, disse a Michelagnolo che gli pareva che il naso di quella figura fussi grosso. Michelagnolo, accortosi che era sotto al Gigante il gonfalonieri e che la vista non lo lasciava scorgere il vero, per satisfarlo salì in sul ponte che era accanto alle spalle; e preso Michelagnolo con prestezza uno scarpello nella man manca con un poco di polvere di marmo che era sopra le tavole del ponte, e cominciato a gettare leggieri con gli scarpegli, lasciava cadere a poco a poco la polvere, né toccò il naso da quel che era. Poi guardato a basso al gonfalonieri, che stava a vedere, disse: «Guardatelo ora». «A me mi piace più, disse il gonfalonieri, gli avete dato la vita». Così scese Michelagnolo, e lo avere contento quel signore, che se ne rise da sé Michelagnolo, avendo compassione a coloro che, per parere d’intendersi, non sanno quel che si dicano.",
+      "body": "瓦萨里在《艺苑名人传》中写道，米开朗基罗为大卫像作最后修整时，佛罗伦萨执政官皮耶罗·索德里尼站在雕像下方观看，说那尊像的鼻子似乎太粗。\n\n米开朗基罗看出，对方所站的位置无法看清鼻形。他没有争辩，而是带着凿子和脚手架上的一点大理石粉，登上雕像肩旁。\n\n他轻轻敲动凿子，让掌中的石粉一点点落下，却没有碰掉鼻子上的石料。随后他向下问：『现在再看看。』\n\n索德里尼回答：『我更喜欢了，你给了它生命。』米开朗基罗走下脚手架，独自笑了。瓦萨里说，他怜悯那些为了显得懂行、却不知道自己在说什么的人。",
+      "sources": "Giorgio Vasari, Le vite de’ più eccellenti pittori, scultori e architettori, 1568, Vita di Michelagnolo Buonarroti, Memofonte 校本文本第 II.724 页（PDF 第451页），https://www.memofonte.it/home/files/pdf/vasari_vite_giuntina_tomo2.pdf；Washington State University, Giorgio Vasari: Michelangelo’s David 英译节选，https://public.archive.wsu.edu/brians/public_html/world_civ/worldcivreader/world_civ_reader_1/vasari.html"
+    },
+    {
+      "title": "迟来的值守",
+      "origin": "world",
+      "sourceLabel": "鲍斯韦尔《约翰逊传》",
+      "originalLanguage": "英语",
+      "originalText": "To Mr. Henry White, a young clergyman, with whom he now formed an intimacy, so as to talk to him with great freedom, he mentioned that he could not in general accuse himself of having been an undutiful son. ‘Once, indeed,’ said he, ‘I was disobedient; I refused to attend my father to Uttoxeter-market. Pride was the source of that refusal, and the remembrance of it was painful. A few years ago, I desired to atone for this fault; I went to Uttoxeter in very bad weather, and stood for a considerable time bareheaded in the rain, on the spot where my father’s stall used to stand. In contrition I stood, and I hope the penance was expiatory.’",
+      "body": "鲍斯韦尔《约翰逊传》记下，晚年的塞缪尔·约翰逊对年轻牧师亨利·怀特谈起父亲。他说自己一生大体算不上不孝，却有一次确实违逆了父亲。\n\n父亲曾要他陪同去阿托克斯特集市照看书摊，他因骄傲而拒绝。多年以后，这次拒绝仍让他痛苦。\n\n为了补偿这桩过错，约翰逊回到阿托克斯特。天气很坏，他来到父亲当年摆摊的地点，脱帽站在雨里，许久没有离开。\n\n他说：『我怀着悔意站在那里，希望这场补赎已经偿清了那次过错。』",
+      "sources": "James Boswell, Boswell’s Life of Johnson, Project Gutenberg eBook #1564，晚年部分所录 Uttoxeter 自述，https://www.gutenberg.org/cache/epub/1564/pg1564-images.html"
+    },
+    {
+      "title": "披风更紧",
+      "origin": "world",
+      "sourceLabel": "阿维亚努斯《风与太阳》",
+      "originalLanguage": "拉丁语",
+      "originalText": "Immitis Boreas placidusque ad sidera Phoebus\nIurgia cum magno conseruere Iove,\nQuis prior inceptum peragat: mediumque per orbem\nCarpebat solitum forte viator iter.\nConvenit hanc potius liti praefigere causam,\nPallia nudato decutienda viro.\nProtinus impulsus ventis circumtonat aether\nEt gelidus nimias depluit imber aquas:\nIlle magis lateri duplicem circumdat amictum,\nTurbida submotos quod trahit aura sinus.\nSed tenues radios paulatim increscere Phoebus\nIusserat, ut nimio surgeret igne iubar,\ndonec lassa volens requiescere membra, viator\ndeposita fessus veste sederet humi.\ntunc victor docuit praesentia numina Titan,\nNullum praemissis vincere posse minis.",
+      "body": "阿维亚努斯的拉丁寓言写道，北风与太阳争论谁更强，恰好看见一个旅人走在路上，便约定谁能让他脱下披风，谁就获胜。\n\n北风先卷过天空，又带来冰冷大雨。风吹得越猛烈，旅人越把双层披风紧紧裹在身上，不让衣襟被掀开。\n\n太阳接手后，只让细弱的光线逐渐增强。旅人渐渐觉得炎热疲倦，自己脱下披风，坐到地上休息。\n\n寓言末尾说，太阳以胜利让在场的神明看见：先以威吓相逼，不能胜过一切。",
+      "sources": "Flavius Avianus, Fabulae IV — De vento et sole, Latin Wikisource 拉丁原文，https://la.wikisource.org/wiki/Fabulae_(Avianus)/IV；Georgetown University Labyrinth Library, Avianus, Fabulae 校本文本与版本说明，https://faculty.georgetown.edu/jod/texts/avianus.html"
+    }
+  ]
+}

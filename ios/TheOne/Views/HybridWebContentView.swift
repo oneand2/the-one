@@ -110,7 +110,8 @@ struct HybridWebContentView: UIViewRepresentable {
             screen: flow.screen,
             tabSelectionTick: flow.tabSelectionTick,
             sessionIdentity: sessionIdentity,
-            pendingChat: flow.pendingChat
+            pendingChat: flow.pendingChat,
+            pendingWebNavigation: flow.pendingWebNavigation
         )
         context.coordinator.handleScenePhase(scenePhase)
     }
@@ -263,6 +264,8 @@ struct HybridWebContentView: UIViewRepresentable {
         private var currentScreen: AppScreen?
         private var lastTabTick = 0
         private var lastPendingChatID: UUID?
+        private var lastPendingWebNavigationID: UUID?
+        private var currentStandalonePath: String?
         private var currentSessionIdentity = ""
         private var pageReady = false
         private var isLoadingPage = false
@@ -325,7 +328,15 @@ struct HybridWebContentView: UIViewRepresentable {
             currentScreen = screen
             currentSessionIdentity = sessionIdentity
             loadState.retryHandler = { [weak self] in
-                self?.reloadHome(force: true)
+                guard let self else { return }
+                if let path = self.currentStandalonePath {
+                    self.pageReady = false
+                    self.isLoadingPage = false
+                    self.loadAttempts = 0
+                    self.loadWebPage(path: path)
+                } else {
+                    self.reloadHome(force: true)
+                }
             }
             reconcileAuthenticationCookies { [weak self] in
                 guard let self else { return }
@@ -338,7 +349,8 @@ struct HybridWebContentView: UIViewRepresentable {
             screen: AppScreen,
             tabSelectionTick: Int,
             sessionIdentity: String,
-            pendingChat: PendingChatRequest?
+            pendingChat: PendingChatRequest?,
+            pendingWebNavigation: PendingWebNavigation?
         ) {
             if sessionIdentity != currentSessionIdentity {
                 let hadResolvedIdentity = !currentSessionIdentity.isEmpty
@@ -363,6 +375,14 @@ struct HybridWebContentView: UIViewRepresentable {
             }
             if let newPendingChat {
                 lastPendingChatID = newPendingChat.id
+            }
+            let newWebNavigation = pendingWebNavigation.flatMap { request in
+                request.id == lastPendingWebNavigationID ? nil : request
+            }
+            if let newWebNavigation {
+                lastPendingWebNavigationID = newWebNavigation.id
+                loadWebPage(path: newWebNavigation.path)
+                return
             }
             if tapped || changed || newPendingChat != nil {
                 dispatchNavigation(to: screen, pendingChat: newPendingChat)
@@ -406,6 +426,7 @@ struct HybridWebContentView: UIViewRepresentable {
 
         private func loadInitialPage(screen: AppScreen) {
             guard let webView, !isLoadingPage, !pageReady else { return }
+            currentStandalonePath = nil
             container?.setModalBackdropActive(false, animated: false)
             var components = URLComponents(url: APIClient.baseURL, resolvingAgainstBaseURL: false)
             components?.path = "/"
@@ -418,6 +439,35 @@ struct HybridWebContentView: UIViewRepresentable {
             isLoadingPage = true
             loadAttempts += 1
             loadState.markLoading(loadAttempts <= 1 ? "正在载入…" : "正在重新连接本地页面…")
+            var request = URLRequest(url: url)
+            request.cachePolicy = .useProtocolCachePolicy
+            request.setValue("ios-hybrid/1.0", forHTTPHeaderField: "X-TheOne-Client")
+            webView.load(request)
+        }
+
+        /// 在现有混合容器里打开网站的独立页面，让账号菜单、排盘入口和网页
+        /// 共用同一份 React 界面与业务逻辑，不再维护一套容易漂移的原生副本。
+        private func loadWebPage(path: String) {
+            guard let webView,
+                  path.hasPrefix("/"),
+                  !path.hasPrefix("//"),
+                  let relative = URLComponents(string: path) else { return }
+
+            var destination = URLComponents(url: APIClient.baseURL, resolvingAgainstBaseURL: false)
+            destination?.path = relative.path
+            var queryItems = relative.queryItems ?? []
+            if !queryItems.contains(where: { $0.name == "embed" }) {
+                queryItems.append(URLQueryItem(name: "embed", value: "ios"))
+            }
+            destination?.queryItems = queryItems
+            guard let url = destination?.url else { return }
+
+            cancelRetry()
+            currentStandalonePath = path
+            pageReady = false
+            isLoadingPage = true
+            loadAttempts += 1
+            loadState.markLoading("正在载入…")
             var request = URLRequest(url: url)
             request.cachePolicy = .useProtocolCachePolicy
             request.setValue("ios-hybrid/1.0", forHTTPHeaderField: "X-TheOne-Client")
@@ -437,7 +487,12 @@ struct HybridWebContentView: UIViewRepresentable {
             cancelRetry()
             let delay = loadAttempts >= 6 ? 8.0 : min(5, 0.6 * pow(1.6, Double(min(loadAttempts, 8))))
             let work = DispatchWorkItem { [weak self] in
-                self?.loadInitialPage(screen: currentScreen)
+                guard let self else { return }
+                if let path = self.currentStandalonePath {
+                    self.loadWebPage(path: path)
+                } else {
+                    self.loadInitialPage(screen: currentScreen)
+                }
             }
             retryWorkItem = work
             DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
@@ -493,6 +548,11 @@ struct HybridWebContentView: UIViewRepresentable {
                   pane.setAttribute('aria-hidden', pane.getAttribute('data-ios-tab-pane') === tab ? 'false' : 'true');
                 });
                 window.scrollTo(0, 0);
+              } else {
+                var destination = new URL('/', location.origin);
+                destination.searchParams.set('embed', 'ios');
+                destination.searchParams.set('tab', tab);
+                location.assign(destination.toString());
               }
               return root ? root.getAttribute('data-active-tab') : '';
             """
@@ -525,6 +585,14 @@ struct HybridWebContentView: UIViewRepresentable {
 
         private func handleEmbeddedURL(_ url: URL?) {
             guard let url, isFirstParty(url) else { return }
+            if url.path == "/" {
+                currentStandalonePath = nil
+            } else {
+                var relative = URLComponents()
+                relative.path = url.path
+                relative.query = url.query
+                currentStandalonePath = relative.string
+            }
             if url.path == "/login" {
                 requestLogin()
             } else if url.path == "/shop" {

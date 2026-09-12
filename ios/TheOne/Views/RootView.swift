@@ -388,7 +388,7 @@ private struct MainTabView: View {
                     closeMenu(); showProfile = true
                 }
                 accountMenuButton("我的八字排盘", icon: "calendar") {
-                    closeMenu(); recordsKind = .classical
+                    closeMenu(); flow.openWebPage("/my/classical")
                 }
                 accountMenuButton("我的八卦人格", icon: "brain.head.profile") {
                     closeMenu(); recordsKind = .mbti

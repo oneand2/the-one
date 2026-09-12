@@ -25,12 +25,18 @@ struct PendingChatRequest {
     let autoSend: Bool
 }
 
+struct PendingWebNavigation {
+    let id = UUID()
+    let path: String
+}
+
 @MainActor
 final class AppFlowStore: ObservableObject {
     @Published var screen: AppScreen
     /// 每次点底栏都加一，即使还在同一 tab，WebView 也会再同步一次。
     @Published private(set) var tabSelectionTick = 0
     @Published private(set) var pendingChat: PendingChatRequest?
+    @Published private(set) var pendingWebNavigation: PendingWebNavigation?
 
     init() {
 #if DEBUG
@@ -46,6 +52,11 @@ final class AppFlowStore: ObservableObject {
     }
 
     func openMBTI() { screen = .mbti }
+
+    func openWebPage(_ path: String) {
+        guard path.hasPrefix("/"), !path.hasPrefix("//") else { return }
+        pendingWebNavigation = PendingWebNavigation(path: path)
+    }
 
     func openChat(preset: String = "", importData: [String: Any] = [:], autoSend: Bool = false) {
         pendingChat = PendingChatRequest(preset: preset, importData: importData, autoSend: autoSend)

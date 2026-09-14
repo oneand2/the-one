@@ -28,6 +28,7 @@ import { resolve } from 'node:path';
 import dotenv from 'dotenv';
 
 import { createAdminClient } from '../src/utils/supabase/admin';
+import { simplifyClassicalChinese } from '../src/utils/chineseText';
 import {
   arrangeWeeklyInsights,
   type DailyInsightOrigin,
@@ -163,7 +164,10 @@ async function main() {
     title: story.title,
     source_label: story.sourceLabel,
     original_language: story.originalLanguage,
-    original_text: story.originalText.trim(),
+    original_text: simplifyClassicalChinese(
+      story.originalLanguage,
+      story.originalText.trim()
+    ),
     body: story.body.trim(),
     sources: story.sources.trim(),
   }));

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/utils/supabase/client';
 import { getCached, setCached, CACHE_KEYS } from '@/utils/cache';
+import { simplifyClassicalChinese } from '@/utils/chineseText';
 import { arrangeWeeklyInsights } from '@/utils/dailyInsights';
 import localStoryWeek from '../../content/2026-08-27-week.json';
 
@@ -167,6 +168,10 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
         : entry.original_language === '英语'
           ? { lang: 'en', dir: 'ltr' as const, fontFamily: 'Georgia, serif' }
           : { lang: 'zh-Hans', dir: 'ltr' as const, fontFamily: KAITI };
+  const displayedOriginalText = simplifyClassicalChinese(
+    entry.original_language,
+    entry.original_text
+  );
 
   return (
     <div>
@@ -228,7 +233,7 @@ export const DailyInsightsView: React.FC<Props> = ({ date }) => {
                 </span>
               </div>
               <div className="border-l border-[#8a4a4a]/35 pl-4">
-                {entry.original_text
+                {displayedOriginalText
                   .split(/\n\s*\n/)
                   .map((paragraph) => paragraph.trim())
                   .filter(Boolean)

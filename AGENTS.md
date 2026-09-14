@@ -15,3 +15,9 @@
 - Do not require the GitHub CLI (`gh`) for this workflow; use the repository's existing Git remote with standard `git` commands.
 - Never include unrelated working-tree files. In particular, an unrelated untracked `tmp/` directory must remain uncommitted unless the user explicitly puts it in scope.
 - After pushing, verify that the remote `main` commit matches the local commit and, when possible, confirm the automatic deployment result before reporting completion.
+
+## “见众生”内容写作
+
+- 新增或修改“见众生”示例手记时，必须先阅读 `docs/jianzhongsheng-personas.md`，并遵守其人物连续性与每日续写规则。
+- 不得以“我多少岁”或“多少岁，发生了某事”作为手记或摘要的模板化开头。年龄必须有叙事必要才可自然写入文中；批量新增内容时，必须额外检查不同人物的开头句式和说话习惯是否趋同。
+- 见众生内容变更后必须运行 `npm run jianzhongsheng:check`，不得绕过年龄开头检查。

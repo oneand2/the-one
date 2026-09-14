@@ -7,6 +7,7 @@
     "dev:poll": "WATCHPACK_POLLING=true WATCHPACK_POLLING_INTERVAL=1000 next dev --webpack",
     "ui:generate": "node scripts/generate-ui-contract.mjs",
     "ui:check": "node scripts/generate-ui-contract.mjs --check",
+    "jianzhongsheng:check": "node scripts/check-jianzhongsheng-content.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

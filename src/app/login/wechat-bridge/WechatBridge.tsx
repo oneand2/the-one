@@ -2,14 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { isMiniProgramEmbed } from '@/utils/iosEmbed';
-import { openMiniProgramLoginPage } from '@/utils/wechatMiniProgramJs';
 import styles from '../login.module.css';
 
 const OPENED_KEY = 'the-one-wechat-mp-opened';
 
 type OpenResponse = {
-  ticketId?: string;
   urlLink?: string;
   error?: string;
 };
@@ -23,7 +20,6 @@ type StatusResponse = {
 export function WechatBridge() {
   const [message, setMessage] = useState('正在打开小程序「决行藏」');
   const [urlLink, setUrlLink] = useState<string | null>(null);
-  const [ticketId, setTicketId] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const pollTimer = useRef(0);
 
@@ -71,22 +67,16 @@ export function WechatBridge() {
       });
       const data = (await response.json()) as OpenResponse;
       if (cancelled) return;
-      if (!response.ok || (!data.urlLink && !data.ticketId)) {
+      if (!response.ok || !data.urlLink) {
         setFailed(true);
         setMessage(data.error || '暂时无法打开小程序');
         return;
       }
 
-      if (data.urlLink) setUrlLink(data.urlLink);
-      if (data.ticketId) setTicketId(data.ticketId);
+      setUrlLink(data.urlLink);
       if (!alreadyOpened) {
         window.sessionStorage.setItem(OPENED_KEY, '1');
-        if (isMiniProgramEmbed() && data.ticketId) {
-          const opened = await openMiniProgramLoginPage(data.ticketId);
-          if (!opened && data.urlLink) window.location.href = data.urlLink;
-        } else if (data.urlLink) {
-          window.location.href = data.urlLink;
-        }
+        window.location.href = data.urlLink;
       }
 
       const result = await readStatus();
@@ -132,17 +122,6 @@ export function WechatBridge() {
               <a href={urlLink} className={styles.primaryButton}>
                 <span>打开小程序</span>
               </a>
-            )}
-            {!urlLink && ticketId && (
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={() => {
-                  void openMiniProgramLoginPage(ticketId);
-                }}
-              >
-                <span>确认身份</span>
-              </button>
             )}
             <Link href="/login" className={styles.secondaryAction}>
               返回登录

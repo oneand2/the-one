@@ -1,12 +1,11 @@
 .page {
   min-height: 100vh;
-  padding: 160px 32px;
+  padding: 120px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   box-sizing: border-box;
-  background: #fbf9f4;
 }
 
 .emblem {
@@ -25,9 +24,8 @@
 
 .title {
   font-family: "Songti SC", "STSong", serif;
-  font-size: 30px;
+  font-size: 28px;
   letter-spacing: 0.16em;
-  font-weight: 400;
 }
 
 .hint {
@@ -35,5 +33,4 @@
   color: #8a8175;
   font-size: 13px;
   line-height: 1.7;
-  letter-spacing: 0.12em;
 }

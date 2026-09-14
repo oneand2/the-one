@@ -92,10 +92,6 @@ export function isWechatInAppBrowser(userAgent: string | null | undefined) {
   return true;
 }
 
-export function isWechatMiniProgramWebView(userAgent: string | null | undefined) {
-  return /miniProgram|MiniProgramEnv/i.test(userAgent || '');
-}
-
 export function isLikelyMobileBrowser(userAgent: string | null | undefined) {
   const ua = userAgent || '';
   if (/WindowsWechat|MacWechat|wxwork|WeChatWork/i.test(ua)) return false;

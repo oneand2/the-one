@@ -63,6 +63,23 @@ export async function insertWechatLoginTicket(input: {
   if (inserted.error) throw inserted.error;
 }
 
+export async function insertAuthorizedWechatLoginTicket(input: {
+  id: string;
+  next: string;
+  userId: string;
+}) {
+  const admin = createAdminClient();
+  const inserted = await admin.from('wechat_login_tickets').insert({
+    id: input.id,
+    mode: 'login',
+    next_path: sanitizeNextPath(input.next, '/'),
+    status: 'authorized',
+    user_id: input.userId,
+    expires_at: new Date(Date.now() + WECHAT_OAUTH_MAX_AGE_SECONDS * 1000).toISOString(),
+  });
+  if (inserted.error) throw inserted.error;
+}
+
 export async function getFreshWechatLoginTicket(ticketId: string) {
   const admin = createAdminClient();
   const queried = await admin

@@ -35,7 +35,7 @@ alwaysApply: true
 - `src/utils/supabase/`：浏览器端、服务端、service-role Supabase client 工厂。
 - `src/types/`：共享 TypeScript 类型，包括 tab ID 和导入的测算/测试数据。
 - `public/`：PWA manifest 和公开静态资源。
-- `wechat-miniprogram/`：小程序「决行藏」网站登录接力页；需用开发者工具或上传密钥发布后，微信内才能打开。
+- `wechat-miniprogram/`：小程序「决行藏」。首页用 web-view 打开整站（`?embed=miniprogram`）并静默登录；`pages/web-login/` 仍给网站微信一键登录接力。需审核发布后，微信内才能用新版本。
 - `android/`：Capacitor 使用的原生 Android 壳。
 - `ios/`：原生 SwiftUI iOS 项目。
 - `docs/` 和根目录 `*.md`：功能说明、部署说明、验证指南和历史实现文档。
@@ -63,7 +63,7 @@ alwaysApply: true
 - `src/app/api/chat-sessions/**`：聊天会话和消息持久化。
 - `src/app/api/records/**`：八字、MBTI、六爻历史记录 API。
 - `src/app/api/user/**`：用户资料和邀请码 API。
-- `src/app/api/auth/wechat/**`：电脑端网站应用扫码（`WECHAT_LOGIN_*`）；微信内置浏览器走小程序「决行藏」接力（`WECHAT_MINIPROGRAM_*`），靠 UnionID 与扫码账号对齐。
+- `src/app/api/auth/wechat/**`：电脑端网站应用扫码（`WECHAT_LOGIN_*`）；手机微信走小程序「决行藏」接力（`WECHAT_MINIPROGRAM_*`）；小程序内打开整站时用 `miniprogram/app-open` 静默建会话。靠 UnionID 与扫码账号对齐。
 - `src/app/api/shop/redeem/route.ts`：兑换码流程。
 - `src/app/api/divine/route.ts`：占卜相关服务端接口。
 - `src/app/api/admin/news-items/sync/route.ts`：管理员把 `world_news` 解析回填到结构化标题库 `news_items`（按日期或全量，幂等）。

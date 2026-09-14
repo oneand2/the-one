@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { isIOSEmbed } from "@/utils/iosEmbed";
+import { isIOSEmbed, isMiniProgramEmbed } from "@/utils/iosEmbed";
 
 function isMobileBrowser() {
   const ua = navigator.userAgent;
@@ -18,7 +18,7 @@ export default function InstallPrompt() {
 
   useEffect(() => {
     // 已经运行在 SwiftUI App 内，不再展示浏览器的 PWA 安装引导。
-    if (isIOSEmbed()) return;
+    if (isIOSEmbed() || isMiniProgramEmbed()) return;
 
     // 电脑网页端不弹自定义安装卡；桌面 Chrome/Edge 也会发 beforeinstallprompt。
     if (!isMobileBrowser()) return;

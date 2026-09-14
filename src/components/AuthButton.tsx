@@ -11,7 +11,7 @@ import { CopperCoinIcon } from './CopperCoinIcon';
 import { isLifetimeVip } from '@/utils/vip';
 import { clearRecordsCaches } from '@/utils/cache';
 import { SITE_INFO } from '@/config/siteInfo';
-import { requestAppLogin } from '@/utils/iosEmbed';
+import { isMiniProgramEmbed, requestAppLogin, withEmbed } from '@/utils/iosEmbed';
 
 export function AuthButton() {
   const router = useRouter();
@@ -256,14 +256,16 @@ export function AuthButton() {
                 <UserCircle className="w-4 h-4 text-stone-500" />
                 个人设置
               </Link>
-              <Link
-                href="/download"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 font-sans"
-              >
-                <Download className="w-4 h-4 text-stone-500" />
-                添加到主屏幕
-              </Link>
+              {!isMiniProgramEmbed() && (
+                <Link
+                  href="/download"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 font-sans"
+                >
+                  <Download className="w-4 h-4 text-stone-500" />
+                  添加到主屏幕
+                </Link>
+              )}
               <Link
                 href="/my/classical"
                 onClick={() => setMenuOpen(false)}
@@ -371,7 +373,7 @@ export function AuthButton() {
         >
           <button
             onClick={() => {
-              if (!requestAppLogin()) router.push('/login');
+              if (!requestAppLogin()) router.push(withEmbed('/login'));
             }}
             className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
           >

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Crimson_Text, Ma_Shan_Zheng } from "next/font/google";
 import { AuthButton } from "@/components/AuthButton";
 import { DeferredLayoutExtras } from "@/components/DeferredLayoutExtras";
+import { MiniProgramEmbedBootstrap } from "@/components/MiniProgramEmbedBootstrap";
 import { PreconnectSupabase } from "@/components/PreconnectSupabase";
 import { RootErrorBoundary } from "@/components/RootErrorBoundary";
 import "./globals.css";
@@ -69,6 +70,7 @@ export default function RootLayout({
       >
         <RootErrorBoundary>
           <PreconnectSupabase />
+          <MiniProgramEmbedBootstrap />
           {/* 登录入口：定位在页面右上角，随页面滚动 */}
           <div
             className="web-auth-entry fixed top-0 right-0 z-50 md:top-6 md:right-6"

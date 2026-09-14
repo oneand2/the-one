@@ -1,6 +1,10 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { getWechatMiniProgramConfig, WECHAT_MP_TICKET_COOKIE } from '@/lib/auth/wechat';
+import {
+  getWechatMiniProgramConfig,
+  isWechatMiniProgramWebView,
+  WECHAT_MP_TICKET_COOKIE,
+} from '@/lib/auth/wechat';
 import { generateMiniProgramUrlLink } from '@/lib/auth/wechatMiniProgram';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getFreshWechatLoginTicket, isWechatTicketId } from '@/lib/auth/wechatTickets';
@@ -23,8 +27,12 @@ export async function GET() {
     return NextResponse.json({ error: '登录已失效，请返回重试' }, { status: 401 });
   }
 
+  if (isWechatMiniProgramWebView((await headers()).get('user-agent'))) {
+    return NextResponse.json({ ticketId: ticket.id });
+  }
+
   if (ticket.url_link) {
-    return NextResponse.json({ urlLink: ticket.url_link });
+    return NextResponse.json({ ticketId: ticket.id, urlLink: ticket.url_link });
   }
 
   try {
@@ -36,7 +44,7 @@ export async function GET() {
       .eq('id', ticket.id)
       .eq('status', ticket.status);
     if (updated.error) throw updated.error;
-    return NextResponse.json({ urlLink });
+    return NextResponse.json({ ticketId: ticket.id, urlLink });
   } catch (error) {
     console.error('wechat miniprogram url link failed:', error);
     return NextResponse.json({ error: '暂时无法打开小程序，请稍后重试' }, { status: 502 });

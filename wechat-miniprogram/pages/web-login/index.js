@@ -10,6 +10,7 @@ Page({
   onLoad(query) {
     const ticket = ((query && query.ticket) || '').trim();
     this.ticket = ticket;
+    this.stay = ((query && query.stay) || '') === '1';
     if (!/^[a-f0-9]{32}$/.test(ticket)) {
       this.setData({
         status: 'missing',
@@ -42,6 +43,14 @@ Page({
                 completeUrl: data.completeUrl || '',
               });
               setTimeout(() => {
+                if (this.stay) {
+                  wx.navigateBack({
+                    fail: () => {
+                      wx.reLaunch({ url: '/pages/index/index' });
+                    },
+                  });
+                  return;
+                }
                 if (typeof wx.exitMiniProgram === 'function') {
                   wx.exitMiniProgram();
                 }

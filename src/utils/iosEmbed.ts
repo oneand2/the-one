@@ -26,6 +26,42 @@ export function isIOSEmbed(): boolean {
   return new URLSearchParams(window.location.search).get('embed') === 'ios';
 }
 
+export function isMiniProgramEmbed(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (document.documentElement.getAttribute('data-mp-embed') === 'true') return true;
+  try {
+    if (window.sessionStorage.getItem('the-one-embed') === 'miniprogram') return true;
+  } catch {
+    // ignore
+  }
+  const ua = window.navigator.userAgent || '';
+  if (/miniProgram|MiniProgramEnv/i.test(ua)) return true;
+  if ((window as Window & { __wxjs_environment?: string }).__wxjs_environment === 'miniprogram') {
+    return true;
+  }
+  return new URLSearchParams(window.location.search).get('embed') === 'miniprogram';
+}
+
+export function rememberMiniProgramEmbed() {
+  if (typeof window === 'undefined') return;
+  if (!isMiniProgramEmbed() && new URLSearchParams(window.location.search).get('embed') !== 'miniprogram') {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem('the-one-embed', 'miniprogram');
+  } catch {
+    // ignore
+  }
+  document.documentElement.setAttribute('data-mp-embed', 'true');
+}
+
+function currentEmbedParam() {
+  if (typeof window === 'undefined') return null;
+  if (isIOSEmbed()) return 'ios';
+  if (isMiniProgramEmbed()) return 'miniprogram';
+  return null;
+}
+
 export function requestAppLogin(): boolean {
   const bridge = nativeBridge();
   if (!bridge && !isIOSEmbed()) return false;
@@ -73,10 +109,11 @@ export function syncAppTab(tab: string): void {
   }
 }
 
-/** 首页 tab 跳转时保留 embed=ios，避免 iOS 壳里掉回网页登录/安装提示。 */
+/** 首页 tab 跳转时保留 embed，避免壳里掉回网页登录/安装提示。 */
 export function homeHref(tab: string, extra?: Record<string, string>): string {
   const params = new URLSearchParams();
-  if (isIOSEmbed()) params.set('embed', 'ios');
+  const embed = currentEmbedParam();
+  if (embed) params.set('embed', embed);
   params.set('tab', tab);
   if (extra) {
     for (const [key, value] of Object.entries(extra)) {
@@ -87,8 +124,10 @@ export function homeHref(tab: string, extra?: Record<string, string>): string {
 }
 
 export function withEmbed(pathAndQuery: string): string {
-  if (typeof window === 'undefined' || !isIOSEmbed()) return pathAndQuery;
+  if (typeof window === 'undefined') return pathAndQuery;
+  const embed = currentEmbedParam();
+  if (!embed) return pathAndQuery;
   const url = new URL(pathAndQuery, window.location.origin);
-  url.searchParams.set('embed', 'ios');
+  url.searchParams.set('embed', embed);
   return `${url.pathname}${url.search}`;
 }

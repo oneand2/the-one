@@ -58,7 +58,7 @@ export function WechatBridge() {
     async function start() {
       const alreadyOpened = window.sessionStorage.getItem(OPENED_KEY) === '1';
       if (alreadyOpened) {
-        setMessage('已确认的话，请稍候；尚未打开则点下方按钮');
+        setMessage('已确认的话，请稍候；尚未打开则点下方按钮。完成后请回到此页');
       }
 
       const response = await fetch('/api/auth/wechat/miniprogram/open', {
@@ -111,7 +111,7 @@ export function WechatBridge() {
         </div>
         <p className={styles.eyebrow}>确 认 身 份</p>
         <h1 className={styles.title}>经由决行藏</h1>
-        <p className={styles.subtitle}>在小程序中点一下即可回到这里</p>
+        <p className={styles.subtitle}>在小程序中点一下，完成后请回到此页</p>
       </div>
 
       <div className={styles.shell}>

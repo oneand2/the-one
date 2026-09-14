@@ -12,6 +12,7 @@ import styles from './login.module.css';
 type Props = {
   next: string;
   wechatEnabled: boolean;
+  wechatRelay?: boolean;
   message?: string;
 };
 
@@ -85,7 +86,7 @@ function StateFrame({ stateKey, children }: { stateKey: string; children: ReactN
   );
 }
 
-export function LoginForm({ next, wechatEnabled, message }: Props) {
+export function LoginForm({ next, wechatEnabled, wechatRelay = false, message }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -322,7 +323,9 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                         <span className={`${styles.choiceSeal} ${styles.wechatSeal}`}>微</span>
                         <span>
                           <span className={styles.choiceTitle}>微信注册</span>
-                          <span className={styles.choiceDetail}>扫码即可建立账户</span>
+                          <span className={styles.choiceDetail}>
+                            {wechatRelay ? '打开小程序即可建立账户' : '扫码即可建立账户'}
+                          </span>
                         </span>
                       </a>
                     ) : (
@@ -377,7 +380,7 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                       <a href={wechatStartHref} className={styles.providerButton}>
                         <span className={styles.providerIdentity}>
                           <span className={styles.wechatSeal}>微</span>
-                          <span>微信扫码登录</span>
+                          <span>{wechatRelay ? '微信一键登录' : '微信扫码登录'}</span>
                         </span>
                         <span className={styles.providerArrow} aria-hidden="true">
                           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
@@ -386,7 +389,11 @@ export function LoginForm({ next, wechatEnabled, message }: Props) {
                           </svg>
                         </span>
                       </a>
-                      <p className={styles.providerHint}>已有账号请先用原方式登录，再到个人设置绑定微信</p>
+                      <p className={styles.providerHint}>
+                        {wechatRelay
+                          ? '会打开小程序「决行藏」确认身份。已有账号请先用原方式登录，再到个人设置绑定微信'
+                          : '已有账号请先用原方式登录，再到个人设置绑定微信'}
+                      </p>
                     </>
                   )}
                 </form>

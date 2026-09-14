@@ -92,6 +92,17 @@ export function isWechatInAppBrowser(userAgent: string | null | undefined) {
   return true;
 }
 
+export function isLikelyMobileBrowser(userAgent: string | null | undefined) {
+  const ua = userAgent || '';
+  if (/WindowsWechat|MacWechat|wxwork|WeChatWork/i.test(ua)) return false;
+  return /iPhone|iPod|iPad|Android|Mobile/i.test(ua);
+}
+
+/** 手机浏览器（含微信内置浏览器）走小程序「决行藏」接力，电脑端继续扫码。 */
+export function shouldUseMiniProgramRelay(userAgent: string | null | undefined) {
+  return isWechatInAppBrowser(userAgent) || isLikelyMobileBrowser(userAgent);
+}
+
 export function sanitizeNextPath(value: string | null | undefined, fallback = '/') {
   if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
   return value;

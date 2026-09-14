@@ -6,8 +6,8 @@ import {
   buildWechatAuthorizeUrl,
   getWechatLoginConfig,
   getWechatMiniProgramConfig,
-  isWechatInAppBrowser,
   sanitizeNextPath,
+  shouldUseMiniProgramRelay,
   signWechatOAuthContext,
   WECHAT_OAUTH_COOKIE,
   WECHAT_OAUTH_MAX_AGE_SECONDS,
@@ -31,7 +31,8 @@ export async function GET(request: NextRequest) {
     mode === 'bind' ? '/profile' : '/',
   );
 
-  if (!config.enabled && !(miniProgram.enabled && isWechatInAppBrowser(request.headers.get('user-agent')))) {
+  const useMiniProgramRelay = miniProgram.enabled && shouldUseMiniProgramRelay(request.headers.get('user-agent'));
+  if (!config.enabled && !useMiniProgramRelay) {
     return redirectWithMessage(
       mode === 'bind' ? '/profile' : '/login',
       '微信登录尚未配置，请稍后再试',
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
     bindUserId = user.id;
   }
 
-  if (miniProgram.enabled && isWechatInAppBrowser(request.headers.get('user-agent'))) {
+  if (useMiniProgramRelay) {
     const ticketId = randomBytes(16).toString('hex');
     try {
       await insertWechatLoginTicket({ id: ticketId, mode, next, bindUserId });

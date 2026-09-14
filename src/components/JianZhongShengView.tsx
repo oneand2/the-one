@@ -667,8 +667,7 @@ export const JianZhongShengView: React.FC = () => {
               <span className="h-px flex-1 bg-stone-200/80" />
             </div>
             <p
-              className="mb-7 text-[14px] leading-7 tracking-[0.04em] text-stone-600"
-              style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+              className="jianzhongsheng-reading-text mb-7 text-[14px] leading-7 tracking-[0.04em] text-stone-600"
             >
               众生各自在生活，我们偶然看见。
             </p>
@@ -771,8 +770,7 @@ export const JianZhongShengView: React.FC = () => {
                 >
                   <span aria-hidden="true" className="absolute right-3 top-3 h-4 w-4 rounded-tr-md border-r border-t border-stone-300/50" />
                   <span
-                    className="block pr-2 text-[13px] leading-[1.95] tracking-[0.015em] text-stone-700"
-                    style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                    className="jianzhongsheng-reading-text block pr-2 text-[13px] leading-[1.95] tracking-[0.015em] text-stone-700"
                   >
                     {entry.excerpt}
                   </span>

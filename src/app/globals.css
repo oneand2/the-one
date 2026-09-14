@@ -31,8 +31,8 @@ body {
   font-family: var(--ui-font-sans);
 }
 
-/* 见众生长文：桌面保留宋体；手机用完整的苹方中文字库，避免小字号宋体
-   在 iPhone 高密度屏幕上因笔画栅格化产生局部似粗体的视觉跳动。 */
+/* 见众生导语、卡片摘要和展开正文共用阅读字体，避免列表遗漏移动端修正。
+   桌面保留宋体；手机优先使用苹方，减少小字号宋体笔画粗细带来的视觉跳动。 */
 .jianzhongsheng-reading-text {
   font-family: var(--ui-font-serif);
   font-weight: 400;

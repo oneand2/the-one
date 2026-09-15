@@ -178,18 +178,12 @@ export function AuthButton() {
 
   if (pathname === '/login') return null;
 
-  // 不阻塞首屏：登录态在后台拉取，先展示按钮/登录入口，避免等 getUser 导致整页“卡住”
-  return (
-    <AnimatePresence mode="wait">
-      {user ? (
-        <motion.div
-          key="authenticated"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          ref={menuRef}
-          className="relative flex items-center gap-2"
-        >
+  // 账户入口是固定导航，登录态切换时直接替换内容，避免退场动画造成短暂空白。
+  return user ? (
+    <div
+      ref={menuRef}
+      className="relative flex items-center gap-1.5 sm:gap-2"
+    >
           <button
             type="button"
             onClick={() => window.dispatchEvent(new CustomEvent('open-get-coins'))}
@@ -228,9 +222,9 @@ export function AuthButton() {
                 return !open;
               });
             }}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-stone-100 transition-colors font-sans text-sm text-stone-700"
+            className="flex min-w-0 items-center gap-1.5 px-2 py-2 rounded-lg hover:bg-stone-100 transition-colors font-sans text-sm text-stone-700 sm:gap-2 sm:px-3"
           >
-            <span className="hidden sm:inline max-w-[140px] truncate">
+            <span className="max-w-[88px] truncate sm:max-w-[140px]">
               {nickname != null && nickname.trim() ? nickname.trim() : (user.email ?? '用户')}
             </span>
             <ChevronDown
@@ -361,24 +355,19 @@ export function AuthButton() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
-      ) : (
-        <motion.div
-          key="unauthenticated"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-        >
-          <button
-            onClick={() => {
-              if (!requestAppLogin()) router.push('/login');
-            }}
-            className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
-          >
-            登录
-          </button>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    </div>
+  ) : (
+    <div>
+      <button
+        type="button"
+        aria-busy={loading}
+        onClick={() => {
+          if (!requestAppLogin()) router.push('/login');
+        }}
+        className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
+      >
+        登录
+      </button>
+    </div>
   );
 }

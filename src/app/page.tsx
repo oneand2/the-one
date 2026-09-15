@@ -153,14 +153,13 @@ const HomeContent: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // 顶部渗墨只在内容开始上滑后出现，静止时 logo 保持清晰。
+  // App 与手机网页共用顶部渗墨：内容开始上滑后才渐显，静止时 logo 保持清晰。
   useEffect(() => {
-    if (!isIOSEmbed) return;
-    const root = document.querySelector<HTMLElement>('[data-ios-embed="true"]');
+    const root = document.querySelector<HTMLElement>('[data-ink-edges="true"]');
     if (!root) return;
     const syncInkFade = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
-      root.style.setProperty('--ios-ink-top', String(Math.min(1, y / 48)));
+      root.style.setProperty('--ink-edge-top-opacity', String(Math.min(1, y / 48)));
     };
     syncInkFade();
     window.addEventListener('scroll', syncInkFade, { passive: true });
@@ -231,6 +230,8 @@ const HomeContent: React.FC = () => {
     <div
       className="min-h-screen relative"
       data-ios-embed={isIOSEmbed ? 'true' : undefined}
+      data-mobile-web={!isIOSEmbed ? 'true' : undefined}
+      data-ink-edges="true"
       data-active-tab={activeTab}
       style={{ background: mobileUI.colors.background }}
     >

@@ -28,12 +28,14 @@ export function isIOSEmbed(): boolean {
 
 export function requestAppLogin(): boolean {
   const bridge = nativeBridge();
-  if (!bridge && !isIOSEmbed()) return false;
+  // URL 上残留 embed=ios 不代表真的原生桥已存在。
+  // 手机网页没有桥接时必须返回 false，让调用方正常跳转 /login。
+  if (!bridge) return false;
   try {
-    bridge?.postMessage({ type: 'login' });
+    bridge.postMessage({ type: 'login' });
     return true;
   } catch {
-    return isIOSEmbed();
+    return false;
   }
 }
 

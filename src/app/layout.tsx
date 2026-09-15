@@ -69,9 +69,9 @@ export default function RootLayout({
       >
         <RootErrorBoundary>
           <PreconnectSupabase />
-          {/* 登录入口：定位在页面右上角，随页面滚动 */}
+          {/* 账户入口：始终固定在视口右上角，并高于页面的渗墨边缘。 */}
           <div
-            className="web-auth-entry fixed top-0 right-0 z-50 md:top-6 md:right-6"
+            className="web-auth-entry fixed top-0 right-0 z-[100] isolate md:top-6 md:right-6"
             style={{
               paddingTop: 'max(12px, env(safe-area-inset-top, 0px))',
               paddingRight: 'max(12px, env(safe-area-inset-right, 0px))',

@@ -72,7 +72,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ activeTab, onTabChange }) 
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-40"
+      className="mobile-nav-ink md:hidden fixed bottom-0 left-0 right-0 z-40"
       style={{
         background: '#fbf9f4',
         boxShadow: 'none',

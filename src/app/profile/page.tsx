@@ -378,6 +378,7 @@ export default function ProfilePage() {
           {isAdmin && (
             <div className="pt-6 border-t border-stone-200 space-y-4">
               <label className="block text-sm font-sans text-stone-700 mb-3">管理员功能</label>
+              <Link href="/admin" className="block w-full rounded-lg border border-stone-300 px-4 py-3 text-center font-sans text-sm text-stone-700 transition-colors hover:bg-stone-50">进入运营后台</Link>
               <Link
                 href="/admin/news"
                 className="block w-full px-4 py-3 bg-stone-800 text-white text-center font-sans text-sm rounded-lg hover:bg-stone-700 transition-colors"

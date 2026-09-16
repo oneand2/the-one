@@ -1,3 +1,4 @@
+import { scheduleUserActivity } from '@/lib/userActivity';
 import { NextRequest } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { createMobileAuthClient } from '@/lib/mobileAuth';
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
     return json({ authenticated: false }, { status: 401 });
   }
   if (!user) return json({ authenticated: false }, { status: 401 });
+  scheduleUserActivity(user.id);
   return json({
     authenticated: true,
     user: {

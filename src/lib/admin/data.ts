@@ -1,7 +1,8 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { isVip } from '@/utils/vip';
 
-import { PAGE_SIZE, MODULES, type AdminModule, type AdminRow, type AdminData, type AdminQuery } from './shared';
+import { analyticsWindow, readActivity, signupSource, summarizeUsers, type ActivityData } from './analytics';
+import { SIGNUP_SOURCES, PAGE_SIZE, MODULES, type AdminModule, type AdminRow, type AdminData, type AdminQuery } from './shared';
 
 export function parseAdminQuery(params: URLSearchParams): AdminQuery {
   const view = params.get('view') || 'overview';
@@ -10,7 +11,11 @@ export function parseAdminQuery(params: URLSearchParams): AdminQuery {
   if (!/^\d+$/.test(rawPage) || Number(rawPage) < 1 || Number(rawPage) > 100000) throw new Error('页码无效');
   const q = (params.get('q') || '').trim();
   if (q.length > 100) throw new Error('搜索内容不能超过 100 字');
-  return { view: view as AdminModule, page: Number(rawPage), q, status: params.get('status') || 'all', channel: params.get('channel') || 'alipay' };
+  const days = Number(params.get('days') || '7');
+  const cohort = params.get('cohort') || 'all';
+  const source = params.get('source') || 'all';
+  if (![7, 30].includes(days) || !['all', 'new', 'active', 'login'].includes(cohort) || (source !== 'all' && !Object.hasOwn(SIGNUP_SOURCES, source))) throw new Error('用户统计筛选无效');
+  return { view: view as AdminModule, page: Number(rawPage), q, status: params.get('status') || 'all', channel: params.get('channel') || 'alipay', days, cohort, source };
 }
 
 export function chinaDay(offset = 0, now = new Date()) {
@@ -33,7 +38,7 @@ async function exactCount(client: SupabaseClient, table: string, filter?: { key:
   return result.count;
 }
 
-async function overview(client: SupabaseClient): Promise<AdminData> {
+async function overview(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
   const warnings: string[] = [];
   async function safe(name: string, task: PromiseLike<number>) {
     try { return await task; } catch { warnings.push(`${name}暂时无法读取，请刷新重试`); return null; }
@@ -65,7 +70,14 @@ async function overview(client: SupabaseClient): Promise<AdminData> {
     ]);
     return { date, answers, comments };
   }));
-  return { stats, trend, sources: tables.map(([, name], i) => ({ name, count: values[i], ok: values[i] !== null })), warnings: [...new Set(warnings)], updatedAt: new Date().toISOString() };
+  let usersAnalytics;
+  try {
+    const accounts = await allUsers(client);
+    const window = analyticsWindow(input.days);
+    const activity = await activityOrWarning(client, window.start, window.end, warnings);
+    usersAnalytics = summarizeUsers(accounts, activity, input.days, window.now);
+  } catch { warnings.push('新增与活跃用户统计暂时无法读取'); }
+  return { usersAnalytics, stats, trend, sources: tables.map(([, name], i) => ({ name, count: values[i], ok: values[i] !== null })), warnings: [...new Set(warnings)], updatedAt: new Date().toISOString() };
 }
 
 async function allUsers(client: SupabaseClient) {
@@ -79,9 +91,23 @@ async function allUsers(client: SupabaseClient) {
   throw new Error('用户规模超出当前搜索范围，请联系维护人员升级查询');
 }
 
+async function activityOrWarning(client: SupabaseClient, start: string, end: string, warnings: string[]): Promise<ActivityData> {
+  try { return await readActivity(client, start, end); }
+  catch { warnings.push('活跃数据暂时不可用，请刷新重试'); return { rows: [], since: null, available: false }; }
+}
+
 async function users(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
   // Auth accounts are authoritative: accounts without a profile must not disappear.
   let accounts = await allUsers(client);
+  const warnings: string[] = [];
+  const window = analyticsWindow(input.days);
+  const activity = await activityOrWarning(client, window.start, window.end, warnings);
+  if (input.cohort === 'active' && !activity.available) throw new Error('活跃数据暂时不可用，请刷新重试');
+  const usersAnalytics = summarizeUsers(accounts, activity, input.days, window.now);
+  const latest = new Map<string, string>();
+  for (const row of activity.rows) {
+    if (Date.parse(row.last_seen_at) <= window.now && (!latest.has(row.user_id) || row.last_seen_at > latest.get(row.user_id)!)) latest.set(row.user_id, row.last_seen_at);
+  }
   const profiles: AdminRow[] = [];
   for (let start = 0; start < accounts.length; start += 100) {
     const { data, error } = await client.from('user_profiles')
@@ -97,17 +123,24 @@ async function users(client: SupabaseClient, input: AdminQuery): Promise<AdminDa
   accounts = accounts.filter(u => {
     const p = byId.get(u.id);
     const matches = !needle || [u.id, u.email, p?.nickname].some(v => String(v ?? '').toLowerCase().includes(needle));
-    return matches && (input.status === 'all' || (input.status === 'vip' ? isVip(p?.vip_expires_at as string | null) : new Date(String(p?.community_suspended_until)).getTime() > Date.now()));
-  }).sort((a, b) => b.created_at.localeCompare(a.created_at) || a.id.localeCompare(b.id));
+    const since = Date.parse(`${window.start}T00:00:00+08:00`);
+    const inWindow = (time?: string) => Boolean(time && Date.parse(time) >= since && Date.parse(time) <= window.now);
+    const cohortMatches = input.cohort === 'all' || (input.cohort === 'new' ? inWindow(u.created_at) : input.cohort === 'active' ? latest.has(u.id) : inWindow(u.last_sign_in_at));
+    return matches && cohortMatches && (input.source === 'all' || signupSource(u) === input.source) && (input.status === 'all' || (input.status === 'vip' ? isVip(p?.vip_expires_at as string | null) : new Date(String(p?.community_suspended_until)).getTime() > Date.now()));
+  }).sort((a, b) => {
+    const timestamp = (u: User) => input.cohort === 'active' ? latest.get(u.id)! : input.cohort === 'login' ? u.last_sign_in_at! : u.created_at;
+    return timestamp(b).localeCompare(timestamp(a)) || a.id.localeCompare(b.id);
+  });
   const rows = accounts.slice((input.page - 1) * PAGE_SIZE, input.page * PAGE_SIZE).map(u => ({
+    signup_source: signupSource(u), last_activity_at: latest.get(u.id) || null,
     id: u.id, email: u.email || null, created_at: u.created_at, last_sign_in_at: u.last_sign_in_at || null,
     nickname: '', coins_balance: null, vip_expires_at: null, community_suspended_until: null, ...byId.get(u.id),
   }));
-  return { rows, total: accounts.length, page: input.page, updatedAt: new Date().toISOString() };
+  return { usersAnalytics, warnings, rows, total: accounts.length, page: input.page, updatedAt: new Date().toISOString() };
 }
 
 export async function loadAdminData(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
-  if (input.view === 'overview' || input.view === 'settings') return overview(client);
+  if (input.view === 'overview' || input.view === 'settings') return overview(client, input);
   if (input.view === 'users') return users(client, input);
   let table: string, columns: string, searchColumn: string, statusColumn: string | null = null;
   let allowed: string[] = ['all'];

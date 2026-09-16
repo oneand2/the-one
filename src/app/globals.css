@@ -50,7 +50,7 @@ body:has([data-ios-embed="true"]) .web-auth-entry {
   display: none;
 }
 
-/* App 与手机网页共用宣纸渗墨。顶部仅在上滑后出现，避免静止时把 logo 溶掉。 */
+/* 手机网页使用宣纸渗墨；App 嵌入页由原生安全区与顶栏负责遮挡。 */
 [data-ink-edges="true"] {
   --ink-edge-top-opacity: 0;
 }
@@ -85,7 +85,7 @@ body:has([data-ios-embed="true"]) .web-auth-entry {
   display: flex !important;
 }
 
-[data-ink-edges="true"]::before,
+[data-mobile-web="true"]::before,
 [data-ios-embed="true"]::after,
 .mobile-nav-ink::before {
   content: "";
@@ -96,18 +96,23 @@ body:has([data-ios-embed="true"]) .web-auth-entry {
   pointer-events: none;
 }
 
-[data-ink-edges="true"]::before {
+[data-mobile-web="true"]::before {
   top: 0;
-  /* 先用完整宣纸底保护账户栏，再向下渐隐，避免滚动内容与铜币/昵称叠字。 */
-  height: calc(max(12px, env(safe-area-inset-top, 0px)) + 6rem);
+  /* 账户栏保持完整宣纸底，下缘用更长的多段透明度曲线自然渗开。 */
+  height: calc(max(12px, env(safe-area-inset-top, 0px)) + 8.5rem);
   opacity: var(--ink-edge-top-opacity);
   background: linear-gradient(
     to bottom,
     var(--ui-color-background) 0%,
-    var(--ui-color-background) calc(max(12px, env(safe-area-inset-top, 0px)) + 2.5rem),
-    color-mix(in srgb, var(--ui-color-background) 92%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 3.25rem),
-    color-mix(in srgb, var(--ui-color-background) 62%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 4.25rem),
-    color-mix(in srgb, var(--ui-color-background) 26%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 5.25rem),
+    var(--ui-color-background) calc(max(12px, env(safe-area-inset-top, 0px)) + 3.75rem),
+    color-mix(in srgb, var(--ui-color-background) 98%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 4.25rem),
+    color-mix(in srgb, var(--ui-color-background) 92%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 4.9rem),
+    color-mix(in srgb, var(--ui-color-background) 80%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 5.6rem),
+    color-mix(in srgb, var(--ui-color-background) 64%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 6.3rem),
+    color-mix(in srgb, var(--ui-color-background) 46%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 7rem),
+    color-mix(in srgb, var(--ui-color-background) 29%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 7.6rem),
+    color-mix(in srgb, var(--ui-color-background) 14%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 8.05rem),
+    color-mix(in srgb, var(--ui-color-background) 5%, transparent) calc(max(12px, env(safe-area-inset-top, 0px)) + 8.35rem),
     transparent 100%
   );
 }

@@ -199,7 +199,8 @@ struct HybridWebContentView: UIViewRepresentable {
           font-size:max(16px,1em)!important;
         }
         .web-auth-entry,.theone-install-prompt{display:none!important}
-        [data-ios-embed="true"]::before,[data-ios-embed="true"]::after{display:none!important}
+        [data-ios-embed="true"]::before,[data-ios-embed="true"]::after,
+        [data-ink-edges="true"]::before,[data-ink-edges="true"]::after{display:none!important}
       `;
       (document.head || document.documentElement).appendChild(style);
       const stopGesture = (event) => { event.preventDefault(); };

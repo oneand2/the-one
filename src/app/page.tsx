@@ -153,13 +153,13 @@ const HomeContent: React.FC = () => {
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  // App 与手机网页共用顶部渗墨：内容开始上滑后才渐显，静止时 logo 保持清晰。
+  // 手机网页顶部渗墨：内容开始上滑后才渐显，静止时 logo 保持清晰。
   useEffect(() => {
     const root = document.querySelector<HTMLElement>('[data-ink-edges="true"]');
     if (!root) return;
     const syncInkFade = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
-      root.style.setProperty('--ink-edge-top-opacity', String(Math.min(1, y / 48)));
+      root.style.setProperty('--ink-edge-top-opacity', String(Math.min(1, y / 32)));
     };
     syncInkFade();
     window.addEventListener('scroll', syncInkFade, { passive: true });

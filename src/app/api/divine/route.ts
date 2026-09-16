@@ -1,3 +1,4 @@
+import { scheduleUserActivity } from '@/lib/userActivity';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/utils/supabase/server';
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: '请先登录' }, { status: 401 });
     }
+    scheduleUserActivity(user.id);
 
     // 管理员或 VIP 不消耗铜币
     const isAdmin = user.email === '892777353@qq.com';

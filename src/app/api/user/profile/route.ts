@@ -1,3 +1,4 @@
+import { scheduleUserActivity } from '@/lib/userActivity';
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 
@@ -12,6 +13,7 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: '未登录' }, { status: 401 });
   }
+  scheduleUserActivity(user.id);
 
   const { data: row, error: profileError } = await supabase
     .from(PROFILE_TABLE)
@@ -64,6 +66,7 @@ export async function PATCH(request: Request) {
   if (!user) {
     return NextResponse.json({ error: '未登录' }, { status: 401 });
   }
+  scheduleUserActivity(user.id);
 
   let body: { nickname?: unknown; juexingcang_meditation_default?: unknown };
   try {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { UserActivityTracker } from '@/components/UserActivityTracker';
 
 const GetCoinsModalLayer = dynamic(
   () => import('@/components/GetCoinsModalLayer').then((m) => ({ default: m.GetCoinsModalLayer })),
@@ -30,6 +31,7 @@ export function DeferredLayoutExtras() {
   if (!mounted) return null;
   return (
     <>
+      <UserActivityTracker />
       <GetCoinsModalLayer />
       <InstallPrompt />
     </>

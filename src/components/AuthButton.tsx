@@ -176,7 +176,7 @@ export function AuthButton() {
     }
   };
 
-  if (pathname === '/login') return null;
+  if (pathname === '/login' || pathname === '/admin' || pathname.startsWith('/admin/')) return null;
 
   // 账户入口是固定导航，登录态切换时直接替换内容，避免退场动画造成短暂空白。
   return user ? (

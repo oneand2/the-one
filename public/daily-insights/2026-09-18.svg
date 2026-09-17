@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img">
+  <rect width="360" height="136" rx="14" fill="#F4F1E8"/>
+  <g fill="none" stroke="#CDD6CC" stroke-width="1" stroke-linecap="round" opacity=".68">
+    <path d="M26 38c36-7 71-6 104 2"/><path d="M38 52c32-6 59-4 86 2"/>
+  </g>
+  <path d="M190 24l96 8 18 34-21 43-82 4-28-30 5-40z" fill="#B79D80" fill-opacity=".34" stroke="#9C866B" stroke-width="1.25" stroke-linejoin="round"/>
+  <path d="M193 31l82 6 16 29-17 35-67 4-24-25 4-36z" fill="#F2F0E8" fill-opacity=".72" stroke="#9C866B" stroke-width=".85" stroke-linejoin="round" opacity=".9"/>
+  <path d="M221 53c15-5 31-5 46-2m-48 15c18-4 35-3 51 1m-46 14c12-2 23-1 33 2" fill="none" stroke="#71857E" stroke-width="1" stroke-linecap="round" opacity=".6"/>
+  <path d="M78 103c17-23 34-38 58-52" fill="none" stroke="#526254" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M69 110c8-1 14-4 19-10l7 8c-7 8-15 12-25 12z" fill="#CDD6CC" fill-opacity=".62" stroke="#526254" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M133 53l33-13" fill="none" stroke="#526254" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M165 40l10 1-7 7z" fill="#B66D5C" fill-opacity=".72" stroke="#A86456" stroke-width=".7" stroke-linejoin="round"/>
+  <path d="M42 119c50-2 92-1 130 1" fill="none" stroke="#CDD6CC" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+</svg>

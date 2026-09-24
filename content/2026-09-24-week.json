@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-09-24",
+  "stories": [
+    {
+      "title": "两宝俱全",
+      "origin": "china",
+      "sourceLabel": "《左传·襄公十五年》",
+      "originalLanguage": "文言",
+      "originalText": "宋人或得玉，獻諸子罕，子罕弗受。獻玉者曰：『以示玉人，玉人以為寶也，故敢獻之。』子罕曰：『我以不貪為寶，爾以玉為寶。若以與我，皆喪寶也，不若人有其寶。』稽首而告曰：『小人懷璧，不可以越鄉，納此以請死也。』子罕寘諸其里，使玉人為之攻之，富而後使復其所。",
+      "body": "《左传·襄公十五年》记载，宋国有人得到一块玉，拿去献给司城子罕。玉已经给玉匠看过，确认是宝物，献玉人这才敢来。\n\n子罕不收。他说：『我把不贪当作宝，你把玉当作宝；若把玉给我，两个人都失去了自己的宝。不如各自保有。』\n\n献玉人叩头说，自己怀着玉璧，无法安全离乡，愿交出玉来求免于祸。子罕便把他安置在自己的乡里，请玉匠替他治玉；等他由此富足，才让他返回原处。",
+      "sources": "维基文库《春秋左氏传·襄公十五年》传文（宋人献玉、子罕不受），https://zh.wikisource.org/wiki/春秋左氏傳/襄公"
+    },
+    {
+      "title": "白出黑归",
+      "origin": "china",
+      "sourceLabel": "《列子·说符》",
+      "originalLanguage": "文言",
+      "originalText": "楊朱之弟曰布，衣素衣而出。天雨，解素衣，衣緇衣而反。其狗不知，迎而吠之。楊布怒，將扑之。楊朱曰：『子無扑矣！子亦猶是也。嚮者使汝狗白而往，黑而來，豈能無怪哉？』",
+      "body": "《列子·说符》写杨朱的弟弟杨布穿着白衣出门。途中下雨，他解下原来的白衣，改穿一件黑衣回家。\n\n家里的狗不知道是他，迎面吠叫。杨布发怒，拿起东西便要扑打这只狗。\n\n杨朱拦住他说，不要打；换作你的狗出门时是白的，回来却成了黑的，你难道不会觉得奇怪吗？",
+      "sources": "维基文库《列子·说符篇》底本原文（杨布换衣、犬吠），https://zh.wikisource.org/wiki/列子/說符篇"
+    },
+    {
+      "title": "来年再止",
+      "origin": "china",
+      "sourceLabel": "《孟子·滕文公下》",
+      "originalLanguage": "文言",
+      "originalText": "戴盈之曰：『什一，去關市之征，今茲未能。請輕之，以待來年，然後已，何如？』孟子曰：『今有人日攘其鄰之雞者，或告之曰：「是非君子之道。」曰：「請損之，月攘一雞；以待來年，然後已。」如知其非義，斯速已矣，何待來年？』",
+      "body": "《孟子·滕文公下》记戴盈之问孟子：恢复十分取一的税制、免去关卡和市场税，今年还办不到，能否先减轻一些，等到明年再完全停止。\n\n孟子说，假如有人每天偷邻居一只鸡，旁人告诉他这不合君子之道，他却请求先减量，改成每月偷一只。\n\n那人还说，要等到来年才停。孟子问：既然已经知道不合义，就该赶快停止，为什么还要等到来年？",
+      "sources": "维基文库《孟子·滕文公下》第八章底本原文（戴盈之问税与日攘邻鸡之喻），https://zh.wikisource.org/wiki/孟子/滕文公下"
+    },
+    {
+      "title": "同方异用",
+      "origin": "china",
+      "sourceLabel": "《庄子·逍遥游》",
+      "originalLanguage": "文言",
+      "originalText": "惠子謂莊子曰：『魏王貽我大瓠之種，我樹之成而實五石。以盛水漿，其堅不能自舉也；剖之以爲瓢，則瓠落無所容。非不呺然大也，吾爲其無用而掊之。』莊子曰：『夫子固拙於用大矣。宋人有善爲不龜手之藥者，世世以洴澼絖爲事。客聞之，請買其方百金。聚族而謀曰：「我世世爲洴澼絖，不過數金；今一朝而鬻技百金，請與之。」客得之，以說吳王。越有難，吳王使之將，冬與越人水戰，大敗越人，裂地而封之。能不龜手，一也；或以封，或不免於洴澼絖，則所用之異也。今子有五石之瓠，何不慮以爲大樽而浮乎江湖，而憂其瓠落無所容？則夫子猶有蓬之心也夫！』",
+      "body": "《庄子·逍遥游》写惠子种出能装五石的大葫芦。他拿来盛水，葫芦太重提不起；剖成瓢，又大得无处可容，于是砸掉，向庄子说它没有用。\n\n庄子讲起宋国一家人的药方。这药能使手在冬水里不皲裂，他们世代靠它漂洗丝絮，所得不过数金。有人愿出百金买方，全家商议后卖了。\n\n买方人拿药去游说吴王。冬日吴越水战，他率军凭此大败越军，得到封地。\n\n庄子说，使手不裂的药相同，一家仍在漂絮，一人却因此受封，差别在使用之处；那只大葫芦，也可以系在身上浮游江湖。",
+      "sources": "维基文库《庄子·逍遥游》底本原文（五石之瓠与不龟手之药），https://zh.wikisource.org/wiki/莊子/逍遙遊"
+    },
+    {
+      "title": "高枝无言",
+      "origin": "world",
+      "sourceLabel": "《徒然草·第一〇九段》",
+      "originalLanguage": "日语",
+      "originalText": "高名の木のぼりといひし男、人をおきてゝ高き木にのぼせて、梢をきらせしに、いとあやふく見えしほどはいふこともなくて、おるゝ時に軒だけばかりになりて、『あやまちすな。心しておりよ』とことばをかけ侍りしを、『かばかりになりては、飛びおるゝともおりなむ、いかにかくいふぞ』と申し侍りしかば、『その事に候ふ。目くるめき、枝あやふきほどは、おのれがおそれ侍れば申さず。あやまちはやすき所になりて、必仕ることに候ふ』といふ。あやしき下臈なれども、聖人のいましめにかなへり。鞠もかたき所を蹴出して、後やすくおもへば、必おつると侍るやらむ。",
+      "body": "吉田兼好《徒然草》第一〇九段写，一位有名的木登命人爬上高树修剪枝梢。那人身在看着极危险的高处时，木登一句话也没有说。\n\n等人降到屋檐一般的高度，他才出声：『别失手，小心下来。』旁人问，到了这里，即使跳下也能落地，为什么反而此时提醒。\n\n木登回答，人在目眩、树枝危险之处，自己就会害怕，无须提醒；失误往往发生在容易的地方。\n\n兼好接着记，蹴鞠也是越过难接的一球后，以为接下来容易，球便落了地。",
+      "sources": "日语维基文库《徒然草（国文大观）》第一〇九段底本原文（高名の木のぼり），https://ja.wikisource.org/wiki/徒然草_(國文大觀)"
+    },
+    {
+      "title": "狮认旧医",
+      "origin": "world",
+      "sourceLabel": "格利乌斯《阿提卡之夜》",
+      "originalLanguage": "拉丁语",
+      "originalText": "Introductus erat inter compluris ceteros ad pugnam bestiarum datus servus viri consularis; ei servo Androclus nomen fuit. Hunc ille leo ubi vidit procul, repente, inquit, quasi admirans stetit ac deinde sensim atque placide tamquam noscitabundus ad hominem accedit. Tum caudam more atque ritu adulantium canum clementer et blande movet hominisque se corpori adiungit cruraque eius et manus prope iam exanimati metu lingua leniter demulcet. Homo Androclus inter illa tam atrocis ferae blandimenta amissum animum recuperat, paulatim oculos ad contuendum leonem refert. Tum quasi mutua recognitione facta laetos, inquit, et gratulabundos videres hominem et leonem. […] Sed postquam introgressus, inquit, leo, uti re ipsa apparuit, in habitaculum illud suum, videt me procul delitescentem, mitis et mansues accessit et sublatum pedem ostendere mihi et porrigere quasi opis petendae gratia visus est. Ibi, inquit, ego stirpem ingentem vestigio pedis eius haerentem revelli conceptamque saniem volnere intimo expressi accuratiusque sine magna iam formidine siccavi penitus atque detersi cruorem. Illa tunc mea opera et medella levatus pede in manibus meis posito recubuit et quievit, atque ex eo die triennium totum ego et leo in eadem specu eodemque et victu viximus. […] Intellego autem, inquit, hunc quoque leonem me tunc separato captum gratiam mihi nunc beneficii et medicinae referre. Haec Apion dixisse Androclum tradit eaque omnia scripta circumlataque tabula populo declarata atque ideo cunctis petentibus dimissum Androclum et poena solutum leonemque ei suffragiis populi donatum.",
+      "body": "格利乌斯《阿提卡之夜》转述阿庇翁所记的一件异事。逃奴安德洛克勒斯被捕后，被判在罗马竞技场与猛兽搏斗；放出的狮子却停步认他，像狗一样摇尾，舔他的手脚。\n\n安德洛克勒斯说，自己逃亡非洲荒野时曾躲进洞穴。一只脚掌流血的狮子走来，抬脚求助；他拔出深扎的木刺，挤出脓血，清理伤口。\n\n此后三年，人和狮子住在同一洞中，共享猎物。后来安德洛克勒斯离开，被士兵抓回；狮子也在分别后遭到捕获。\n\n这次在竞技场重逢，狮子没有扑咬。故事写到，观众请求赦免安德洛克勒斯，并把狮子交给了他。",
+      "sources": "Aulus Gellius, Noctes Atticae 5.14，拉丁原文及逐段英译（安德洛克勒斯与狮子），https://readancienttexts.com/gellius/noctes_atticae/7"
+    },
+    {
+      "title": "木盆未成",
+      "origin": "world",
+      "sourceLabel": "托尔斯泰《老祖父和孙子》",
+      "originalLanguage": "俄语",
+      "originalText": "Стал дед очень стар. Ноги у него не ходили, глаза не видели, уши не слышали, зубов не было. И когда он ел, у него текло назад изо рта. Сын и невестка перестали его за стол сажать, а давали ему обедать за печкой. Снесли ему раз обедать в чашке. Он хотел ее подвинуть, да уронил и разбил. Невестка стала бранить старика за то, что он им все в доме портит и чашки бьет, и сказала, что теперь она ему будет давать обедать в лоханке. Старик только вздохнул и ничего не сказал.\n\nСидят раз муж с женой дома и смотрят — сынишка их на полу дощечками играет — что-то слаживает. Отец и спросил: «Что ты это делаешь, Миша?» А Миша и говорив: «Это я, батюшка, лоханку делаю. Когда вы с матушкой стары будете, чтобы вас из этой лоханки кормить».\n\nМуж с женой поглядели друг на друга и заплакали. Им стало стыдно за то, что они так обижали старика; и стали с тех пор сажать его за стол и ухаживать за ним.",
+      "body": "托尔斯泰《老祖父和孙子》写，一位老人腿脚、眼耳和牙齿都已衰弱，吃饭时会把食物洒出来。儿子和儿媳不再让他上桌，只让他在炉后吃饭。\n\n一次老人打碎饭碗，儿媳责骂他，决定以后只用木盆给他盛饭。老人叹了口气，没有说话。\n\n后来夫妻俩看见小儿子坐在地上摆弄木板。父亲问他在做什么，孩子说，正做一只木盆，等父母老了，好用它给他们盛饭。\n\n夫妻二人相对而泣。此后，他们让老人重新回到桌旁，并照料他。",
+      "sources": "俄罗斯虚拟图书馆（РВБ），Л. Н. Толстой《Старый дед и внучек》，据1982年二十二卷本第10卷第22页，https://rvb.ru/tolstoy/01text/vol_10/01text/0058.htm"
+    }
+  ]
+}

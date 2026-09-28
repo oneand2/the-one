@@ -1,12 +1,12 @@
 # 阿里云生产发布
 
-生产域名：https://www.the-one-and-the-two.com 。代码提交 `main` 后，GitHub Actions 自动发布到现有 ECS；不需要手动构建或上传。
+生产域名：https://www.the-one-and-the-two.com 。应用代码提交 `main` 后，GitHub Actions 自动发布到现有 ECS；不需要手动构建或上传。纯文档提交会先核对线上应用是否已是最新，有待发布的应用修改仍会继续发布。
 
 ## 架构与优化
 
 ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和生产环境变量。数据库继续使用现有 Supabase。Next.js 使用 standalone 输出，最终镜像只包含 Node 运行时、追踪到的运行依赖、服务端产物及公开资源。开发依赖、源文件和 `.next/cache` 不进入运行镜像。`.dockerignore` 使用构建输入白名单。
 
-GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的 npm/Next 缓存挂载不计入最终镜像，也不声称跨 GitHub runner 自动保留。
+GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的缓存挂载不计入最终镜像。Next.js 编译缓存通过 actions/cache 与固定版本的 buildkit-cache-dance 跨 runner 保存和恢复；锁文件、Next 配置或 Dockerfile 变化时切换缓存分组。缓存恢复或导出失败可退回正常完整构建；npm 安装仍由依赖镜像层缓存复用。
 
 镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。字体、前端 JS、CSS、服务端公共 chunks 与每次变化的版本文件分别保存，避免仅构建编号变化就重新下载整套静态资源。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
 
@@ -22,7 +22,7 @@ GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变
 6. 使用真实域名、有效证书验证新版本，成功后记录当前/上一版；切换失败自动恢复原配置和环境变量。
 7. 保留上一版容器运行供回滚；再上一版容器在下一次成功后退出。保留最近三个发布记录和至少七天历史镜像，清理仅针对本项目的历史文件/镜像，不执行全局 prune。
 
-并发发布通过 GitHub concurrency 和服务器 flock 串行化，新提交不会取消正在切换的发布。应用和 Nginx 保留 `unless-stopped` 重启策略。原有证书续期 timer、acme.sh 账号、TLS-ALPN 方式保持原样；脚本改为启停现有 Nginx 并与发布共享锁，避免 Compose 重新启动旧应用。证书续期本身仍会短暂停用 443，这是原有 TLS-ALPN 方式的行为，日常发布不会如此。
+构建与发布分成独立 job：新提交可取消尚未结束的旧构建，但不会中断已经开始的生产发布。发布仍通过 GitHub concurrency 和服务器 flock 串行化，发布前再次检查是否已有更新的 main 提交，过时版本不再上线。应用和 Nginx 保留 `unless-stopped` 重启策略。原有证书续期 timer、acme.sh 账号、TLS-ALPN 方式保持原样；脚本改为启停现有 Nginx 并与发布共享锁，避免 Compose 重新启动旧应用。证书续期本身仍会短暂停用 443，这是原有 TLS-ALPN 方式的行为，日常发布不会如此。
 
 ## 手动回滚与运维
 
@@ -45,3 +45,14 @@ GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜�
 首轮工作流从触发到 job 完成为 6 分 52 秒，其中构建/推送 85 秒，ECS 拉取 267 秒，服务器拉取到切换完成 273 秒。首轮需下载新依赖和资源层；后续相同层由 Docker 复用。并非承诺每次网络条件下都能在 5 分钟内完成。后续每轮准确结果可在工作流 measurements artifact 查看。
 
 进一步拆分稳定资源后，运行 [36387593705](https://github.com/oneand2/the-one/actions/runs/36387593705) 于 06:41:22–06:44:02 UTC 成功执行，共 2 分 40 秒；拉取和发布步骤 29 秒。该运行此前等待上一轮发布，若从推送触发时算起为 4 分 04 秒。还实际完成了一次“回退至上一健康版 → 恢复当前版”的生产演练，两次公开 HTTPS 均返回对应提交，39 项运行配置与生产配置文件一致，Nginx 的 HTTPS 配置除应用 upstream 外保持一致。
+
+## 进一步缩短日常流程
+
+- `plan-release.py` 查询健康的线上提交，再与当前 Git 树比较。仅 `docs/`、`README.md`、`AGENTS.md` 的差异允许跳过构建和发布；未知路径、运行文件、部署脚本变化均发布。
+- 基线查询失败、线上不健康或无法读取旧提交时，保守执行完整发布。比较基线是线上版本，不能用上一条提交，避免上一轮失败后的一次文档提交掩盖尚未上线的代码。
+- 手动 workflow_dispatch 始终请求完整流程。只改文档时，健康接口继续返回实际在运行的应用 SHA，而非将文档提交标为已上线。
+- Next.js 编译缓存单独持久化；与原来的 Docker 层缓存同时生效，TypeScript 检查、静态页生成和生产健康检查继续执行。
+- SSH 上传与远程命令共用一次连接，减少重复握手；连接和临时凭据在任务结束时关闭/移除。
+- 结果仍保存到 GitHub artifacts：`build-metrics-<SHA>` 包含是否需要发布的判定和镜像清单，`deployment-metrics-<SHA>` 包含实际发布测量。
+
+缓存挂载实现参考 [Docker 官方缓存说明](https://docs.docker.com/build/ci/github-actions/cache/#cache-mounts)。

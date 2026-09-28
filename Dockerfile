@@ -39,7 +39,7 @@ COPY content ./content
 COPY src ./src
 
 COPY scripts/deploy/prepare-runtime.mjs ./scripts/deploy/prepare-runtime.mjs
-RUN --mount=type=cache,target=/app/.next/cache npx next build --webpack \
+RUN --mount=type=cache,id=next-compile-v1,target=/app/.next/cache npx next build --webpack \
   && node scripts/deploy/prepare-runtime.mjs
 
 FROM node:24-bookworm-slim AS runner

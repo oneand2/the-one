@@ -5,17 +5,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Never interrupt a running production cutover. New pushes wait their turn.
-concurrency:
-  group: aliyun-production
-  cancel-in-progress: false
-
 permissions:
   contents: read
   packages: write
 
 jobs:
-  deploy:
+  build:
+    concurrency:
+      group: aliyun-build-${{ github.ref }}
+      cancel-in-progress: true
+    outputs:
+      publish: ${{ steps.plan.outputs.publish }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -28,10 +28,38 @@ jobs:
           bash -n scripts/deploy/release.sh scripts/deploy/rollback.sh
           sh -n scripts/deploy/renew-certificate.sh
 
+      - name: Compare with healthy production release
+        id: plan
+        run: python3 scripts/deploy/plan-release.py
+
       - name: Set up Docker Buildx
+        if: steps.plan.outputs.publish == 'true'
+        id: builder
         uses: docker/setup-buildx-action@v3
 
+      - name: Restore Next.js compiler cache
+        if: steps.plan.outputs.publish == 'true'
+        id: next_cache
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: next-compile-cache
+          key: ${{ runner.os }}-next-compile-v1-${{ hashFiles('package-lock.json', 'next.config.ts', 'Dockerfile') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-next-compile-v1-${{ hashFiles('package-lock.json', 'next.config.ts', 'Dockerfile') }}-
+
+      # Docker's gha layer cache does not persist RUN cache mounts by itself.
+      - name: Restore compiler cache into Docker
+        continue-on-error: true
+        if: steps.plan.outputs.publish == 'true'
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        with:
+          builder: ${{ steps.builder.outputs.name }}
+          cache-map: '{"next-compile-cache":{"target":"/app/.next/cache","id":"next-compile-v1"}}'
+          skip-extraction: ${{ steps.next_cache.outputs.cache-hit }}
+
       - name: Sign in to GitHub Container Registry
+        if: steps.plan.outputs.publish == 'true'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -39,6 +67,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build minimal production image
+        if: steps.plan.outputs.publish == 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -47,7 +76,7 @@ jobs:
           push: true
           provenance: false
           cache-from: type=gha,scope=the-one-production
-          cache-to: type=gha,mode=max,scope=the-one-production
+          cache-to: type=gha,mode=max,scope=the-one-production,ignore-error=true
           build-args: |
             RELEASE_SHA=${{ github.sha }}
             NEXT_PUBLIC_SUPABASE_URL=https://ikiznnuenehlutcjpukd.supabase.co
@@ -59,11 +88,53 @@ jobs:
             NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER=${{ vars.PUBLIC_SECURITY_NUMBER }}
 
       - name: Read published image manifest
+        if: steps.plan.outputs.publish == 'true'
         run: |
           mkdir -p "$RUNNER_TEMP/metrics"
           docker buildx imagetools inspect --raw "ghcr.io/oneand2/the-one:$GITHUB_SHA" > "$RUNNER_TEMP/metrics/manifest.json"
 
+      - name: Save build measurements and manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-metrics-${{ github.sha }}
+          path: ${{ runner.temp }}/metrics/
+          retention-days: 30
+
+  deploy:
+    needs: build
+    if: needs.build.outputs.publish == 'true'
+    # A new build can replace an obsolete build, never an active cutover.
+    concurrency:
+      group: aliyun-production
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Skip superseded release
+        id: current
+        run: |
+          latest=$(git ls-remote origin refs/heads/main | cut -f1)
+          test -n "$latest"
+          if test "$latest" = "$GITHUB_SHA"; then
+            echo 'publish=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'publish=false' >> "$GITHUB_OUTPUT"
+            echo 'A newer main commit exists; this obsolete release will not replace production.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Download image manifest
+        if: steps.current.outputs.publish == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: build-metrics-${{ github.sha }}
+          path: ${{ runner.temp }}/metrics/
+
       - name: Pull changed layers and release
+        if: steps.current.outputs.publish == 'true'
         env:
           DEPLOY_HOST: 47.116.143.76
           DEPLOY_USER: admin
@@ -148,10 +219,10 @@ jobs:
           printf '%s\n' "$DEPLOY_KEY" > "$HOME/.ssh/aliyun_deploy_key"
           chmod 600 "$HOME/.ssh/aliyun_deploy_key"
 
-          ssh-keyscan -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
+          ssh-keyscan -T 5 -t ed25519 -H "$DEPLOY_HOST" >> "$HOME/.ssh/known_hosts"
 
 
-          SSH="ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -i $HOME/.ssh/aliyun_deploy_key"
+          SSH="ssh -o ControlMaster=auto -o ControlPath=$RUNNER_TEMP/aliyun-control -o ControlPersist=60 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -i $HOME/.ssh/aliyun_deploy_key"
           REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
           INCOMING="$DEPLOY_PATH/incoming/$GITHUB_SHA"
           $SSH "$REMOTE" "sudo install -d -m 700 '$INCOMING'"
@@ -169,6 +240,7 @@ jobs:
           cat "$RUNNER_TEMP/metrics/release.json" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify public HTTPS release
+        if: steps.current.outputs.publish == 'true'
         env:
           EXPECTED_RELEASE: ${{ github.sha }}
         run: |
@@ -186,4 +258,6 @@ jobs:
 
       - name: Remove runner credentials
         if: always()
-        run: rm -f "$RUNNER_TEMP/payment-production.env" "$RUNNER_TEMP/registry-token" "$HOME/.ssh/aliyun_deploy_key"
+        run: |
+          ssh -S "$RUNNER_TEMP/aliyun-control" -O exit admin@47.116.143.76 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/payment-production.env" "$RUNNER_TEMP/registry-token" "$HOME/.ssh/aliyun_deploy_key"

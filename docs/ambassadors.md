@@ -45,3 +45,11 @@ npm run build
 ```
 
 `supabase/tests/ambassador_referrals.sql` 在事务中生成临时账户与订单，验证不可改归属、过期与停用、渠道去重、退款、待支付、未入账、日期边界、Apple 测试环境排除、跨大使隔离和数据库授权，最后回滚，不能删掉其事务与回滚包装。
+
+## 微信注册归属修复（2026-09-28）
+
+GoTrue 的 Admin createUser 先插入账户，再更新 app_metadata；仅把推广 token 放入 app_metadata 会错过 AFTER INSERT 归属触发器。微信创建账户现与邮箱注册一致，在首次插入的 user_metadata 中也携带经过服务端校验的 token，app_metadata 继续保留原始来源。未增加 UPDATE 归属触发器，旧账户登录或修改资料不能补领、更改推广归属，后台权限仍来自服务端身份表。
+
+通过真实 Auth API 验证：修复前微信新账户漏记；修复后微信新注册、重复登录、跨应用 unionid 账户复用、旧账户排除、邮箱 generateLink 注册以及汇总查询均通过。测试不会发送邮件或创建支付订单，临时账户与访问记录自动删除。手动执行：`AMBASSADOR_TEST_CODE=<启用的大使代号> node --import tsx scripts/check-wechat-referral.ts`。此测试会短暂影响该大使的注册数，勿放入自动构建。
+
+已漏记的记录使用 `supabase/repairs/backfill_wechat_signup_referrals.sql` 核验补回：必须同时有服务端注册元数据、注册前已创建的授权 ticket、有效访问记录；保留真实注册时间，不覆盖已有归属，不将老账户再次登录计作新增。该文件是受控数据修复脚本，不修改数据库结构或权限。

@@ -128,7 +128,11 @@ export async function loginOrCreateWechatUser(
       id: authIdentity.userId,
       email: authIdentity.email,
       email_confirm: true,
-      user_metadata: { nickname: profile.nickname, avatar_url: profile.avatarUrl },
+      // GoTrue inserts user_metadata with auth.users, but applies app_metadata
+      // in a later UPDATE. The signup-only referral trigger must see the token
+      // in the initial INSERT, just as it does for email signup. Later metadata
+      // edits never assign or change attribution; permissions use app_metadata.
+      user_metadata: { nickname: profile.nickname, avatar_url: profile.avatarUrl, ambassador_token: ambassadorToken },
       app_metadata: { signup_source: 'wechat', ambassador_token: ambassadorToken },
     });
 

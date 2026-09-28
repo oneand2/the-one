@@ -118,6 +118,7 @@ export async function bindWechatToUser(
 export async function loginOrCreateWechatUser(
   admin: ReturnType<typeof createAdminClient>,
   profile: WechatProfile,
+  ambassadorToken?: string,
 ) {
   let identity = await findWechatIdentity(admin, profile.appId, profile.openid, profile.unionid);
 
@@ -128,7 +129,7 @@ export async function loginOrCreateWechatUser(
       email: authIdentity.email,
       email_confirm: true,
       user_metadata: { nickname: profile.nickname, avatar_url: profile.avatarUrl },
-      app_metadata: { signup_source: 'wechat' },
+      app_metadata: { signup_source: 'wechat', ambassador_token: ambassadorToken },
     });
 
     let user = created.data.user;

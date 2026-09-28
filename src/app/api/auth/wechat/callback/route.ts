@@ -1,3 +1,5 @@
+import { validReferralToken } from '@/lib/ambassadors/server';
+import { REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   buildAppAbsoluteUrl,
@@ -82,7 +84,7 @@ export async function GET(request: NextRequest) {
       return setRedirect(response, context.next, '微信绑定成功');
     }
 
-    const userId = await loginOrCreateWechatUser(admin, profile);
+    const userId = await loginOrCreateWechatUser(admin, profile, await validReferralToken(admin, request.cookies.get(REFERRAL_COOKIE)?.value));
     await establishWechatSession(supabase, admin, userId);
     return setRedirect(response, context.next);
   } catch (error) {

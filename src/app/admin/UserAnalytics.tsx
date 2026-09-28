@@ -1,13 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
 import { SIGNUP_SOURCES, type UserAnalytics as Analytics } from '@/lib/admin/shared';
 import styles from './admin.module.css';
 
 const count = (value: number | null) => value === null ? '—' : value.toLocaleString('zh-CN');
 export function UserAnalytics({ data, compact = false }: { data: Analytics; compact?: boolean }) {
-  const href = (cohort: string) => `/admin?view=users&days=${data.days}&cohort=${cohort}`;
+  const ambassador = useSearchParams().get('ambassador');
+  const href = (cohort: string) => `/admin?view=users&days=${data.days}&cohort=${cohort}${ambassador ? `&ambassador=${ambassador}` : ''}`;
   const cards = [
     { label: '新增用户', value: data.newUsers, hint: '期间注册的账户', cohort: 'new' },
     { label: '活跃用户', value: data.activeUsers, hint: '已采集期间的去重人数', cohort: 'active' },
@@ -31,7 +33,7 @@ export function UserAnalytics({ data, compact = false }: { data: Analytics; comp
       <section className={styles.panel}>
         <div className={styles.panelHeading}><div><span className={styles.eyebrow}>来 处</span><h2>新增用户注册方式</h2></div><span className={styles.quiet}>共 {data.newUsers} 人</span></div>
         <div className={styles.sourceList}>{data.signupSources.map(item => <Link key={item.source} href={`${href('new')}&source=${item.source}`}><span>{SIGNUP_SOURCES[item.source]}</span><span>{item.count} 人 <ArrowRight size={12} /></span><i style={{ width: `${data.newUsers ? item.count / data.newUsers * 100 : 0}%` }} /></Link>)}</div>
-        <p className={styles.footnote}>来自账户创建时的注册方式；后来绑定的微信或 Apple 不改变原始方式。未记录的来源单独列出。广告、外部链接等推广来源尚未采集。</p>
+        <p className={styles.footnote}>来自账户创建时的注册方式；后来绑定的微信或 Apple 不改变原始方式。未记录的来源单独列出。推广链接的归属与充值汇总可在「推广大使」中查看。</p>
       </section>
     </div>}
   </section>;

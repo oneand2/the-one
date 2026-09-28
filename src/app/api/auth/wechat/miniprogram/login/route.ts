@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       }
       userId = ticket.bind_user_id;
     } else {
-      userId = await loginOrCreateWechatUser(admin, profile);
+      userId = await loginOrCreateWechatUser(admin, profile, ticket.ambassador_token || undefined);
     }
 
     const updated = await admin

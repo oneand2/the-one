@@ -1,3 +1,6 @@
+import { cookies } from 'next/headers';
+import { validReferralToken } from '@/lib/ambassadors/server';
+import { REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
 import { NextResponse } from 'next/server';
 import {
   getWechatMiniProgramConfig,
@@ -18,6 +21,7 @@ export type WechatLoginTicketRow = {
   status: 'pending' | 'authorized' | 'consumed';
   user_id: string | null;
   url_link: string | null;
+  ambassador_token: string | null;
   expires_at: string;
 };
 
@@ -58,6 +62,7 @@ export async function insertWechatLoginTicket(input: {
     next_path: sanitizeNextPath(input.next, input.mode === 'bind' ? '/profile' : '/'),
     bind_user_id: input.bindUserId ?? null,
     status: 'pending',
+    ambassador_token: input.mode === 'login' ? await validReferralToken(admin, (await cookies()).get(REFERRAL_COOKIE)?.value) : null,
     expires_at: new Date(Date.now() + WECHAT_OAUTH_MAX_AGE_SECONDS * 1000).toISOString(),
   });
   if (inserted.error) throw inserted.error;
@@ -67,7 +72,7 @@ export async function getFreshWechatLoginTicket(ticketId: string) {
   const admin = createAdminClient();
   const queried = await admin
     .from('wechat_login_tickets')
-    .select('id, mode, next_path, bind_user_id, status, user_id, url_link, expires_at')
+    .select('id, mode, next_path, bind_user_id, status, user_id, url_link, expires_at, ambassador_token')
     .eq('id', ticketId)
     .maybeSingle();
   if (queried.error) throw queried.error;

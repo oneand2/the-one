@@ -1,3 +1,4 @@
+import { selectScoped } from '@/lib/ambassadors/scope';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { isVip } from '@/utils/vip';
 
@@ -26,8 +27,8 @@ export function literalSearch(q: string) {
   return q.replace(/[\\%_]/g, '\\$&');
 }
 
-async function exactCount(client: SupabaseClient, table: string, filter?: { key: string; value: string }, day?: string) {
-  let query = client.from(table).select('*', { count: 'exact', head: true });
+async function exactCount(client: SupabaseClient, table: string, filter?: { key: string; value: string }, day?: string, scope?: string | null) {
+  let query = selectScoped(client, table, '*', { count: 'exact', head: true }, scope);
   if (filter) query = query.eq(filter.key, filter.value);
   if (day) {
     const start = new Date(`${day}T00:00:00+08:00`);
@@ -38,7 +39,7 @@ async function exactCount(client: SupabaseClient, table: string, filter?: { key:
   return result.count;
 }
 
-async function overview(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
+async function overview(client: SupabaseClient, input: AdminQuery, scope?: string | null): Promise<AdminData> {
   const warnings: string[] = [];
   async function safe(name: string, task: PromiseLike<number>) {
     try { return await task; } catch { warnings.push(`${name}暂时无法读取，请刷新重试`); return null; }
@@ -49,59 +50,73 @@ async function overview(client: SupabaseClient, input: AdminQuery): Promise<Admi
     ['alipay', '支付宝订单', 'payment_orders'], ['wechat', '微信订单', 'wechat_payment_orders'],
     ['apple', 'Apple 交易记录', 'apple_iap_transactions'], ['insights', '今日见闻', 'daily_insights'], ['news', '每日新闻', 'world_news'],
   ];
-  const values = await Promise.all(tables.map(([, label, table]) => safe(label, exactCount(client, table))));
+  if (scope) tables.splice(7, 2);
+  const values = await Promise.all(tables.map(([, label, table]) => safe(label, exactCount(client, table, undefined, undefined, scope))));
   const stats = Object.fromEntries(tables.map(([key], i) => [key, values[i]]));
   stats.users = await safe('注册账户', (async () => {
+    if (scope) return (await allUsers(client, scope)).length;
     const { data, error } = await client.auth.admin.listUsers({ page: 1, perPage: 1 });
     if (error || !('total' in data)) throw new Error('注册账户读取失败');
     return data.total;
   })());
-  stats.openReports = await safe('待处理举报', exactCount(client, 'jianzhongsheng_reports', { key: 'status', value: 'open' }));
+  stats.openReports = await safe('待处理举报', exactCount(client, 'jianzhongsheng_reports', { key: 'status', value: 'open' }, undefined, scope));
   stats.vip = await safe('有效会员', (async () => {
-    const { count, error } = await client.from('user_profiles').select('*', { count: 'exact', head: true }).gt('vip_expires_at', new Date().toISOString());
+    const { count, error } = await selectScoped(client, 'user_profiles', '*', { count: 'exact', head: true }, scope).gt('vip_expires_at', new Date().toISOString());
     if (error || count === null) throw new Error('会员读取失败');
     return count;
   })());
   const trend = await Promise.all(Array.from({ length: 7 }, async (_, i) => {
     const date = chinaDay(i - 6);
     const [answers, comments] = await Promise.all([
-      safe('手记趋势', exactCount(client, 'jianzhongsheng_answers', undefined, date)),
-      safe('评论趋势', exactCount(client, 'jianzhongsheng_comments', undefined, date)),
+      safe('手记趋势', exactCount(client, 'jianzhongsheng_answers', undefined, date, scope)),
+      safe('评论趋势', exactCount(client, 'jianzhongsheng_comments', undefined, date, scope)),
     ]);
     return { date, answers, comments };
   }));
   let usersAnalytics;
   try {
-    const accounts = await allUsers(client);
+    const accounts = await allUsers(client, scope);
     const window = analyticsWindow(input.days);
-    const activity = await activityOrWarning(client, window.start, window.end, warnings);
+    const activity = await activityOrWarning(client, window.start, window.end, warnings, scope);
     usersAnalytics = summarizeUsers(accounts, activity, input.days, window.now);
   } catch { warnings.push('新增与活跃用户统计暂时无法读取'); }
   return { usersAnalytics, stats, trend, sources: tables.map(([, name], i) => ({ name, count: values[i], ok: values[i] !== null })), warnings: [...new Set(warnings)], updatedAt: new Date().toISOString() };
 }
 
-async function allUsers(client: SupabaseClient) {
+async function allUsers(client: SupabaseClient, scope?: string | null) {
+  let referralIds: Set<string> | null = null;
+  if (scope) {
+    referralIds = new Set<string>();
+    for (let offset = 0; ; offset += 1000) {
+      if (offset >= 100000) throw new Error('名下用户超出查询范围');
+      const result = await client.from('user_referrals').select('user_id').eq('ambassador_id', scope).order('user_id').range(offset, offset + 999);
+      if (result.error) throw new Error('名下用户暂时无法读取');
+      for (const row of result.data) referralIds.add(row.user_id);
+      if (result.data.length < 1000) break;
+    }
+    if (!referralIds.size) return [];
+  }
   const users: User[] = [];
   for (let page = 1; page <= 100; page++) {
     const { data, error } = await client.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw new Error('用户列表暂时无法读取');
-    users.push(...data.users);
+    users.push(...data.users.filter(user => !referralIds || referralIds.has(user.id)));
     if (!data.nextPage) return users;
   }
   throw new Error('用户规模超出当前搜索范围，请联系维护人员升级查询');
 }
 
-async function activityOrWarning(client: SupabaseClient, start: string, end: string, warnings: string[]): Promise<ActivityData> {
-  try { return await readActivity(client, start, end); }
+async function activityOrWarning(client: SupabaseClient, start: string, end: string, warnings: string[], scope?: string | null): Promise<ActivityData> {
+  try { return await readActivity(client, start, end, scope); }
   catch { warnings.push('活跃数据暂时不可用，请刷新重试'); return { rows: [], since: null, available: false }; }
 }
 
-async function users(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
+async function users(client: SupabaseClient, input: AdminQuery, scope?: string | null): Promise<AdminData> {
   // Auth accounts are authoritative: accounts without a profile must not disappear.
-  let accounts = await allUsers(client);
+  let accounts = await allUsers(client, scope);
   const warnings: string[] = [];
   const window = analyticsWindow(input.days);
-  const activity = await activityOrWarning(client, window.start, window.end, warnings);
+  const activity = await activityOrWarning(client, window.start, window.end, warnings, scope);
   if (input.cohort === 'active' && !activity.available) throw new Error('活跃数据暂时不可用，请刷新重试');
   const usersAnalytics = summarizeUsers(accounts, activity, input.days, window.now);
   const latest = new Map<string, string>();
@@ -110,11 +125,10 @@ async function users(client: SupabaseClient, input: AdminQuery): Promise<AdminDa
   }
   const profiles: AdminRow[] = [];
   for (let start = 0; start < accounts.length; start += 100) {
-    const { data, error } = await client.from('user_profiles')
-      .select('user_id,nickname,coins_balance,vip_expires_at,community_suspended_until')
+    const { data, error } = await selectScoped(client, 'user_profiles', 'user_id,nickname,coins_balance,vip_expires_at,community_suspended_until', {}, scope)
       .in('user_id', accounts.slice(start, start + 100).map(u => u.id));
     if (error) throw new Error('用户档案暂时无法读取');
-    profiles.push(...data);
+    profiles.push(...data as unknown as AdminRow[]);
   }
   // Keep IN filters under proxy URL limits (100 UUIDs per request).
   const byId = new Map(profiles.map(p => [p.user_id, p]));
@@ -139,9 +153,9 @@ async function users(client: SupabaseClient, input: AdminQuery): Promise<AdminDa
   return { usersAnalytics, warnings, rows, total: accounts.length, page: input.page, updatedAt: new Date().toISOString() };
 }
 
-export async function loadAdminData(client: SupabaseClient, input: AdminQuery): Promise<AdminData> {
-  if (input.view === 'overview' || input.view === 'settings') return overview(client, input);
-  if (input.view === 'users') return users(client, input);
+export async function loadAdminData(client: SupabaseClient, input: AdminQuery, scope?: string | null): Promise<AdminData> {
+  if (input.view === 'overview' || input.view === 'settings') return overview(client, input, scope);
+  if (input.view === 'users') return users(client, input, scope);
   let table: string, columns: string, searchColumn: string, statusColumn: string | null = null;
   let allowed: string[] = ['all'];
   if (input.view === 'answers' || input.view === 'comments') {
@@ -165,7 +179,12 @@ export async function loadAdminData(client: SupabaseClient, input: AdminQuery): 
     allowed = apple ? ['all', 'Production', 'Sandbox', 'Xcode'] : ['all', 'paid', 'pending', 'closed', 'refunded'];
   }
   if (!allowed.includes(input.status)) throw new Error('筛选状态无效');
-  let query = client.from(table).select(columns, { count: 'exact' });
+  let query = selectScoped(client, table, columns, { count: 'exact' }, scope);
+  if (input.view === 'orders') {
+    const dateColumn = input.channel === 'apple' ? 'created_at' : 'paid_at';
+    if (input.start) query = query.gte(dateColumn, input.start);
+    if (input.end) query = query.lt(dateColumn, input.end);
+  }
   if (input.q) query = query.ilike(searchColumn, `%${literalSearch(input.q)}%`);
   if (statusColumn && input.status !== 'all') query = query.eq(statusColumn, input.status);
   const { data, error, count } = await query.order(input.view === 'insights' ? 'insight_date' : 'created_at', { ascending: false }).order('id').range((input.page - 1) * PAGE_SIZE, input.page * PAGE_SIZE - 1);

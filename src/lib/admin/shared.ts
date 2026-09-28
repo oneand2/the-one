@@ -1,5 +1,5 @@
 export const PAGE_SIZE = 25;
-export const MODULES = ['overview', 'users', 'answers', 'comments', 'orders', 'reports', 'insights', 'settings'] as const;
+export const MODULES = ['overview', 'users', 'answers', 'comments', 'orders', 'reports', 'insights', 'settings', 'ambassadors'] as const;
 export type AdminModule = typeof MODULES[number];
 export type AdminRow = Record<string, string | number | boolean | null>;
 export const SIGNUP_SOURCES = { email: '邮箱注册', wechat: '微信注册', apple: 'Apple 注册', legacy: '历史用户名注册', unknown: '未记录' } as const;
@@ -18,4 +18,4 @@ export type AdminData = {
   warnings?: string[]; updatedAt: string;
   usersAnalytics?: UserAnalytics;
 };
-export type AdminQuery = { view: AdminModule; page: number; q: string; status: string; channel: string; days: number; cohort: string; source: string };
+export type AdminQuery = { view: AdminModule; page: number; q: string; status: string; channel: string; days: number; cohort: string; source: string; start?: string | null; end?: string | null };

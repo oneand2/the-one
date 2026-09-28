@@ -1,3 +1,4 @@
+import { selectScoped } from '@/lib/ambassadors/scope';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { SIGNUP_SOURCES, type SignupSource, type UserAnalytics } from './shared';
 
@@ -29,16 +30,16 @@ export function signupSource(user: Pick<User, 'app_metadata' | 'email'>): Signup
 
 export type ActivityRow = { user_id: string; activity_date: string; last_seen_at: string };
 export type ActivityData = { rows: ActivityRow[]; since: string | null; available: boolean };
-export async function readActivity(client: SupabaseClient, start: string, end: string): Promise<ActivityData> {
+export async function readActivity(client: SupabaseClient, start: string, end: string, scope?: string | null): Promise<ActivityData> {
   const { data: coverage, error } = await client.from('user_activity_coverage').select('started_at').eq('id', 1).maybeSingle();
   if (error) throw new Error('活跃记录暂时无法读取');
   const rows: ActivityRow[] = [];
   for (let offset = 0; offset < 100000; offset += 1000) {
-    const result = await client.from('user_daily_activity').select('user_id,activity_date,last_seen_at')
+    const result = await selectScoped(client, 'user_daily_activity', 'user_id,activity_date,last_seen_at', {}, scope)
       .gte('activity_date', start).lte('activity_date', end)
       .order('activity_date').order('user_id').range(offset, offset + 999);
     if (result.error) throw new Error('活跃记录暂时无法读取');
-    rows.push(...result.data);
+    rows.push(...result.data as unknown as ActivityRow[]);
     if (result.data.length < 1000) return { rows, since: coverage?.started_at || null, available: true };
   }
   throw new Error('活跃数据超出查询范围，请联系维护人员升级查询');

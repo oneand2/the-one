@@ -47,6 +47,7 @@ export default function ProfilePage() {
         return;
       }
       // 检查是否是管理员
+      fetch('/api/admin/access', { cache: 'no-store' }).then(r => r.json()).then(result => { if (result.access) setIsAdmin(true); }).catch(() => {});
       if (user.email === ADMIN_EMAIL) {
         setIsAdmin(true);
       }

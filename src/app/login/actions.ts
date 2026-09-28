@@ -1,5 +1,8 @@
 'use server';
 
+import { cookies } from 'next/headers';
+import { REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
+import { validReferralToken } from '@/lib/ambassadors/server';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { requestRecoveryOtp, requestSignupOtp } from '@/utils/authOtp';
@@ -67,7 +70,10 @@ export async function signup(formData: FormData): Promise<AuthResult> {
   }
 
   const supabase = await createClient();
-  const result = await requestSignupOtp(supabase, { email, password, nickname, inviteCode });
+  let ambassadorToken: string | undefined;
+  try { ambassadorToken = await validReferralToken(createAdminClient(), (await cookies()).get(REFERRAL_COOKIE)?.value); }
+  catch { return { error: '推广来源暂时无法确认，请稍后重试注册' }; }
+  const result = await requestSignupOtp(supabase, { email, password, nickname, inviteCode, ambassadorToken });
   if ('error' in result) return { error: result.error };
   if ('sessionUserId' in result) {
     await supabase.from(PROFILE_TABLE).upsert(

@@ -25,7 +25,7 @@ async function issueOtpViaMailer(params: {
   type: 'signup' | 'recovery';
   email: string;
   password?: string;
-  data?: { nickname: string; invite_code?: string };
+  data?: { nickname: string; invite_code?: string; ambassador_token?: string };
 }): Promise<{ otpEmail: string } | { error: string }> {
   const admin = createAdminClient();
   const generated =
@@ -72,11 +72,12 @@ async function issueOtpViaMailer(params: {
 
 export async function requestSignupOtp(
   supabase: SupabaseClient,
-  params: { email: string; password: string; nickname: string; inviteCode: string },
+  params: { email: string; password: string; nickname: string; inviteCode: string; ambassadorToken?: string },
 ): Promise<SignupOtpResult> {
   const email = params.email.trim();
   const data = {
     nickname: params.nickname.slice(0, 50),
+    ambassador_token: params.ambassadorToken,
     invite_code: params.inviteCode.slice(0, 32) || undefined,
   };
 

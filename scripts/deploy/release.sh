@@ -22,6 +22,7 @@ had_current=0
 old=$(cat "$state/current" 2>/dev/null || printf 'the-one-app-1')
 older=$(cat "$state/previous" 2>/dev/null || true)
 if [[ $old == "$candidate" ]]; then
+  rm -f "$incoming/payment-production.env" "$incoming/registry-token"
   echo "Release already active: $release"
   exit 0
 fi
@@ -67,7 +68,14 @@ mkdir -p "$auth"
 chmod 700 "$auth"
 docker --config "$auth" login ghcr.io -u oneand2 --password-stdin < "$incoming/registry-token"
 pull_started=$(date +%s)
-docker --config "$auth" pull "$image" | tee "$work/pull.log"
+# Bound registry stalls while keeping the live app online. Completed layers are
+# cached by Docker and reused on a retry.
+pulled=0
+for attempt in 1 2; do
+  if timeout 600 docker --config "$auth" pull "$image" 2>&1 | tee -a "$work/pull.log"; then pulled=1; break; fi
+  sleep 3
+done
+[[ $pulled == 1 ]] || { echo 'Registry pull failed; current release untouched' >&2; exit 1; }
 pull_seconds=$(( $(date +%s) - pull_started ))
 rm -rf "$auth"
 rm -f "$incoming/registry-token"
@@ -102,8 +110,12 @@ fi
 healthy=0
 for attempt in $(seq 1 30); do
   if docker exec "$candidate" node -e '
-    const release=process.env.RELEASE_SHA;
-    Promise.all([fetch("http://127.0.0.1:3000/api/health",{signal:AbortSignal.timeout(3000)}).then(async r=>r.ok&&(await r.json()).release===release),fetch("http://127.0.0.1:3000/",{signal:AbortSignal.timeout(3000)}).then(r=>r.ok),fetch("http://127.0.0.1:3000/api/admin/ambassadors",{signal:AbortSignal.timeout(3000)}).then(r=>r.status===403)]).then(ok=>process.exit(ok.every(Boolean)?0:1)).catch(()=>process.exit(1))' >/dev/null 2>&1; then healthy=1; break; fi
+    const request=(path)=>fetch("http://127.0.0.1:3000"+path,{signal:AbortSignal.timeout(3000)});
+    const checks=[["/",200],["/api/admin/ambassadors",403],["/api/payments/alipay/status",401],["/api/payments/wechat/status",401]];
+    Promise.all([
+      request("/api/health").then(async r=>r.ok&&(await r.json()).release===process.env.RELEASE_SHA),
+      ...checks.map(([path,status])=>request(path).then(r=>r.status===status))
+    ]).then(ok=>process.exit(ok.every(Boolean)?0:1)).catch(()=>process.exit(1))' >/dev/null 2>&1; then healthy=1; break; fi
   sleep 2
 done
 [[ $healthy == 1 ]] || { echo 'Candidate health checks failed' >&2; exit 1; }
@@ -164,11 +176,13 @@ manifest=json.loads((work/'manifest.json').read_text())
 layers=manifest.get('layers',[])
 log=(work/'pull.log').read_text()
 downloaded=set(re.findall(r'^([a-f0-9]+): Pull complete',log,re.M))
-known=set(re.findall(r'^([a-f0-9]+): Already exists',log,re.M))
 def matches(layer,ids): return any(layer['digest'].split(':')[-1].startswith(prefix) for prefix in ids)
-measured=all(matches(layer,downloaded|known) for layer in layers)
+# Docker's containerd image store omits cached layers from progress output.
+# A successful pull's completed layer IDs identify the downloaded subset.
+measured='Status:' in log
 result={'release':release,'image_bytes':int(size),'compressed_image_bytes':sum(layer['size'] for layer in layers),
         'downloaded_layer_bytes':sum(layer['size'] for layer in layers if matches(layer,downloaded)) if measured else None,
+        'downloaded_layers':sum(matches(layer,downloaded) for layer in layers),'total_layers':len(layers),
         'pull_seconds':int(pull),'server_deploy_seconds':int(total),'previous':old}
 (work/'result.json').write_text(json.dumps(result)+'\n')
 print(json.dumps(result))

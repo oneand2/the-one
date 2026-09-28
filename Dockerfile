@@ -60,7 +60,8 @@ COPY --from=builder --chown=1001:1001 /app/runtime ./
 COPY --from=builder --chown=1001:1001 /app/.next/static ./.next/static
 ARG RELEASE_SHA=local
 ENV RELEASE_SHA=$RELEASE_SHA
-LABEL org.opencontainers.image.revision=$RELEASE_SHA
+LABEL org.opencontainers.image.revision=$RELEASE_SHA \
+      org.opencontainers.image.source="https://github.com/oneand2/the-one"
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \

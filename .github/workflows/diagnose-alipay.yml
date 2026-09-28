@@ -22,7 +22,7 @@ jobs:
 
           ssh -i "$HOME/.ssh/aliyun_deploy_key" "$DEPLOY_USER@$DEPLOY_HOST" <<'EOF_REMOTE'
           set -eu
-          CONTAINER=the-one-app-1
+          CONTAINER=$(sudo cat /opt/the-one/deployment/current 2>/dev/null || printf 'the-one-app-1')
 
           sudo docker exec -i "$CONTAINER" node <<'EOF_NODE'
           const crypto = require('node:crypto');

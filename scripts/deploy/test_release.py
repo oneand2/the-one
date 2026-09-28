@@ -27,11 +27,12 @@ root=pathlib.Path(os.environ['MOCK_ROOT'])
 with (root/'calls').open('a') as log: log.write(cmd+' '+' '.join(args)+'\\n')
 failure=os.environ['FAILURE']
 if cmd in ['sleep','flock']: sys.exit(0)
+if cmd=='timeout': os.execvp(args[1],args[1:])
 if cmd=='curl':
     if '/api/health' in args[-1]: print(json.dumps({'release':'wrong' if failure=='cutover' else 'a'*40}))
     else: print('healthy')
     sys.exit(0)
-if args[0]=='load': sys.stdin.read(); sys.exit(0)
+if 'pull' in args and failure=='registry': sys.exit(1)
 if args[:2]==['image','inspect']:
     print('a'*40 if 'revision' in args[-1] else 12345); sys.exit(0)
 if args[0]=='inspect':
@@ -42,7 +43,7 @@ if args[0]=='run' and '--rm' in args and failure=='config': sys.exit(1)
 sys.exit(0)
 ''')
             command.chmod(0o755)
-            for name in ['docker','curl','sleep','flock']: (mock/name).symlink_to(command)
+            for name in ['docker','curl','sleep','flock','timeout']: (mock/name).symlink_to(command)
             result=subprocess.run(['bash',str(script),SHA],env=os.environ|{'PATH':str(mock)+':'+os.environ['PATH'],'MOCK_ROOT':str(root),'FAILURE':failure},capture_output=True,text=True)
             if failure:
                 self.assertNotEqual(result.returncode,0,result.stdout+result.stderr)
@@ -58,6 +59,7 @@ sys.exit(0)
             self.assertFalse((incoming/'payment-production.env').exists())
             self.assertFalse((incoming/'registry-token').exists())
 
+    def test_registry_failure_keeps_old(self): self.run_release('registry')
     def test_success(self): self.run_release('')
     def test_unhealthy_candidate_keeps_old(self): self.run_release('candidate')
     def test_invalid_nginx_keeps_old(self): self.run_release('config')

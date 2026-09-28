@@ -30,7 +30,7 @@
 
 新表和视图均禁止匿名及普通登录客户端访问。分大使读取通过服务端身份验证后，使用带归属编号的 SQL 视图，在统计和分页前筛选。API 每次重新核对大使状态；所有写接口仍仅允许原有管理员。Auth 注册触发器位于非公开 `private` schema，以固定空 search_path 执行，撤销所有客户端的函数执行权限；此处需要 SECURITY DEFINER 才能在 Auth 创建账户时写入仅服务器可见的归属表，其余报表函数和视图使用 SECURITY INVOKER。
 
-生产 `NEXT_PUBLIC_SITE_URL` 应使用网站规范的 HTTPS 域名，用于生成分享链接及安全 Cookie。新增代码尚需按仓库正常流程发布后才会出现在网站。
+生产 `NEXT_PUBLIC_SITE_URL` 应使用网站规范的 HTTPS 域名，用于生成分享链接及安全 Cookie。推广大使代码已随 2026-09-28 的阿里云部署上线，后台接口的未登录访问已验证为拒绝。
 
 安全检查器提示新增三张表「RLS 已开启但无策略」是刻意禁止浏览器直接访问，并且已经撤销客户端授权，不应添加公开策略。解释见 [Supabase 权限检查文档](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)。其余检查器告警来自原有对象，本次没有修改。
 

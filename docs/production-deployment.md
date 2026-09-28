@@ -26,7 +26,7 @@ GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变
 
 ## 手动回滚与运维
 
-在 ECS 执行 `sudo bash /opt/the-one/deployment/rollback.sh`，恢复上一健康容器和该次发布前的 Nginx/环境变量；不重新下载镜像。仅允许回退到仍在运行的版本，避免引用已清理容器。
+在 ECS 执行 `sudo bash /opt/the-one/deployment/rollback.sh`，将流量切回上一健康容器，并恢复对应环境变量，保留当前 HTTPS 配置；不重新下载镜像。仅允许回退到仍在运行的版本，避免引用已清理容器。
 
 `/opt/the-one/deployment/current` 记录当前容器，`previous` 记录回退容器。发布记录和环境快照在 `/opt/the-one/releases/<SHA>/`，权限为 root-only。`/api/health` 返回当前提交编号，不包含密钥。
 
@@ -37,3 +37,9 @@ GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜�
 ## 原始测量（2026-09-28）
 
 优化前 ECS Docker 列表显示约 2.99 GB 存储占用；同一镜像 `docker image inspect .Size` 为 1,441,095,877 字节。两种口径不可混用。主要层为完整 node_modules 约 811 MB、整个 .next 约 477 MB，其中构建缓存约 431 MiB。public 仅约 6.6 MiB。旧工作流每次完整 docker save/gzip/SSH 上传，未配置跨 runner 的 Docker layer cache，且每次部署全局清理镜像/构建缓存并重建 Nginx。
+
+## 首轮真实验证
+
+2026-09-28，运行 [36386309129](https://github.com/oneand2/the-one/actions/runs/36386309129) 成功，版本 `95d542e` 已通过公开 HTTPS 检查。Docker 列表由约 2.99 GB 降为 387 MB（约减少 87%）；仓库镜像压缩层合计 117,720,175 字节。Docker/containerd 对导入的未压缩 archive 和仓库压缩内容采用不同存储表示，不能直接用两次 `.Size` 作为解压大小比较。
+
+首轮工作流从触发到 job 完成为 6 分 52 秒，其中构建/推送 85 秒，ECS 拉取 267 秒，服务器拉取到切换完成 273 秒。首轮需下载新依赖和资源层；后续相同层由 Docker 复用。并非承诺每次网络条件下都能在 5 分钟内完成。后续每轮准确结果可在工作流 measurements artifact 查看。

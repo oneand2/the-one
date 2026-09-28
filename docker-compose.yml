@@ -1,3 +1,6 @@
+# Bootstrap definition only. Production app releases are managed by
+# scripts/deploy/release.sh. Do not use up --remove-orphans or down on ECS.
+# See docs/production-deployment.md for safe operations and rollback.
 services:
   app:
     image: the-one-app:latest

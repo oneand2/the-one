@@ -6,7 +6,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps
 
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
@@ -32,13 +32,15 @@ ENV NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER=$NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
-COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs ./
+COPY next.config.ts tsconfig.json postcss.config.mjs ./
 COPY questions.json mbti_final_cleaned.json ./
 COPY public ./public
 COPY content ./content
 COPY src ./src
 
-RUN npx next build --webpack
+COPY scripts/deploy/prepare-runtime.mjs ./scripts/deploy/prepare-runtime.mjs
+RUN --mount=type=cache,target=/app/.next/cache npx next build --webpack \
+  && node scripts/deploy/prepare-runtime.mjs
 
 FROM node:24-bookworm-slim AS runner
 WORKDIR /app
@@ -51,15 +53,16 @@ ENV HOSTNAME=0.0.0.0
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
-COPY package.json package-lock.json ./
-COPY --from=deps /app/node_modules ./node_modules
-
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./next.config.ts
-
+# No development dependencies, build cache, source tree, or npm CLI required.
+COPY --from=builder --chown=1001:1001 /app/.next/standalone/node_modules ./node_modules
+COPY --from=builder --chown=1001:1001 /app/public ./public
+COPY --from=builder --chown=1001:1001 /app/runtime ./
+COPY --from=builder --chown=1001:1001 /app/.next/static ./.next/static
+ARG RELEASE_SHA=local
+ENV RELEASE_SHA=$RELEASE_SHA
+LABEL org.opencontainers.image.revision=$RELEASE_SHA
 USER nextjs
-
 EXPOSE 3000
-
-CMD ["npm", "run", "start"]
+HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node", "server.js"]

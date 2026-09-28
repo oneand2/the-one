@@ -56,3 +56,9 @@ GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜�
 - 结果仍保存到 GitHub artifacts：`build-metrics-<SHA>` 包含是否需要发布的判定和镜像清单，`deployment-metrics-<SHA>` 包含实际发布测量。
 
 缓存挂载实现参考 [Docker 官方缓存说明](https://docs.docker.com/build/ci/github-actions/cache/#cache-mounts)。
+
+进一步优化的实测记录（2026-09-28）：
+
+- 首次编译缓存基线建立：[36396989846](https://github.com/oneand2/the-one/actions/runs/36396989846)，成功上线。
+- 源码小改、命中编译缓存：[36397398106](https://github.com/oneand2/the-one/actions/runs/36397398106)。Webpack 编译 6.3 秒，构建并推送镜像 67 秒（前一流程测得 109 秒）；仅下载 1 层、2,119,525 字节。此次仓库拉取因网络耗时 40 秒，服务器发布共 50 秒，完整流程约 3 分 08 秒。与此前 2 分 55 秒的那次相比，构建更快、下载更少，但完整耗时没有更快，不能将单次构建收益等同于稳定的端到端收益。
+- 本段文档提交用于验证文档专用路径：应只执行检查与线上基线比较，不构建镜像、不启动候选容器、不切换 Nginx；实际应用版本保持最后一次成功发布的源码版本。

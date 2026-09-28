@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: next-compile-cache
-          key: ${{ runner.os }}-next-compile-v1-${{ hashFiles('package-lock.json', 'next.config.ts', 'Dockerfile') }}-${{ github.sha }}
+          key: ${{ runner.os }}-next-compile-v1-${{ hashFiles('package-lock.json', 'next.config.ts', 'Dockerfile') }}-baseline
           restore-keys: |
             ${{ runner.os }}-next-compile-v1-${{ hashFiles('package-lock.json', 'next.config.ts', 'Dockerfile') }}-
 
@@ -56,7 +56,9 @@ jobs:
         with:
           builder: ${{ steps.builder.outputs.name }}
           cache-map: '{"next-compile-cache":{"target":"/app/.next/cache","id":"next-compile-v1"}}'
-          skip-extraction: ${{ steps.next_cache.outputs.cache-hit }}
+          # Reuse the validated baseline; avoid exporting a large compiler cache
+          # on every small change. Webpack still invalidates changed source files.
+          skip-extraction: ${{ steps.next_cache.outputs.cache-hit != '' }}
 
       - name: Sign in to GitHub Container Registry
         if: steps.plan.outputs.publish == 'true'

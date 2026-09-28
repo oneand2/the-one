@@ -6,7 +6,7 @@
 
 ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和生产环境变量。数据库继续使用现有 Supabase。Next.js 使用 standalone 输出，最终镜像只包含 Node 运行时、追踪到的运行依赖、服务端产物及公开资源。开发依赖、源文件和 `.next/cache` 不进入运行镜像。`.dockerignore` 使用构建输入白名单。
 
-GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的缓存挂载不计入最终镜像。Next.js 编译缓存通过 actions/cache 与固定版本的 buildkit-cache-dance 跨 runner 保存和恢复；锁文件、Next 配置或 Dockerfile 变化时切换缓存分组。缓存恢复或导出失败可退回正常完整构建；npm 安装仍由依赖镜像层缓存复用。
+GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的缓存挂载不计入最终镜像。Next.js 编译缓存通过 actions/cache 与固定版本的 buildkit-cache-dance 跨 runner 保存和恢复；锁文件、Next 配置或 Dockerfile 变化时切换缓存分组。编译缓存基线建立后，不在每次小改时重复导出整份缓存；Webpack 仍按源文件内容校验并重新编译变化的模块。缓存恢复或导出失败可退回正常完整构建；npm 安装仍由依赖镜像层缓存复用。
 
 镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。字体、前端 JS、CSS、服务端公共 chunks 与每次变化的版本文件分别保存，避免仅构建编号变化就重新下载整套静态资源。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
 

@@ -40,6 +40,7 @@ struct HybridWebContentView: UIViewRepresentable {
     let onTabChanged: @MainActor (AppScreen) -> Void
     let onLoginRequested: @MainActor () -> Void
     let onStoreRequested: @MainActor () -> Void
+    let onCoinsRefreshRequested: @MainActor () -> Void
     let onSessionRefreshRequested: @MainActor () -> Void
     let onSessionInvalidated: @MainActor () -> Void
 
@@ -49,6 +50,7 @@ struct HybridWebContentView: UIViewRepresentable {
             onTabChanged: onTabChanged,
             onLoginRequested: onLoginRequested,
             onStoreRequested: onStoreRequested,
+            onCoinsRefreshRequested: onCoinsRefreshRequested,
             onSessionRefreshRequested: onSessionRefreshRequested,
             onSessionInvalidated: onSessionInvalidated
         )
@@ -233,6 +235,8 @@ struct HybridWebContentView: UIViewRepresentable {
       const notify = (type) => {
         try { window.webkit.messageHandlers.theone.postMessage({ type }); } catch (e) {}
       };
+      // 网页的余额更新同时通知 SwiftUI 顶部账户栏。
+      window.addEventListener('coins-should-refresh', () => notify('coinsRefresh'));
       const kindFor = (url) => {
         if (!url) return null;
         try {
@@ -260,6 +264,7 @@ struct HybridWebContentView: UIViewRepresentable {
         private let onTabChanged: @MainActor (AppScreen) -> Void
         private let onLoginRequested: @MainActor () -> Void
         private let onStoreRequested: @MainActor () -> Void
+        private let onCoinsRefreshRequested: @MainActor () -> Void
         private let onSessionRefreshRequested: @MainActor () -> Void
         private let onSessionInvalidated: @MainActor () -> Void
         private var currentScreen: AppScreen?
@@ -284,6 +289,7 @@ struct HybridWebContentView: UIViewRepresentable {
             onTabChanged: @escaping @MainActor (AppScreen) -> Void,
             onLoginRequested: @escaping @MainActor () -> Void,
             onStoreRequested: @escaping @MainActor () -> Void,
+            onCoinsRefreshRequested: @escaping @MainActor () -> Void,
             onSessionRefreshRequested: @escaping @MainActor () -> Void,
             onSessionInvalidated: @escaping @MainActor () -> Void
         ) {
@@ -291,6 +297,7 @@ struct HybridWebContentView: UIViewRepresentable {
             self.onTabChanged = onTabChanged
             self.onLoginRequested = onLoginRequested
             self.onStoreRequested = onStoreRequested
+            self.onCoinsRefreshRequested = onCoinsRefreshRequested
             self.onSessionRefreshRequested = onSessionRefreshRequested
             self.onSessionInvalidated = onSessionInvalidated
             super.init()
@@ -822,6 +829,12 @@ struct HybridWebContentView: UIViewRepresentable {
                 requestLogin()
             } else if type == "store" {
                 requestStore()
+            } else if type == "coinsRefresh",
+                      message.frameInfo.isMainFrame,
+                      isFirstParty(message.frameInfo.request.url) {
+                synchronizeWebCookiesToNative { [weak self] in
+                    self?.onCoinsRefreshRequested()
+                }
             } else if type == "modalBackdropChanged",
                       let payload = body["payload"] as? [String: Any],
                       let active = payload["active"] as? Bool {

@@ -193,6 +193,9 @@ private struct MainTabView: View {
                         onTabChanged: { flow.screen = $0 },
                         onLoginRequested: { auth.showsLogin = true },
                         onStoreRequested: { showStore = true },
+                        onCoinsRefreshRequested: {
+                            Task { await profile.load() }
+                        },
                         onSessionRefreshRequested: {
                             Task { await auth.restoreSession() }
                         },

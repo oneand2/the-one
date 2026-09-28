@@ -893,6 +893,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         });
       }
 
+      // 服务端在关闭响应流前完成扣币；立即刷新，避免等待历史记录保存。
+      window.dispatchEvent(new CustomEvent('coins-should-refresh'));
+
       // 保存消息到数据库
       if (sessionId) {
         try {
@@ -921,8 +924,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       } else {
         console.warn('没有会话ID，对话未保存到历史记录');
       }
-      window.dispatchEvent(new CustomEvent('coins-should-refresh'));
     } catch (error) {
+      // 响应中断时也重新读取余额，避免已扣费但仍显示旧值。
+      window.dispatchEvent(new CustomEvent('coins-should-refresh'));
       console.error('发送消息失败:', error);
       const raw = error instanceof Error ? error.message : '未知错误';
       const isNetwork =

@@ -60,6 +60,8 @@ COPY --from=builder --chown=1001:1001 /app/static/media ./.next/static/media
 COPY --from=builder --chown=1001:1001 /app/static/chunks ./.next/static/chunks
 COPY --from=builder --chown=1001:1001 /app/static/css ./.next/static/css
 COPY --from=builder --chown=1001:1001 /app/server-chunks ./.next/server/chunks
+COPY --from=builder --chown=1001:1001 /app/server-api ./
+COPY --from=builder --chown=1001:1001 /app/server-pages ./
 COPY --from=builder --chown=1001:1001 /app/runtime ./
 ARG RELEASE_SHA=local
 ENV RELEASE_SHA=$RELEASE_SHA

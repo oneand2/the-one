@@ -8,7 +8,7 @@ ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和�
 
 GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的缓存挂载不计入最终镜像。Next.js 编译缓存通过 actions/cache 与固定版本的 buildkit-cache-dance 跨 runner 保存和恢复；锁文件、Next 配置或 Dockerfile 变化时切换缓存分组。编译缓存基线建立后，不在每次小改时重复导出整份缓存；Webpack 仍按源文件内容校验并重新编译变化的模块。缓存恢复或导出失败可退回正常完整构建；npm 安装仍由依赖镜像层缓存复用。
 
-镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。字体、前端 JS、CSS、服务端公共 chunks 与每次变化的版本文件分别保存，避免仅构建编号变化就重新下载整套静态资源。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
+镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。字体、前端 JS、CSS、服务端公共 chunks、API 执行代码、页面执行代码与每次变化的 HTML/RSC 和版本文件分别保存，避免仅构建编号变化就重新下载整套静态资源。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
 
 当前没有可直接使用的阿里云 ACR 账号/仓库配置；实测 ECS 可连接 GHCR，因此使用已有 GitHub 工作流权限，无需新增账号。镜像仓库认证使用每次 job 的 GITHUB_TOKEN，ECS 临时凭据在拉取结束或失败时删除，job 结束后令牌过期；没有在服务器安装永久仓库密码。GitHub 工作流权限增加 packages:write。未来配置 ACR 后，可以替换仓库地址和认证方式，健康切换逻辑不变。
 
@@ -62,3 +62,5 @@ GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜�
 - 首次编译缓存基线建立：[36396989846](https://github.com/oneand2/the-one/actions/runs/36396989846)，成功上线。
 - 源码小改、命中编译缓存：[36397398106](https://github.com/oneand2/the-one/actions/runs/36397398106)。Webpack 编译 6.3 秒，构建并推送镜像 67 秒（前一流程测得 109 秒）；仅下载 1 层、2,119,525 字节。此次仓库拉取因网络耗时 40 秒，服务器发布共 50 秒，完整流程约 3 分 08 秒。与此前 2 分 55 秒的那次相比，构建更快、下载更少，但完整耗时没有更快，不能将单次构建收益等同于稳定的端到端收益。
 - 本段文档提交用于验证文档专用路径：应只执行检查与线上基线比较，不构建镜像、不启动候选容器、不切换 Nginx；实际应用版本保持最后一次成功发布的源码版本。
+
+文档专用路径已实测：[36397897901](https://github.com/oneand2/the-one/actions/runs/36397897901)，19 秒完成，镜像构建与生产部署均跳过，应用仍运行 `77d3cd6`。

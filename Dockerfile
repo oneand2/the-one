@@ -56,8 +56,11 @@ RUN groupadd --system --gid 1001 nodejs \
 # No development dependencies, build cache, source tree, or npm CLI required.
 COPY --from=builder --chown=1001:1001 /app/.next/standalone/node_modules ./node_modules
 COPY --from=builder --chown=1001:1001 /app/public ./public
+COPY --from=builder --chown=1001:1001 /app/static/media ./.next/static/media
+COPY --from=builder --chown=1001:1001 /app/static/chunks ./.next/static/chunks
+COPY --from=builder --chown=1001:1001 /app/static/css ./.next/static/css
+COPY --from=builder --chown=1001:1001 /app/server-chunks ./.next/server/chunks
 COPY --from=builder --chown=1001:1001 /app/runtime ./
-COPY --from=builder --chown=1001:1001 /app/.next/static ./.next/static
 ARG RELEASE_SHA=local
 ENV RELEASE_SHA=$RELEASE_SHA
 LABEL org.opencontainers.image.revision=$RELEASE_SHA \

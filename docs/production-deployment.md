@@ -8,7 +8,7 @@ ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和�
 
 GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的 npm/Next 缓存挂载不计入最终镜像，也不声称跨 GitHub runner 自动保留。
 
-镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
+镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。字体、前端 JS、CSS、服务端公共 chunks 与每次变化的版本文件分别保存，避免仅构建编号变化就重新下载整套静态资源。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
 
 当前没有可直接使用的阿里云 ACR 账号/仓库配置；实测 ECS 可连接 GHCR，因此使用已有 GitHub 工作流权限，无需新增账号。镜像仓库认证使用每次 job 的 GITHUB_TOKEN，ECS 临时凭据在拉取结束或失败时删除，job 结束后令牌过期；没有在服务器安装永久仓库密码。GitHub 工作流权限增加 packages:write。未来配置 ACR 后，可以替换仓库地址和认证方式，健康切换逻辑不变。
 

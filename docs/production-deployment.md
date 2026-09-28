@@ -8,19 +8,21 @@ ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和�
 
 GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变时复用安装层；代码变化仍执行 Next.js 构建，不能承诺页面级增量编译。构建过程的 npm/Next 缓存挂载不计入最终镜像，也不声称跨 GitHub runner 自动保留。
 
-最终 Docker archive 按成员压缩并计算 SHA-256。通过 SSH/rsync 只上传 ECS 缺少的内容块，ECS 校验全部校验和后在本机重组并导入镜像。Node 基础层、相同依赖和资源无需反复跨网传输。本机导入仍会读取完整精简镜像，不等于完整镜像再次上传。无须新增 ACR 账号或仓库凭据；未来有 ACR 时可替换传输环节而保留发布和回滚脚本。
+镜像推送 GitHub Container Registry（GHCR），ECS 使用 Docker 原生拉取，自动复用已有层并并行下载。与原来的 docker save/SSH 整包传输相比，代码小改动只下载变化的应用层。SSH 仅发送发布脚本、运行配置和短期仓库凭据。
+
+当前没有可直接使用的阿里云 ACR 账号/仓库配置；实测 ECS 可连接 GHCR，因此使用已有 GitHub 工作流权限，无需新增账号。镜像仓库认证使用每次 job 的 GITHUB_TOKEN，ECS 临时凭据在拉取结束或失败时删除，job 结束后令牌过期；没有在服务器安装永久仓库密码。GitHub 工作流权限增加 packages:write。未来配置 ACR 后，可以替换仓库地址和认证方式，健康切换逻辑不变。
 
 ## 发布与失败保护
 
 1. 检查发布工具，构建精简镜像，保存构建缓存。
-2. 上传缺少的镜像块和发布脚本，不再打包上传整个仓库。
+2. 上传发布脚本，由 ECS 拉取缺少的镜像层，不再打包上传整个仓库。
 3. 在原 Docker 网络启动独立候选容器，旧版本持续服务。
 4. 验证健康接口、提交版本、首页和未登录后台拒绝访问；保留上一版静态资源兼容已打开页面。
 5. 测试候选 Nginx 配置，只替换现有 upstream，原地写入文件挂载并平滑 reload，不重启 HTTPS 入口。
 6. 使用真实域名、有效证书验证新版本，成功后记录当前/上一版；切换失败自动恢复原配置和环境变量。
-7. 保留上一版容器运行供回滚；再上一版容器在下一次成功后退出。保留最近三个发布记录及七天缓存，清理仅针对本项目的历史文件/镜像，不执行全局 prune。
+7. 保留上一版容器运行供回滚；再上一版容器在下一次成功后退出。保留最近三个发布记录和至少七天历史镜像，清理仅针对本项目的历史文件/镜像，不执行全局 prune。
 
-并发发布通过 GitHub concurrency 和服务器 flock 串行化，新提交不会取消正在切换的发布。应用和 Nginx 保留 `unless-stopped` 重启策略。原有证书续期服务保持原样。
+并发发布通过 GitHub concurrency 和服务器 flock 串行化，新提交不会取消正在切换的发布。应用和 Nginx 保留 `unless-stopped` 重启策略。原有证书续期 timer、acme.sh 账号、TLS-ALPN 方式保持原样；脚本改为启停现有 Nginx 并与发布共享锁，避免 Compose 重新启动旧应用。证书续期本身仍会短暂停用 443，这是原有 TLS-ALPN 方式的行为，日常发布不会如此。
 
 ## 手动回滚与运维
 
@@ -30,7 +32,7 @@ GitHub Buildx 通过 `type=gha,mode=max` 缓存构建层。依赖锁文件不变
 
 现有 `docker-compose.yml` 仅作为首次部署基础设施的定义保留。日常生产应用由发布脚本管理：不要在现有生产上运行 `docker compose down`、`up --remove-orphans`，或重新复制仓库中的静态 nginx.conf 覆盖动态 upstream。维护 Nginx 配置时应保留当前 upstream。重启单个 Nginx 可使用 `docker restart the-one-nginx-1`。
 
-GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜像大小、压缩总量、实际传输字节、服务器发布时间；Actions 页面包含整体耗时。冷缓存首次发布和跨境网络波动仍可能超过 1–5 分钟。
+GitHub 每次运行保存 `deployment-metrics-<SHA>` artifact，包括精简镜像大小、压缩总量、新下载层的压缩字节、服务器发布时间；Actions 页面包含整体耗时。冷缓存首次发布和跨境网络波动仍可能超过 1–5 分钟。
 
 ## 原始测量（2026-09-28）
 

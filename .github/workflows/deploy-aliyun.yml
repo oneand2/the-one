@@ -12,6 +12,7 @@ concurrency:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   deploy:
@@ -25,17 +26,25 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts/deploy -p 'test_*.py'
           bash -n scripts/deploy/release.sh scripts/deploy/rollback.sh
+          sh -n scripts/deploy/renew-certificate.sh
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build minimal production image
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64
-          tags: the-one-app:${{ github.sha }}
-          outputs: type=docker,dest=${{ runner.temp }}/image.tar
+          tags: ghcr.io/oneand2/the-one:${{ github.sha }}
+          push: true
           provenance: false
           cache-from: type=gha,scope=the-one-production
           cache-to: type=gha,mode=max,scope=the-one-production
@@ -49,16 +58,17 @@ jobs:
             NEXT_PUBLIC_ICP_NUMBER=${{ vars.ICP_NUMBER }}
             NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER=${{ vars.PUBLIC_SECURITY_NUMBER }}
 
-      - name: Pack reusable image layers
+      - name: Read published image manifest
         run: |
           mkdir -p "$RUNNER_TEMP/metrics"
-          python3 scripts/deploy/image-archive.py pack "$RUNNER_TEMP/image.tar" "$RUNNER_TEMP/image" | tee "$RUNNER_TEMP/metrics/image.json"
+          docker buildx imagetools inspect --raw "ghcr.io/oneand2/the-one:$GITHUB_SHA" > "$RUNNER_TEMP/metrics/manifest.json"
 
-      - name: Upload changed layers and release
+      - name: Pull changed layers and release
         env:
           DEPLOY_HOST: 47.116.143.76
           DEPLOY_USER: admin
           DEPLOY_KEY: ${{ secrets.ALIYUN_SSH_KEYC }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEPLOY_PATH: /opt/the-one
           ALIPAY_APP_ID: ${{ secrets.ALIPAY_APP_ID }}
           ALIPAY_SELLER_ID: ${{ secrets.ALIPAY_SELLER_ID }}
@@ -144,20 +154,19 @@ jobs:
           SSH="ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 -i $HOME/.ssh/aliyun_deploy_key"
           REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
           INCOMING="$DEPLOY_PATH/incoming/$GITHUB_SHA"
-          $SSH "$REMOTE" "sudo install -d -m 700 '$INCOMING' '$DEPLOY_PATH/image-blobs'"
+          $SSH "$REMOTE" "sudo install -d -m 700 '$INCOMING'"
+          # This job's short-lived token expires after the job; no permanent
+          # registry credential is installed on ECS.
+          printf '%s' "$GHCR_TOKEN" > "$RUNNER_TEMP/registry-token"
           started=$(date +%s)
-          rsync -rt --ignore-existing --stats --files-from="$RUNNER_TEMP/image/blob-list.txt" \
-            -e "$SSH" --rsync-path='sudo rsync' "$RUNNER_TEMP/image/blobs/" \
-            "$REMOTE:$DEPLOY_PATH/image-blobs/" | tee "$RUNNER_TEMP/metrics/transfer.txt"
           rsync -rt -e "$SSH" --rsync-path='sudo rsync' \
-            "$RUNNER_TEMP/image/manifest.json" "$PAYMENT_ENV_FILE" \
-            scripts/deploy/image-archive.py scripts/deploy/release.sh scripts/deploy/rollback.sh scripts/deploy/cleanup.py \
+            "$RUNNER_TEMP/metrics/manifest.json" "$PAYMENT_ENV_FILE" "$RUNNER_TEMP/registry-token" \
+            scripts/deploy/release.sh scripts/deploy/rollback.sh scripts/deploy/cleanup.py scripts/deploy/renew-certificate.sh \
             "$REMOTE:$INCOMING/"
           $SSH "$REMOTE" "sudo bash '$INCOMING/release.sh' '$GITHUB_SHA'"
           $SSH "$REMOTE" "sudo cat '$DEPLOY_PATH/releases/$GITHUB_SHA/result.json'" > "$RUNNER_TEMP/metrics/release.json"
-          echo "Upload and release: $(( $(date +%s) - started )) seconds" >> "$GITHUB_STEP_SUMMARY"
-          cat "$RUNNER_TEMP/metrics/image.json" "$RUNNER_TEMP/metrics/release.json" >> "$GITHUB_STEP_SUMMARY"
-          grep 'Total transferred file size' "$RUNNER_TEMP/metrics/transfer.txt" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pull and release: $(( $(date +%s) - started )) seconds" >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/metrics/release.json" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify public HTTPS release
         env:
@@ -177,4 +186,4 @@ jobs:
 
       - name: Remove runner credentials
         if: always()
-        run: rm -f "$RUNNER_TEMP/payment-production.env" "$HOME/.ssh/aliyun_deploy_key"
+        run: rm -f "$RUNNER_TEMP/payment-production.env" "$RUNNER_TEMP/registry-token" "$HOME/.ssh/aliyun_deploy_key"

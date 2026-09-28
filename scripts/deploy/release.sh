@@ -12,11 +12,13 @@ mkdir -p "$work" "$state"
 chmod 700 "$work" "$state"
 exec 9>"$state/release.lock"
 flock -w 900 9
-image="the-one-app:$release"
+image="ghcr.io/oneand2/the-one:$release"
 candidate="the-one-release-$release"
 nginx=the-one-nginx-1
 network=the-one_default
 started=$(date +%s)
+had_current=0
+[[ -f "$state/current" ]] && had_current=1
 old=$(cat "$state/current" 2>/dev/null || printf 'the-one-app-1')
 older=$(cat "$state/previous" 2>/dev/null || true)
 if [[ $old == "$candidate" ]]; then
@@ -30,9 +32,10 @@ cp "$root/.env.production" "$work/env.before"
 chmod 600 "$work/env.before"
 switched=0
 committed=0
+auth="$work/registry-auth"
 rollback() {
   result=$?
-  trap - EXIT INT TERM
+  trap - EXIT INT TERM HUP
   if [[ $committed == 0 ]]; then
     if [[ $switched == 1 ]]; then
       cat "$work/nginx.before.conf" > "$root/nginx.conf"
@@ -43,16 +46,31 @@ rollback() {
       cp "$work/env.before" "$root/.env.production"
       echo 'Restored previous Nginx upstream.'
     fi
+    if [[ $had_current == 1 ]]; then
+      printf '%s\n' "$old" > "$state/current"
+    else
+      rm -f "$state/current"
+    fi
+    if [[ -n $older ]]; then printf '%s\n' "$older" > "$state/previous"; else rm -f "$state/previous"; fi
     docker rm -f "$candidate" >/dev/null 2>&1 || true
     echo "Release failed; previous application retained: $old" >&2
   fi
-  rm -f "$incoming/payment-production.env"
+  rm -rf "$auth"
+  rm -f "$incoming/payment-production.env" "$incoming/registry-token"
   exit "$result"
 }
 trap rollback EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
-python3 "$incoming/image-archive.py" unpack "$incoming/manifest.json" "$root/image-blobs" | docker load
+trap 'exit 129' HUP
+mkdir -p "$auth"
+chmod 700 "$auth"
+docker --config "$auth" login ghcr.io -u oneand2 --password-stdin < "$incoming/registry-token"
+pull_started=$(date +%s)
+docker --config "$auth" pull "$image" | tee "$work/pull.log"
+pull_seconds=$(( $(date +%s) - pull_started ))
+rm -rf "$auth"
+rm -f "$incoming/registry-token"
 # A successful import alone is not proof that the requested release was loaded.
 [[ $(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}') == "$release" ]]
 cp "$root/.env.production" "$work/app.env"
@@ -128,10 +146,32 @@ printf '%s\n' "$old" > "$state/previous"
 printf '%s\n' "$candidate" > "$state/current.new"
 mv "$state/current.new" "$state/current"
 committed=1
+# Keep the existing systemd timer/acme account, but avoid Compose resurrecting
+# the legacy app on renewal. Installation happens only after a healthy cutover.
+if [[ -f /usr/local/sbin/the-one-cert-renew.sh ]]; then
+  cp /usr/local/sbin/the-one-cert-renew.sh "$work/cert-renew.before.sh"
+  install -m 700 "$incoming/renew-certificate.sh" /usr/local/sbin/the-one-cert-renew.sh
+fi
 # Keep the immediate previous container running for instant rollback and drains.
 # Only retire a version that is neither current nor its rollback target.
 if [[ -n $older && $older != "$old" && $older != "$candidate" ]]; then docker rm -f "$older" >/dev/null 2>&1 || true; fi
 bytes=$(docker image inspect "$image" --format '{{.Size}}')
-printf '{"release":"%s","image_bytes":%s,"server_deploy_seconds":%s,"previous":"%s"}\n' "$release" "$bytes" "$(( $(date +%s) - started ))" "$old" | tee "$work/result.json"
+python3 - "$work" "$release" "$bytes" "$pull_seconds" "$(( $(date +%s) - started ))" "$old" <<'PYMETRICS'
+import json,pathlib,re,sys
+work,release,size,pull,total,old=sys.argv[1:]
+work=pathlib.Path(work)
+manifest=json.loads((work/'manifest.json').read_text())
+layers=manifest.get('layers',[])
+log=(work/'pull.log').read_text()
+downloaded=set(re.findall(r'^([a-f0-9]+): Pull complete',log,re.M))
+known=set(re.findall(r'^([a-f0-9]+): Already exists',log,re.M))
+def matches(layer,ids): return any(layer['digest'].split(':')[-1].startswith(prefix) for prefix in ids)
+measured=all(matches(layer,downloaded|known) for layer in layers)
+result={'release':release,'image_bytes':int(size),'compressed_image_bytes':sum(layer['size'] for layer in layers),
+        'downloaded_layer_bytes':sum(layer['size'] for layer in layers if matches(layer,downloaded)) if measured else None,
+        'pull_seconds':int(pull),'server_deploy_seconds':int(total),'previous':old}
+(work/'result.json').write_text(json.dumps(result)+'\n')
+print(json.dumps(result))
+PYMETRICS
 # Cleanup is limited to this application's managed releases; live/previous are protected.
 python3 "$state/cleanup.py" || echo 'Cache cleanup deferred; release remains healthy.' >&2

@@ -13,7 +13,7 @@ class ReleaseTests(unittest.TestCase):
             (root/'.env.production').write_text('EXISTING=value\nALIPAY_APP_ID=old\n')
             (incoming/'payment-production.env').write_text('ALIPAY_APP_ID=new\n')
             (incoming/'manifest.json').write_text('{}')
-            (incoming/'image-archive.py').write_text('print("image")')
+            (incoming/'registry-token').write_text('test-token')
             for name in ['cleanup.py','rollback.sh']: (incoming/name).write_text('')
             script=root/'release.sh'
             script.write_text((HERE/'release.sh').read_text().replace('root=/opt/the-one','root='+str(root)))
@@ -56,6 +56,7 @@ sys.exit(0)
                 self.assertEqual((root/'deployment/previous').read_text().strip(),'the-one-app-1')
                 self.assertIn('ALIPAY_APP_ID=new',(root/'.env.production').read_text())
             self.assertFalse((incoming/'payment-production.env').exists())
+            self.assertFalse((incoming/'registry-token').exists())
 
     def test_success(self): self.run_release('')
     def test_unhealthy_candidate_keeps_old(self): self.run_release('candidate')

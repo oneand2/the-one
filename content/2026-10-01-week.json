@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-10-01",
+  "stories": [
+    {
+      "title": "举烛入书",
+      "origin": "china",
+      "sourceLabel": "《韩非子·外储说左上》",
+      "originalLanguage": "文言",
+      "originalText": "郢人有遺燕相國書者，夜書，火不明，因謂持燭者曰：『舉燭。』云而過書『舉燭』。舉燭，非書意也。燕相受書而說之，曰：『舉燭者，尚明也；尚明也者，舉賢而任之。』燕相白王，王大說，國以治。治則治矣，非書意也。今世舉學者多似此類。",
+      "body": "《韩非子·外储说左上》写，一个郢都人在夜里给燕国宰相写信。灯火昏暗，他顺口吩咐持烛的人：『举烛。』\n\n说话间，他误把『举烛』二字写进信里。这两个字本来不属于书信的意思。\n\n燕国宰相收到信，却解释说，『举烛』是崇尚光明；崇尚光明，就是选举贤者而任用。宰相把这番解释告诉燕王，燕王十分高兴，照此施行，国家也治理好了。\n\n《韩非子》末了仍说：治理确实见效，可那并不是写信人的原意。",
+      "sources": "维基文库《韩非子·外储说左上》底本原文（郢书燕说），https://zh.wikisource.org/wiki/韓非子/外儲說左上"
+    },
+    {
+      "title": "亭外一日",
+      "origin": "china",
+      "sourceLabel": "《后汉书·郭伋传》",
+      "originalLanguage": "文言",
+      "originalText": "始至行部，到西河美稷，有童兒數百，各騎竹馬，道次迎拜。伋問：『兒曹何自遠來？』對曰：『聞使君到，喜，故來奉迎。』伋辭謝之。及事訖，諸兒復送至郭外，問『使君何日當還？』伋謂別駕從事，計日告之。行部既還，先期一日，伋為違信於諸兒，遂止於野亭，須期乃入。",
+      "body": "《后汉书·郭伋传》记，郭伋任并州牧，巡视到西河美稷。数百名孩子各骑竹马，在路旁迎接他，说听闻使君来到，心里欢喜。\n\n事情办完，孩子们又送他到城外，问他哪一天回来。郭伋让随行官员算好路程，把日期告诉他们。\n\n巡视返程时，他比约定早到了一天。城门已在眼前，他却认为这时进去，便是对孩子们失信。\n\n郭伋于是停在城外的野亭，等到约定的日子才进城。",
+      "sources": "维基文库《后汉书》卷三十一《郭伋传》底本原文（童儿骑竹马、止于野亭），https://zh.wikisource.org/wiki/後漢書/卷31"
+    },
+    {
+      "title": "卵仍未食",
+      "origin": "china",
+      "sourceLabel": "《世说新语·忿狷》",
+      "originalLanguage": "文言",
+      "originalText": "王藍田性急。嘗食雞子，以筯刺之，不得，便大怒，舉以擲地。雞子於地圓轉未止，仍下地以屐齒蹍之，又不得，瞋甚，復於地取內口中，齧破即吐之。王右軍聞而大笑曰：『使安期有此性，猶當無一豪可論，況藍田邪？』",
+      "body": "《世说新语·忿狷》说，蓝田侯王述性子急。有次吃鸡蛋，他用筷子去刺，没能夹住，立刻发怒，把蛋举起来掷到地上。\n\n鸡蛋落地后转个不停。他下席用木屐底下的齿去碾，又没踩中，怒气更盛。\n\n王述只好从地上捡起鸡蛋，塞进口中咬破；刚刚咬开，他又把蛋吐了出来。王羲之听说此事，大笑着说，纵使王述的父亲有这种性情，也没有什么可取，何况王述。",
+      "sources": "维基文库《世说新语·忿狷》第二则底本原文（王蓝田食鸡子），https://zh.wikisource.org/wiki/世說新語/忿狷"
+    },
+    {
+      "title": "井中一人",
+      "origin": "china",
+      "sourceLabel": "《吕氏春秋·察传》",
+      "originalLanguage": "文言",
+      "originalText": "宋之丁氏，家無井，而出溉汲，常一人居外。及其家穿井，告人曰：『吾穿井得一人。』有聞而傳之者曰：『丁氏穿井得一人。』國人道之，聞之於宋君。宋君令人問之於丁氏，丁氏對曰：『得一人之使，非得一人於井中也。』求聞之若此，不若無聞也。",
+      "body": "《吕氏春秋·察传》写，宋国丁家没有水井，取水要到外面去，常年得留一个人在外专管汲水。后来家里凿成井，丁氏告诉别人：『我家穿井得一人。』\n\n听见这话的人转告旁人时，说成了：『丁家挖井挖出了一个人。』都城里人人传说，消息一直到了宋君那里。\n\n宋君没有停在传闻上，派人去问丁氏。丁氏回答，所谓『得一人』，是得到一个人的劳力，无须再派人出门取水，并非从井里挖出一个人。\n\n原文收束说，像这样求取传闻，还不如没有听见。",
+      "sources": "维基文库四部丛刊本《吕氏春秋·慎行论·察传》原页，https://zh.wikisource.org/zh/Page:Sibu_Congkan0424-高誘-呂氏春秋-5-5.djvu/45；中国哲学书电子化计划《风俗通义·正失》所引《吕氏春秋》同段，https://ctext.org/fengsutongyi/zheng-shi/ding-shi-jia-chuan-jing-de/zhs"
+    },
+    {
+      "title": "仰观坠井",
+      "origin": "world",
+      "sourceLabel": "柏拉图《泰阿泰德》",
+      "originalLanguage": "古希腊语",
+      "originalText": "Ὥσπερ καὶ Θαλῆν ἀστρονομοῦντα, ὦ Θεόδωρε, καὶ ἄνω βλέποντα, πεσόντα εἰς φρέαρ, Θρᾷττά τις ἐμμελὴς καὶ χαρίεσσα θεραπαινὶς ἀποσκῶψαι λέγεται ὡς τὰ μὲν ἐν οὐρανῷ προθυμοῖτο εἰδέναι, τὰ δ' ἔμπροσθεν αὐτοῦ καὶ παρὰ πόδας λανθάνοι αὐτόν. ταὐτὸν δὲ ἀρκεῖ σκῶμμα ἐπὶ πάντας ὅσοι ἐν φιλοσοφίᾳ διάγουσι.",
+      "body": "柏拉图《泰阿泰德》中，苏格拉底谈到一则关于泰勒斯的笑话。泰勒斯仰头观察星空，行走时掉进一口井里。\n\n一位机敏而诙谐的色雷斯女仆看见后取笑他：他热切地想知道天上发生的事，眼前和脚边的东西却瞒过了他。\n\n苏格拉底说，这个笑话也适用于终身研究哲学的人；他们探究人的本性，却可能连邻人正在做什么都不知道。",
+      "sources": "希腊语维基文库，Plato, Θεαίτητος 174a–b，John Burnet 1903 校本原文，https://el.wikisource.org/wiki/Θεαίτητος；Project Gutenberg, Plato's Theaetetus, Benjamin Jowett 英译，https://www.gutenberg.org/files/1726/1726-h/1726-h.htm"
+    },
+    {
+      "title": "斑斑的斧",
+      "origin": "world",
+      "sourceLabel": "富兰克林《自传》",
+      "originalLanguage": "英语",
+      "originalText": "This article, therefore, cost me so much painful attention, and my faults in it vexed me so much, and I made so little progress in amendment, and had such frequent relapses, that I was almost ready to give up the attempt, and content myself with a faulty character in that respect, like the man who, in buying an ax of a smith, my neighbour, desired to have the whole of its surface as bright as the edge.\n\nThe smith consented to grind it bright for him if he would turn the wheel; he turn'd, while the smith press'd the broad face of the ax hard and heavily on the stone, which made the turning of it very fatiguing. The man came every now and then from the wheel to see how the work went on, and at length would take his ax as it was, without farther grinding.\n\n\"No,\" said the smith, \"turn on, turn on; we shall have it bright by-and-by; as yet, it is only speckled.\" \"Yes,\" says the man, \"but I think I like a speckled ax best.\"",
+      "body": "富兰克林在《自传》中写，自己用一套表格逐项改正习惯，其中『秩序』一项最难。他反复犯错，进展很少，几乎想放弃，便想起邻居铁匠铺的一件事。\n\n一名顾客买斧头，要求斧面像刃口一样通体明亮。铁匠答应替他磨，但要他自己转动砂轮。\n\n顾客转轮，铁匠把宽阔的斧面紧压在磨石上。工作很累，顾客不时停下来察看，后来决定就这样把斧头带走。铁匠劝他继续，再磨一会便会全亮，现在还满是斑点。\n\n顾客回答：『这样正好，我想我还是喜欢一把带斑点的斧头。』",
+      "sources": "Benjamin Franklin, Autobiography, Part II, Project Gutenberg eBook #20203（斑斑的斧段落），https://www.gutenberg.org/files/20203/20203-h/20203-h.htm；美国国会图书馆富兰克林自传在线版本指南，https://guides.loc.gov/finding-benjamin-franklin/autobiography-online"
+    },
+    {
+      "title": "一招未授",
+      "origin": "world",
+      "sourceLabel": "萨迪《蔷薇园》",
+      "originalLanguage": "波斯语",
+      "originalText": "یکی در صنعتِ کُشتی گرفتن سرآمده بود، سی‌صد و شصت بندِ فاخر بدانستی و هر روز به نوعی از آن کُشتی گرفتی. مگر گوشهٔ خاطرش با جمالِ یکی از شاگردان میلی داشت. سی‌صد و پنجاه و نُه بندش در‌آموخت مگر یک بند که در تعلیمِ آن دفع انداختی و تأخیر کردی. فی‌الجمله پسر در قوّت و صنعت سر آمد و کسی را در زمانِ او با او امکانِ مقاومت نبود تا به حدّی که پیشِ مَلِکِ آن روزگار گفته بود: استاد را فضیلتی که بر من است از رویِ بزرگیست و حقِّ تربیت؛ وگرنه به قوّت از او کمتر نیستم و به صنعت با او برابرم.\n\nمَلِک را این سخن دُشْخوار آمد. فرمود تا مُصارعت کنند.\n\nمقامی مُتَّسِع ترتیب کردند و ارکانِ دولت و اعیانِ حضرت و زورآورانِ رویِ زمین حاضر شدند. پسر چون پیلِ مست اندر‌آمد به صَدمَتی که اگر کوهِ رویین بودی از جای بر‌کندی. استاد دانست که جوان به قوّت از او برتر است؛ بدان بندِ غریب که از وی نهان داشته بود، با او در‌آویخت. پسر دفعِ آن ندانست، به هم بر‌آمد. استاد به دو دست از زمینش بالایِ سَر برد و فرو‌کوفت. غریو از خلق برخاست. ملک فرمود استاد را خلعت و نعمت دادن و پسر را زجر و ملامت کرد که با پرورندهٔ خویش دعویِ مقاومت کردی و به سر نبردی.\n\nگفت: ای پادشاهِ روی زمین! به زورآوری بر من دست نیافت بلکه مرا از علمِ کُشتی دقیقه‌ای مانده بود و همه عمر از من دریغ همی‌ داشت. امروز بدان دقیقه بر من غالب آمد.\n\nگفت: از بهرِ چنین روزی؛ که زیرکان گفته‌اند: دوست را چندان قوّت مده که دشمنی کند تواند.",
+      "body": "萨迪《蔷薇园》写，一位摔跤名师通晓三百六十种招式。他偏爱一个弟子，把三百五十九招都教给了他，唯独有一招一再推迟。\n\n弟子渐渐在力量和技艺上无人能敌，甚至当着国王说，自己只在年长和教养之恩上让老师居先；论力量与技艺，已经不在老师之下。\n\n国王命二人较量。弟子挟着强力上场，老师知道力量不敌，便使出那一招从未传授的技法。弟子不会化解，被老师举过头顶，摔在地上。\n\n弟子说，老师胜在藏了一招。老师回答，他正是为这种时候留下它；智者说，不要给朋友足以在成为敌人时伤害你的力量。",
+      "sources": "Ganjoor，萨迪《蔷薇园》第一章第27则，波斯语原文及校订记录，https://ganjoor.net/saadi/golestan/gbab1/sh27；Edward Rehatsek 英译《The Gulistan》，https://www.thesufi.com/sufi_ebooks/Shaykh_Saadi/Saadi_Gulistan_The_Rose_Garden_by_Edward_Rehatsek.pdf"
+    }
+  ]
+}

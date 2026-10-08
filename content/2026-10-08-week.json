@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-10-08",
+  "stories": [
+    {
+      "title": "先买马骨",
+      "origin": "china",
+      "sourceLabel": "《战国策·燕策一》",
+      "originalLanguage": "文言",
+      "originalText": "臣聞古之君人有以千金求千里馬者，三年不能得。涓人言於君曰：『請求之。』君遣之。三月得千里馬，馬已死，買其首五百金，反以報君。君大怒曰：『所求者生馬，安事死馬而捐五百金？』涓人對曰：『死馬且買之五百金，況生馬乎？天下必以王為能市馬，馬今至矣。』於是不能期年，千里之馬至者三。",
+      "body": "《战国策·燕策一》写，燕昭王想招揽贤士，郭隗给他讲了一件旧事。一位国君愿出千金求千里马，三年仍没有结果。\n\n一名宫中近侍请命去找，三个月后只遇到一匹已经死去的千里马。他花五百金买下马头，回来复命。国君发怒：要的是活马，为何白费五百金买死马？\n\n近侍说，死马尚且肯出五百金，何况活马；天下从此会知道国君真肯买好马。不到一年，送来的千里马便有三匹。\n\n郭隗接着请燕昭王从礼遇自己开始：连他都被郑重对待，远方比他更贤的人自然会来。",
+      "sources": "维基文库《绎史》卷一百三十五所录《战国策·燕策一》郭隗说燕昭王全文，https://zh.wikisource.org/zh/繹史_(四庫全書本)/卷135；维基文库《太平御览》卷八百九十四所引同段，https://zh.wikisource.org/wiki/太平御覽/0894"
+    },
+    {
+      "title": "兴尽而返",
+      "origin": "china",
+      "sourceLabel": "《世说新语·任诞》",
+      "originalLanguage": "文言",
+      "originalText": "王子猷居山陰，夜大雪，眠覺，開室，命酌酒。四望皎然，因起彷徨，詠左思《招隱詩》。忽憶戴安道。時戴在剡，即便夜乘小船就之。經宿方至，造門不前而返。人問其故，王曰：『吾本乘興而行，興盡而返，何必見戴？』",
+      "body": "《世说新语·任诞》记，王子猷住在山阴。一个大雪之夜，他睡醒后打开房门，让人斟酒；四下雪色明亮，他徘徊吟诵左思的《招隐诗》。\n\n他忽然想起住在剡县的戴安道，当夜便乘小船前去。船行一整夜，才到戴家门前。\n\n王子猷没有进去，转身原路返回。别人问他缘故，他说，自己原是乘着兴致而来，兴致已尽便回去，何必一定要见到戴安道。",
+      "sources": "维基文库《世说新语·任诞》第四十七则底本原文（王子猷雪夜访戴），https://zh.wikisource.org/zh-hans/世說新語/任誕"
+    },
+    {
+      "title": "暮夜四知",
+      "origin": "china",
+      "sourceLabel": "《后汉书·杨震传》",
+      "originalLanguage": "文言",
+      "originalText": "當之郡，道經昌邑，故所舉荊州茂才王密為昌邑令，謁見，至夜懷金十斤以遺震。震曰：『故人知君，君不知故人，何也？』密曰：『暮夜無知者。』震曰：『天知，神知，我知，子知。何謂無知？』密愧而出。",
+      "body": "《后汉书·杨震传》记，杨震赴任东莱太守，途中经过昌邑。昌邑县令王密，正是他早年举荐的人。\n\n王密夜里来拜见，怀中带着十斤黄金，想送给杨震。杨震说：『老朋友了解你，你却不了解老朋友，这是为什么？』\n\n王密说，深夜里没有人知道。杨震回答：『天知，神知，我知，你知，怎么能说无人知道？』\n\n王密听罢惭愧，带着黄金退出去了。",
+      "sources": "维基文库四库全书本《后汉书》卷八十四《杨震传》底本原文（暮夜却金），https://zh.wikisource.org/zh-hans/後漢書_(四庫全書本)/卷084；维基文库《后汉书》卷五十四杨震列传，https://zh.wikisource.org/wiki/後漢書/卷54"
+    },
+    {
+      "title": "真画者",
+      "origin": "china",
+      "sourceLabel": "《庄子·田子方》",
+      "originalLanguage": "文言",
+      "originalText": "宋元君將畫圖，衆史皆至，受揖而立，舐筆和墨，在外者半。有一史後至者，儃儃然不趨，受揖不立，因之舍。公使人視之，則解衣槃礴，臝。君曰：『可矣，是眞畫者也！』",
+      "body": "《庄子·田子方》写，宋元君要命人作画，众画师都赶来领命，站在一旁舔笔调墨；来的人太多，还有一半只能候在外面。\n\n有一位画师最后才到。他缓缓而行，不曾快步趋前；领命之后也没有站着等候，径自回到住处。\n\n宋元君派人去看，只见那人解开衣服，伸腿坐着，赤裸身体。宋元君听完便说：『可以了，这才是真正的画师。』",
+      "sources": "维基文库《庄子·田子方》底本原文（宋元君将画图），https://zh.wikisource.org/zh-hant/莊子/田子方"
+    },
+    {
+      "title": "田中无金",
+      "origin": "world",
+      "sourceLabel": "拉封丹《农夫与孩子》",
+      "originalLanguage": "法语",
+      "originalText": "Travaillez, prenez de la peine :\nC’est le fonds qui manque le moins.\nUn riche laboureur, sentant sa mort prochaine,\nFit venir ses enfants, leur parla sans témoins.\nGardez-vous, leur dit-il, de vendre l’héritage\nQue nous ont laissé nos parents :\nUn trésor est caché dedans.\nJe ne sais pas l’endroit ; mais un peu de courage\nVous le fera trouver : vous en viendrez à bout.\nRemuez votre champ dès qu’on aura fait l’oût :\nCreusez, fouillez, bêchez ; ne laissez nulle place\nOù la main ne passe et repasse.\nLe père mort, les fils vous retournent le champ,\nDe çà, de là, partout ; si bien qu’au bout de l’an\nIl en rapporta davantage.\nD’argent, point de caché. Mais le père fut sage\nDe leur montrer, avant sa mort,\nQue le travail est un trésor.",
+      "body": "拉封丹写，一位富有的农夫临终前把孩子们叫到身边，避开旁人交代：不要卖掉祖传的田地，里面藏着一笔财宝。\n\n他不知道财宝埋在哪里，只让孩子们在收获之后翻遍田地，挖土、掘地、下锹，不漏过任何一处。\n\n父亲去世，孩子们把整块田来回翻了一遍。地里没有找到金银；到了年末，经过深耕的田地却比往年收获更多。\n\n拉封丹在原诗末尾写，父亲临终前让孩子们看见，劳作本身就是财宝。",
+      "sources": "法国维基文库，Jean de La Fontaine,《Le Laboureur et ses enfants》，1874 年版第五卷第九则，第164页，https://fr.wikisource.org/wiki/Fables_de_La_Fontaine_(éd._1874)/Le_Laboureur_et_ses_enfants"
+    },
+    {
+      "title": "眼中之镜",
+      "origin": "world",
+      "sourceLabel": "王尔德《弟子》",
+      "originalLanguage": "英语",
+      "originalText": "When Narcissus died the pool of his pleasure changed from a cup of sweet waters into a cup of salt tears, and the Oreads came weeping through the woodland that they might sing to the pool and give it comfort.\n\nAnd when they saw that the pool had changed from a cup of sweet waters into a cup of salt tears, they loosened the green tresses of their hair and cried to the pool and said, ‘We do not wonder that you should mourn in this manner for Narcissus, so beautiful was he.’\n\n‘But was Narcissus beautiful?’ said the pool.\n\n‘Who should know that better than you?’ answered the Oreads. ‘Us did he ever pass by, but you he sought for, and would lie on your banks and look down at you, and in the mirror of your waters he would mirror his own beauty.’\n\nAnd the pool answered, ‘But I loved Narcissus because, as he lay on my banks and looked down at me, in the mirror of his eyes I saw ever my own beauty mirrored.’",
+      "body": "王尔德的散文诗《弟子》从纳喀索斯死后写起。他常来凝望自己的那池甜水变成了咸泪，林泽女神们穿过树林，前来为池水歌唱，安慰它的悲伤。\n\n女神们说，纳喀索斯如此美丽，池水为他哀悼并不奇怪。\n\n池水却问：『纳喀索斯美吗？』女神们惊讶，答说他总在池边俯身，只有池水最清楚他的容貌。\n\n池水说，它爱纳喀索斯，是因为他低头看水时，池水总能在他的眼睛里看见自己的美。",
+      "sources": "Project Gutenberg, Oscar Wilde, Selected Prose of Oscar Wilde,《The Disciple》英文全文，https://www.gutenberg.org/files/1338/1338-h/1338-h.htm；维基共享资源《The Poetical Works of Oscar Wilde》扫描本，第300页，https://upload.wikimedia.org/wikipedia/commons/1/19/The_poetical_works_of_Oscar_Wilde_(IA_poeticalworksofo00wild).pdf"
+    },
+    {
+      "title": "此门为你",
+      "origin": "world",
+      "sourceLabel": "卡夫卡《在法的门前》",
+      "originalLanguage": "德语",
+      "originalText": "Vor dem Gesetz steht ein Türhüter. Zu diesem Türhüter kommt ein Mann vom Lande und bittet um Eintritt in das Gesetz. Aber der Türhüter sagt, daß er ihm jetzt den Eintritt nicht gewähren könne. Der Mann überlegt und fragt dann, ob er also später werde eintreten dürfen. „Es ist möglich,“ sagt der Türhüter, „jetzt aber nicht.“ Da das Tor zum Gesetz offen steht wie immer und der Türhüter beiseite tritt, bückt sich der Mann, um durch das Tor in das Innere zu sehen.\n\n[…]\n\nWohl aber erkennt er jetzt im Dunkel einen Glanz, der unverlöschlich aus der Türe des Gesetzes bricht. Nun lebt er nicht mehr lange. Vor seinem Tode sammeln sich in seinem Kopfe alle Erfahrungen der ganzen Zeit zu einer Frage, die er bisher an den Türhüter noch nicht gestellt hat. Er winkt ihm zu, da er seinen erstarrenden Körper nicht mehr aufrichten kann. Der Türhüter muß sich tief zu ihm hinunterneigen, denn der Größenunterschied hat sich sehr zu ungunsten des Mannes verändert.\n\n„Was willst du denn jetzt noch wissen?“ fragt der Türhüter, „du bist unersättlich.“ „Alle streben doch nach dem Gesetz,“ sagt der Mann, „wieso kommt es, daß in den vielen Jahren niemand außer mir Einlaß verlangt hat?“ Der Türhüter erkennt, daß der Mann schon an seinem Ende ist und, um sein vergehendes Gehör noch zu erreichen, brüllt er ihn an: „Hier konnte niemand sonst Einlaß erhalten, denn dieser Eingang war nur für dich bestimmt. Ich gehe jetzt und schließe ihn.“",
+      "body": "卡夫卡写，一个乡下人来到法的门前，请守门人准许进入。门一直开着，守门人却说，现在还不能让他进去；至于以后是否可以，只答『有可能』。\n\n乡下人于是坐在门边等候。他等过许多年，反复请求，还把随身所有东西都交给守门人。守门人一概收下，却始终不准他进入。\n\n临死前，他看见门内仍有不灭的光。他问守门人，所有人都向往法，为何这么多年再没有别人来请求入内。\n\n守门人俯身对着他衰弱的耳朵喊：这道入口只为他一人而设；现在，守门人要去把它关上了。",
+      "sources": "德语维基文库，Franz Kafka,《Vor dem Gesetz》1915年首刊校勘文本（已据扫描本两次校对），https://de.wikisource.org/wiki/Vor_dem_Gesetz"
+    }
+  ]
+}

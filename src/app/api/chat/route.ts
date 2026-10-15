@@ -7,6 +7,7 @@ import { isVip } from '@/utils/vip';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData, QianchengImportData } from '@/types/import-data';
 import { retrieveRelevantNews } from '@/utils/newsRetrieval';
 import { baguaDimensionLabel, personalityName } from '@/lib/baguaPersonality';
+import { chatReasoningParams, isDeepSeekRequest, resolveDeepSeekModel, streamChatResponse } from '@/lib/chatStream';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -44,6 +45,7 @@ async function deductCoins(
 }
 
 export async function POST(req: Request) {
+  const requestStartedAt = Date.now();
   try {
     const body = await req.json();
     const { messages, useReasoning, useSearch, useMeditation, importData } = body;
@@ -132,6 +134,8 @@ export async function POST(req: Request) {
       client = new OpenAI({
         apiKey: meditationKey,
         baseURL: meditationBaseURL,
+        timeout: 85000,
+        maxRetries: 0,
       });
       modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
     } else {
@@ -139,10 +143,12 @@ export async function POST(req: Request) {
       client = new OpenAI({
         apiKey: process.env.AI_API_KEY,
         baseURL: process.env.AI_BASE_URL,
+        timeout: 55000,
+        maxRetries: 0,
       });
-      modelName = useReasoning 
-        ? process.env.AI_REASONER_MODEL_NAME || 'deepseek-reasoner'
-        : process.env.AI_MODEL_NAME || 'deepseek-chat';
+      modelName = resolveDeepSeekModel(useReasoning
+        ? process.env.AI_REASONER_MODEL_NAME
+        : process.env.AI_MODEL_NAME);
     }
 
     // 检测是否有导入数据，决定使用哪套提示词
@@ -371,105 +377,22 @@ export async function POST(req: Request) {
       max_tokens: maxTokens,
       stream: true,
       ...(useMeditation && { system: systemPrompt }),
+      ...chatReasoningParams(Boolean(useMeditation), Boolean(useReasoning), isDeepSeekRequest(modelName, process.env.AI_BASE_URL)),
     };
 
-    const stream = await client.chat.completions.create(createParams);
-
-    const encoder = new TextEncoder();
-
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          const THINK_START = '<think>';
-          const THINK_END = '</think>';
-          const MAX_THINK_BUFFER = 8000;
-          let inThinkBlock = false;
-          let pending = '';
-          let thinkBuffer = '';
-          let disableThinkStrip = false;
-
-          const stripThink = (chunkText: string) => {
-            if (disableThinkStrip) return chunkText;
-            let input = pending + chunkText;
-            pending = '';
-            let output = '';
-
-            while (input.length > 0) {
-              if (!inThinkBlock) {
-                const start = input.indexOf(THINK_START);
-                if (start === -1) {
-                  const keepFrom = Math.max(0, input.length - (THINK_START.length - 1));
-                  output += input.slice(0, keepFrom);
-                  pending = input.slice(keepFrom);
-                  return output;
-                }
-                output += input.slice(0, start);
-                input = input.slice(start + THINK_START.length);
-                inThinkBlock = true;
-                thinkBuffer = '';
-              } else {
-                thinkBuffer += input;
-                const end = thinkBuffer.indexOf(THINK_END);
-                if (end === -1) {
-                  if (thinkBuffer.length > MAX_THINK_BUFFER) {
-                    output += THINK_START + thinkBuffer;
-                    thinkBuffer = '';
-                    inThinkBlock = false;
-                    disableThinkStrip = true;
-                  }
-                  return output;
-                }
-                input = thinkBuffer.slice(end + THINK_END.length);
-                thinkBuffer = '';
-                inThinkBlock = false;
-              }
-            }
-            return output;
-          };
-
-          let hasContent = false;
-          try {
-            for await (const chunk of stream) {
-              const rawText = chunk.choices[0]?.delta?.content ?? '';
-              const text = useMeditation ? stripThink(rawText) : rawText;
-              if (text) {
-                hasContent = true;
-                controller.enqueue(encoder.encode(text));
-              }
-            }
-          } catch (streamError) {
-            const message =
-              streamError instanceof Error
-                ? streamError.message
-                : '上游流式响应异常';
-            controller.enqueue(encoder.encode(`\n\n【流式响应中断】${message}`));
-          }
-          if (useMeditation && !disableThinkStrip) {
-            if (!inThinkBlock && pending) {
-              hasContent = true;
-              controller.enqueue(encoder.encode(pending));
-              pending = '';
-            }
-            if (inThinkBlock && thinkBuffer) {
-              // 防止未闭合 <think> 导致内容被截断
-              hasContent = true;
-              controller.enqueue(encoder.encode(THINK_START + thinkBuffer));
-              thinkBuffer = '';
-              inThinkBlock = false;
-            }
-          }
-          if (!skipCoins && hasContent) {
-            const deducted = await deductCoins(admin, user.id, cost, balance);
-            if (!deducted) {
-              console.error('扣款失败：余额在并发请求中发生变化或数据库暂不可用');
-            }
-          }
-          controller.close();
-        } catch (e) {
-          const message =
-            e instanceof Error ? e.message : '未知错误';
-          controller.enqueue(encoder.encode(`\n\n【服务异常】${message}`));
-          controller.close();
+    // Finish or cancel the upstream before the browser's 60s / 90s deadline.
+    const timeoutMs = (useMeditation ? 85000 : 55000) - (Date.now() - requestStartedAt);
+    if (timeoutMs <= 0) throw new DOMException('对话服务响应超时，请稍后再试', 'TimeoutError');
+    const readable = await streamChatResponse({
+      signal: req.signal,
+      timeoutMs,
+      create: async signal => await client.chat.completions.create(createParams, { signal, timeout: timeoutMs, maxRetries: 0 }),
+      stripThink: Boolean(useMeditation),
+      onComplete: async () => {
+        if (req.signal.aborted) throw new DOMException('对话已取消', 'AbortError');
+        if (!skipCoins) {
+          const deducted = await deductCoins(admin, user.id, cost, balance);
+          if (!deducted) console.error('扣款失败：余额在并发请求中发生变化或数据库暂不可用');
         }
       },
     });
@@ -479,6 +402,7 @@ export async function POST(req: Request) {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
         'X-Content-Type-Options': 'nosniff',
+        'X-Accel-Buffering': 'no',
       },
     });
   } catch (error: unknown) {
@@ -489,7 +413,7 @@ export async function POST(req: Request) {
         error: '对话出现问题，请稍后再试',
         details: error instanceof Error ? error.message : '未知错误',
       },
-      { status: 500 }
+      { status: error instanceof Error && error.name === 'TimeoutError' ? 504 : error instanceof Error && error.name === 'AbortError' ? 499 : 500 }
     );
   }
 }

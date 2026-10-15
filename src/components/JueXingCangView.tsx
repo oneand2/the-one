@@ -808,7 +808,8 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           importData: (getImportCount(effectiveImportData) > 0 || effectiveImportData?.qiancheng) ? effectiveImportData : undefined,
         }),
         timeoutMs: mindMode === 'meditation' ? 90000 : 60000,
-        retries: 2,
+        // A timed-out generation may still be running upstream; do not submit it again.
+        retries: 0,
       });
 
       if (!response.ok) {

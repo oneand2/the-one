@@ -1,11 +1,21 @@
 import type { WechatJsapiParams } from './wechatShared';
+import { isWechatJsapiUserAgent } from './wechatShared';
 
 type Bridge = {
   invoke(method: string, params: WechatJsapiParams, callback: (result: { err_msg?: string }) => void): void;
 };
 
+export function isWechatJsapiEnvironment() {
+  if (typeof window === 'undefined') return false;
+  return isWechatJsapiUserAgent(window.navigator.userAgent)
+    && (window as Window & { __wxjs_environment?: string }).__wxjs_environment !== 'miniprogram';
+}
+
 /** Bridge 的 ok 只用于提示；到账以服务端通知或查单为准。 */
 export async function invokeWechatPay(params: WechatJsapiParams): Promise<'ok' | 'cancel' | 'fail'> {
+  if (!isWechatJsapiEnvironment()) {
+    throw new Error('当前不在手机微信浏览器中，无法打开微信内收银台。请在微信中打开本站付款，或改用扫码支付。');
+  }
   const bridgeWindow = window as Window & { WeixinJSBridge?: Bridge };
   if (!bridgeWindow.WeixinJSBridge) {
     await new Promise<void>((resolve, reject) => {

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { AlertCircle, Check, Coins, Crown, Wallet, ShieldCheck, X } from 'lucide-react';
 import type { WechatJsapiParams, WechatPayMode } from '@/lib/payments/wechatShared';
-import { invokeWechatPay } from '@/lib/payments/wechatBrowser';
+import { invokeWechatPay, isWechatJsapiEnvironment } from '@/lib/payments/wechatBrowser';
 import {
   COIN_PACKAGES,
   LIFETIME_VIP_PACKAGE,
@@ -16,6 +16,7 @@ import {
 } from '@/lib/payments/coinPackages';
 import { requestAppLogin } from '@/utils/iosEmbed';
 import { isLifetimeVip } from '@/utils/vip';
+import { hasPurchaseConsent, savePurchaseConsent } from '@/lib/payments/purchaseConsent';
 
 type PaymentMessage = { type: 'success' | 'error' | 'info'; text: string } | null;
 type PaymentProvider = 'alipay' | 'wechat';
@@ -84,17 +85,74 @@ export default function ShopPage() {
   const [message, setMessage] = useState<PaymentMessage>(null);
   const [wechatPayment, setWechatPayment] = useState<WechatPayment | null>(null);
   const [alipayPayment, setAlipayPayment] = useState<AlipayPayment | null>(null);
-  const [agreementAttention, setAgreementAttention] = useState(false);
-  const agreementRef = useRef<HTMLLabelElement>(null);
+  const [pendingPurchase, setPendingPurchase] = useState<{ provider: PaymentProvider; packageId: string } | null>(null);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const consentDialogRef = useRef<HTMLDialogElement>(null);
+  const consentUserRef = useRef<string | null | undefined>(undefined);
+  const paymentMessageRef = useRef<HTMLDivElement>(null);
   const purchaseInFlight = useRef(false);
   const [returnedWechatOrder, setReturnedWechatOrder] = useState<string | null>(null);
   const [checkingWechat, setCheckingWechat] = useState(false);
   const [invokingWechat, setInvokingWechat] = useState(false);
 
+  const syncConsentUser = useEffectEvent((userId: unknown) => {
+    const nextUser = typeof userId === 'string' && userId ? userId : null;
+    if (consentUserRef.current === nextUser) return;
+    const previousUser = consentUserRef.current;
+    consentUserRef.current = nextUser;
+    setAccepted(nextUser ? hasPurchaseConsent(nextUser) : false);
+    if (previousUser !== undefined) {
+      setPendingPurchase(null);
+      setConsentChecked(false);
+    }
+  });
+
   useEffect(() => {
-    fetch('/api/user/profile', { credentials: 'include' })
+    if (!pendingPurchase) return;
+    const dialog = consentDialogRef.current;
+    if (!dialog) return;
+    const previousOverflow = document.body.style.overflow;
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector<HTMLInputElement>('input[type="checkbox"]')?.focus({ preventScroll: true });
+    document.body.style.overflow = 'hidden';
+    return () => {
+      dialog.close();
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [pendingPurchase]);
+
+  useEffect(() => {
+    if (message && !wechatPayment && !alipayPayment) {
+      paymentMessageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [message, wechatPayment, alipayPayment]);
+
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      void fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
+        .then(response => response.ok ? response.json() : null)
+        .then(profile => {
+          syncConsentUser(profile?.user_id);
+          if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+          if (profile) setVipExpiresAt(profile.vip_expires_at ?? null);
+        }).catch(() => {});
+    };
+    window.addEventListener('focus', refresh);
+    window.addEventListener('pageshow', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('pageshow', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
       .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
+        syncConsentUser(data?.user_id);
         setBalance(typeof data?.coins_balance === 'number' ? data.coins_balance : null);
         setVipExpiresAt(typeof data?.vip_expires_at === 'string' ? data.vip_expires_at : null);
       })
@@ -250,13 +308,9 @@ export default function ShopPage() {
     };
   }, [alipayPayment]);
 
-  const focusAgreement = () => {
-    setAgreementAttention(true);
-    setMessage({ type: 'error', text: '请先阅读并同意服务与退款规则。' });
-    agreementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    window.setTimeout(() => {
-      agreementRef.current?.querySelector('input')?.focus({ preventScroll: true });
-    }, 450);
+  const updateAccepted = (value: boolean) => {
+    setAccepted(value);
+    if (consentUserRef.current) savePurchaseConsent(consentUserRef.current, value);
   };
 
   const openWechatCashier = async (params: WechatJsapiParams) => {
@@ -297,15 +351,18 @@ export default function ShopPage() {
     } finally { setCheckingWechat(false); }
   };
 
-  const handlePurchase = async (provider: PaymentProvider, packageId: string, resumedConsent = false) => {
+  const handlePurchase = async (provider: PaymentProvider, packageId: string, options: { resumeAuthorization?: boolean; consentConfirmed?: boolean } = {}) => {
     if (purchaseInFlight.current) return;
-    if (!accepted && !resumedConsent) {
-      focusAgreement();
+    const coinPackage = getShopPackage(packageId);
+    if (!coinPackage) return;
+    const resumedConsent = options.resumeAuthorization === true;
+    if (!accepted && !resumedConsent && !options.consentConfirmed) {
+      setConsentChecked(false);
+      setPendingPurchase({ provider, packageId });
+      setMessage(null);
       return;
     }
 
-    const coinPackage = getShopPackage(packageId);
-    if (!coinPackage) return;
     const alipayDisplayMode = provider === 'alipay' && !isMobilePaymentDevice() ? 'embedded' : 'redirect';
 
     purchaseInFlight.current = true;
@@ -320,7 +377,7 @@ export default function ShopPage() {
           packageId,
           ...(provider === 'alipay'
             ? { displayMode: alipayDisplayMode }
-            : { mobile: isMobilePaymentDevice(false), attemptId: window.crypto.randomUUID() }),
+            : { mobile: isMobilePaymentDevice(false), jsapi: isWechatJsapiEnvironment(), attemptId: window.crypto.randomUUID() }),
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -357,6 +414,11 @@ export default function ShopPage() {
         return;
       }
 
+      if ((data.mode === 'authorize' || data.mode === 'jsapi') && !isWechatJsapiEnvironment()) {
+        if (typeof data.outTradeNo === 'string') setReturnedWechatOrder(data.outTradeNo);
+        setMessage({ type: 'error', text: '当前不在手机微信浏览器中，已停止微信内付款流程。请刷新页面使用扫码支付，或在微信中打开本站付款。' });
+        return;
+      }
       if (data.mode === 'authorize' && typeof data.authorizationUrl === 'string') {
         if (resumedConsent) {
           setMessage({ type: 'error', text: '微信付款身份未能保存，请重新打开本页后付款。' });
@@ -403,8 +465,16 @@ export default function ShopPage() {
     }
   };
 
+  const confirmPurchaseConsent = async () => {
+    if (!consentChecked || !pendingPurchase || purchaseInFlight.current) return;
+    const purchase = pendingPurchase;
+    updateAccepted(true);
+    setPendingPurchase(null);
+    await handlePurchase(purchase.provider, purchase.packageId, { consentConfirmed: true });
+  };
+
   const resumeWechatPurchase = useEffectEvent((packageId: string) => {
-    void handlePurchase('wechat', packageId, true);
+    void handlePurchase('wechat', packageId, { resumeAuthorization: true });
   });
 
   useEffect(() => {
@@ -431,6 +501,7 @@ export default function ShopPage() {
   }, []);
 
   const alreadyLifetime = isLifetimeVip(vipExpiresAt);
+  const consentPackage = pendingPurchase ? getShopPackage(pendingPurchase.packageId) : null;
 
   return (
     <main className="min-h-screen bg-[#FBF9F4] px-6 pb-24 pt-14">
@@ -465,7 +536,7 @@ export default function ShopPage() {
         </header>
 
         {message && (
-          <div role="status" className={`mb-8 flex flex-wrap items-start gap-3 rounded-[13px] border px-4 py-3 text-[13px] leading-6 ${
+          <div ref={paymentMessageRef} role="status" className={`mb-8 flex flex-wrap items-start gap-3 rounded-[13px] border px-4 py-3 text-[13px] leading-6 ${
             message.type === 'success'
               ? 'border-[#5B7A5B]/25 bg-[#5B7A5B]/[0.07] text-[#4e6b4e]'
               : message.type === 'error'
@@ -586,20 +657,14 @@ export default function ShopPage() {
         </section>
 
         <label
-          ref={agreementRef}
-          className={`mt-8 flex cursor-pointer items-start gap-3 rounded-[13px] border px-4 py-4 text-[13px] leading-6 ${easeTransition} ${
-            agreementAttention
-              ? 'border-[#8A4A4A]/30 bg-[#8A4A4A]/[0.05] text-[#7a4444] ring-4 ring-[#8A4A4A]/[0.08]'
-              : 'border-transparent text-stone-500'
-          }`}
+          className={`mt-8 flex cursor-pointer items-start gap-3 rounded-[13px] border border-transparent px-4 py-4 text-[13px] leading-6 text-stone-500 ${easeTransition}`}
         >
           <input
             type="checkbox"
             checked={accepted}
             onChange={(event) => {
-              setAccepted(event.target.checked);
+              updateAccepted(event.target.checked);
               if (event.target.checked) {
-                setAgreementAttention(false);
                 setMessage(null);
               }
             }}
@@ -610,9 +675,7 @@ export default function ShopPage() {
               我已阅读并同意<Link href="/terms" className="mx-1 text-stone-700 underline underline-offset-4">用户服务协议</Link>
               与<Link href="/refund" className="mx-1 text-stone-700 underline underline-offset-4">退款与售后规则</Link>，并知晓铜币的用途和消耗方式。
             </span>
-            {agreementAttention && (
-              <span className="mt-1 block text-[#8A4A4A]">请勾选这里，再选择支付方式。</span>
-            )}
+            {accepted && <span className="mt-1 block text-xs text-stone-400">已确认；当前账号在此浏览器下次购买无需重复勾选，可随时取消。</span>}
           </span>
         </label>
 
@@ -624,13 +687,50 @@ export default function ShopPage() {
         </div>
       </div>
 
+      {pendingPurchase && consentPackage && (
+        <dialog
+          ref={consentDialogRef}
+          aria-labelledby="purchase-consent-title"
+          aria-describedby="purchase-consent-description"
+          onCancel={(event) => { event.preventDefault(); setPendingPurchase(null); }}
+          className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-[24px] border-0 bg-[var(--ui-color-background)] p-6 text-stone-900 shadow-[0_24px_64px_rgba(28,25,23,0.04)] ring-1 ring-stone-900/[0.08] backdrop:bg-stone-950/40 backdrop:backdrop-blur-sm sm:p-8"
+        >
+          <button type="button" onClick={() => setPendingPurchase(null)} aria-label="关闭购买确认"
+            className={`absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-stone-400 ${easeTransition} hover:bg-stone-100 hover:text-stone-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500`}>
+            <X className="h-4 w-4" />
+          </button>
+          <p className={eyebrow}>首 次 购 买 确 认</p>
+          <h2 id="purchase-consent-title" className="mt-5 font-serif text-2xl tracking-[0.1em]">付款前，请确认</h2>
+          <p id="purchase-consent-description" className="mt-3 text-[13px] leading-6 text-stone-500">确认服务与退款规则后，继续刚才选择的付款。</p>
+          <div className="mt-6 flex items-center justify-between gap-4 border-y border-stone-900/[0.07] py-4">
+            <div>
+              <p className="font-serif text-lg tracking-[0.08em]">{consentPackage.name}</p>
+              <p className="mt-1 text-xs text-stone-500">{pendingPurchase.provider === 'wechat' ? '微信支付' : '支付宝支付'}{!isLifetimeVipPackage(consentPackage) && ` · ${consentPackage.coins} 枚铜币`}</p>
+            </div>
+            <span className="shrink-0 font-serif text-2xl">{formatCny(consentPackage.amountCents)}</span>
+          </div>
+          <label className="mt-6 flex cursor-pointer items-start gap-3 text-[13px] leading-7 text-stone-600">
+            <input type="checkbox" checked={consentChecked}
+              onChange={(event) => setConsentChecked(event.target.checked)}
+              className="mt-1.5 h-4 w-4 shrink-0 accent-stone-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-stone-500" />
+            <span>我已阅读并同意<Link href="/terms" target="_blank" rel="noopener noreferrer" className="mx-1 text-stone-900 underline underline-offset-4">用户服务协议</Link>与<Link href="/refund" target="_blank" rel="noopener noreferrer" className="mx-1 text-stone-900 underline underline-offset-4">退款与售后规则</Link>，并知晓所购服务的用途和计费方式。</span>
+          </label>
+          <p className="mt-3 pl-7 text-[11px] leading-5 text-stone-400">确认后，当前账号在此浏览器将记住选择。下次仍需你点击付款，不会自动扣费。</p>
+          <div className="mt-7 grid gap-3">
+            <button type="button" disabled={!consentChecked || loadingPayment !== null} onClick={() => void confirmPurchaseConsent()}
+              className={`${primaryBtn} min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-500`}>同意并继续付款</button>
+            <button type="button" onClick={() => setPendingPurchase(null)} className={`${secondaryBtn} min-h-11`}>暂不购买</button>
+          </div>
+        </dialog>
+      )}
+
       {wechatPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/40 px-4 py-8 backdrop-blur-sm">
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="wechat-payment-title"
-            className="relative w-full max-w-md rounded-[24px] bg-[#FBF9F4] p-8 text-center shadow-[0_24px_64px_rgba(28,25,23,0.04)] ring-1 ring-stone-900/[0.08]"
+            className="relative max-h-[calc(100dvh-4rem)] w-full max-w-md overflow-y-auto rounded-[24px] bg-[#FBF9F4] p-8 text-center shadow-[0_24px_64px_rgba(28,25,23,0.04)] ring-1 ring-stone-900/[0.08]"
           >
             <button
               type="button"
@@ -675,6 +775,7 @@ export default function ShopPage() {
                   请使用微信扫一扫
                 </h2>
                 <p className="mt-2 text-xs tracking-[0.06em] text-stone-400">{paidItemCaption(wechatPayment)}</p>
+                {wechatPayment.notice && <p role="status" className="mt-3 text-[13px] leading-6 text-stone-600">{wechatPayment.notice}</p>}
                 <div className="mx-auto mt-6 w-fit rounded-2xl border border-stone-900/[0.07] bg-[#FDFCF9] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                   <Image
                     src={wechatPayment.qrDataUrl!}
@@ -687,7 +788,6 @@ export default function ShopPage() {
                 </div>
                 <p className="mt-5 text-[13px] leading-6 text-stone-500">二维码将在15分钟后失效，付款完成后本页会自动确认到账。</p>
                 <p className="mt-2 text-[11px] leading-5 text-stone-400">请直接打开微信“扫一扫”，不要从相册识别二维码。</p>
-                {wechatPayment.notice && <p className="mt-3 text-[13px] leading-6 text-stone-500">{wechatPayment.notice}</p>}
               </>
             ) : (
               <>

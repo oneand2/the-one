@@ -28,6 +28,7 @@ export async function GET() {
       .eq('user_id', user.id)
       .maybeSingle();
     return NextResponse.json({
+      user_id: user.id,
       nickname: row.nickname ?? '',
       coins_balance: row.coins_balance ?? INITIAL_COINS,
       invite_code: row.invite_code ?? null,
@@ -52,6 +53,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   return NextResponse.json({
+    user_id: user.id,
     nickname: inserted.nickname ?? '',
     coins_balance: inserted.coins_balance ?? INITIAL_COINS,
     invite_code: inserted.invite_code ?? null,

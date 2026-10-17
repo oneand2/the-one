@@ -8,7 +8,7 @@ import { NextRequest } from 'next/server';
 import { selectWechatPayMode } from '../src/lib/payments/wechatShared';
 import * as payer from '../src/lib/payments/wechatPayer';
 import * as packages from '../src/lib/payments/coinPackages';
-import { invokeWechatPay } from '../src/lib/payments/wechatBrowser';
+import { invokeWechatPay, isWechatJsapiEnvironment } from '../src/lib/payments/wechatBrowser';
 
 const realRequire = createRequire(`${process.cwd()}/package.json`);
 const wechat = loadIsolatedModule('src/lib/payments/wechat.ts', { 'server-only': {} }) as typeof import('../src/lib/payments/wechat');
@@ -44,8 +44,12 @@ test('selects each browser environment and never uses H5 inside WeChat or withou
   assert.equal(selectWechatPayMode('Mozilla/5.0 Macintosh', allCaps, true), 'h5');
   for (const ua of [wechatUa, mobileUa]) assert.equal(selectWechatPayMode(ua, nativeCaps, true), 'native');
   assert.equal(selectWechatPayMode(wechatUa, { ...allCaps, jsapi: false }, true), 'native');
-  for (const desktop of ['WindowsWechat', 'MacWechat', 'wxwork', 'WeChatWork']) {
+  for (const desktop of ['WindowsWechat', 'MacWechat', 'Windows NT', 'wxwork', 'WeChatWork', 'miniProgram']) {
     assert.equal(selectWechatPayMode(`${wechatUa} ${desktop}`, allCaps, true), 'native');
+  }
+  for (const ua of [mobileUa, `${mobileUa} Safari/604.1`, `${mobileUa} CriOS/130.0`, 'Mozilla/5.0 (Linux; Android 14) Chrome/130.0 Mobile']) {
+    assert.equal(selectWechatPayMode(ua, { ...allCaps, h5: false }), 'native');
+    assert.equal(selectWechatPayMode(ua, allCaps), 'h5');
   }
 });
 
@@ -146,10 +150,37 @@ test('Bridge returns success, cancellation and failure without deciding whether 
     for (const [err_msg, expected] of [['get_brand_wcpay_request:ok', 'ok'], ['get_brand_wcpay_request:cancel', 'cancel'], ['other', 'fail']]) {
       globalThis.window = {
         setTimeout, clearTimeout,
+        navigator: { userAgent: wechatUa },
         WeixinJSBridge: { invoke(_method: string, _params: unknown, callback: (data: { err_msg: string }) => void) { callback({ err_msg }); } },
       } as unknown as Window & typeof globalThis;
       assert.equal(await invokeWechatPay({ appId: 'test', timeStamp: '1', nonceStr: 'test', package: 'prepay_id=test', signType: 'RSA', paySign: 'test' }), expected);
     }
+  } finally {
+    if (originalWindow === undefined) Reflect.deleteProperty(globalThis, 'window');
+    else globalThis.window = originalWindow;
+  }
+});
+
+test('external browsers, desktop WeChat and mini-programs never wait for or invoke the JSAPI bridge', async () => {
+  const originalWindow = globalThis.window;
+  try {
+    for (const [userAgent, environment] of [
+      [mobileUa, undefined], [`${mobileUa} Safari/604.1`, undefined],
+      [`${mobileUa} CriOS/130.0`, undefined], [`${wechatUa} WindowsWechat`, undefined],
+      [`${wechatUa} miniProgram`, undefined], [wechatUa, 'miniprogram'],
+    ]) {
+      globalThis.window = {
+        navigator: { userAgent }, __wxjs_environment: environment,
+        setTimeout() { assert.fail('unsupported browsers must not wait for a bridge'); },
+        WeixinJSBridge: { invoke() { assert.fail('a leftover bridge must not override the browser environment'); } },
+      } as unknown as Window & typeof globalThis;
+      assert.equal(isWechatJsapiEnvironment(), false);
+      await assert.rejects(invokeWechatPay({ appId: 'test', timeStamp: '1', nonceStr: 'test', package: 'prepay_id=test', signType: 'RSA', paySign: 'test' }), /当前不在手机微信浏览器/);
+    }
+    globalThis.window = { navigator: { userAgent: wechatUa } } as unknown as Window & typeof globalThis;
+    assert.equal(isWechatJsapiEnvironment(), true);
+    Reflect.deleteProperty(globalThis, 'window');
+    assert.equal(isWechatJsapiEnvironment(), false);
   } finally {
     if (originalWindow === undefined) Reflect.deleteProperty(globalThis, 'window');
     else globalThis.window = originalWindow;
@@ -199,9 +230,9 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
     },
     qrcode: { toDataURL: async () => 'data:image/png;base64,test' },
   });
-  const request = (ua: string, extra: Record<string, string> = {}, attemptId?: string) => new NextRequest('https://shop.example.test/api/payments/wechat/create', {
+  const request = (ua: string, extra: Record<string, string> = {}, attemptId?: string, jsapi?: boolean) => new NextRequest('https://shop.example.test/api/payments/wechat/create', {
     method: 'POST', headers: { Origin: configured.NEXT_PUBLIC_SITE_URL, 'User-Agent': ua, 'Content-Type': 'application/json', ...extra },
-    body: JSON.stringify({ packageId: 'insight_100', mobile: true, attemptId }),
+    body: JSON.stringify({ packageId: 'insight_100', mobile: true, attemptId, jsapi }),
   });
   assert.equal((await route.POST(request(mobileUa, { Origin: 'https://attacker.example' }))).status, 403);
   userId = null;
@@ -235,6 +266,21 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
   const repeated = await (await route.POST(request(mobileUa, {}, attempt))).json();
   assert.equal(repeated.mode, 'pending');
   assert.equal(orderNumbers.at(-1), orderNumbers.at(-2), 'retried purchase intent uses the same order');
+  duplicate = false;
+  caps = { ...allCaps, h5: false };
+  for (const ua of [mobileUa, `${mobileUa} Safari/604.1`, `${mobileUa} CriOS/130.0`]) {
+    const externalResponse = await route.POST(request(ua, { Cookie: `${payer.WECHAT_PAYER_COOKIE}=${cookie}` }, undefined, true));
+    const externalPayment = await externalResponse.json();
+    assert.equal(externalPayment.mode, 'native');
+    assert.ok(externalPayment.qrDataUrl);
+    assert.match(externalPayment.notice, /当前浏览器暂不支持直接拉起微信付款/);
+    assert.equal(externalPayment.authorizationUrl, undefined);
+    assert.equal(externalPayment.jsapiParams, undefined);
+    assert.equal(externalResponse.headers.get('set-cookie'), null);
+  }
+  const vetoResponse = await route.POST(request(wechatUa, {}, undefined, false));
+  assert.equal((await vetoResponse.json()).mode, 'native');
+  assert.equal(vetoResponse.headers.get('set-cookie'), null);
 });
 
 test('OAuth callback rejects mismatched state and user; success returns encrypted payer cookie without login mutation', async () => {

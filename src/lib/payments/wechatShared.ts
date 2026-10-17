@@ -11,6 +11,11 @@ export type WechatJsapiParams = {
   paySign: string;
 };
 
+export function isWechatJsapiUserAgent(userAgent: string) {
+  return /MicroMessenger/i.test(userAgent)
+    && !/WindowsWechat|MacWechat|Windows NT|wxwork|WeChatWork|\bminiProgram\b/i.test(userAgent);
+}
+
 /** 微信内不能走 H5；未开通的手机支付方式保留 Native 收款入口。 */
 export function selectWechatPayMode(
   userAgent: string,
@@ -18,9 +23,10 @@ export function selectWechatPayMode(
   mobileHint = false,
 ): WechatPayMode {
   const desktopWechat = /WindowsWechat|MacWechat|wxwork|WeChatWork/i.test(userAgent);
-  if (/MicroMessenger/i.test(userAgent) && !desktopWechat) {
+  if (isWechatJsapiUserAgent(userAgent)) {
     return capabilities.jsapi ? 'jsapi' : 'native';
   }
+  if (/MicroMessenger|\bminiProgram\b/i.test(userAgent)) return 'native';
   const mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent) || mobileHint;
   return !desktopWechat && mobile && capabilities.h5 ? 'h5' : 'native';
 }

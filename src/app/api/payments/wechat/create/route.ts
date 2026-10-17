@@ -29,11 +29,13 @@ export async function POST(request: NextRequest) {
 
   let packageId = '';
   let mobileHint = false;
+  let jsapiAllowed = true;
   let attemptId = '';
   try {
-    const body = (await request.json()) as { packageId?: unknown; mobile?: unknown; attemptId?: unknown };
+    const body = (await request.json()) as { packageId?: unknown; mobile?: unknown; jsapi?: unknown; attemptId?: unknown };
     packageId = typeof body.packageId === 'string' ? body.packageId : '';
     mobileHint = body.mobile === true;
+    jsapiAllowed = body.jsapi !== false;
     if (body.attemptId !== undefined && (typeof body.attemptId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.attemptId))) {
       return NextResponse.json({ error: '无效购买请求' }, { status: 400 });
     }
@@ -47,7 +49,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '服务包不存在' }, { status: 400 });
   }
 
-  const mode = selectWechatPayMode(request.headers.get('user-agent') || '', getWechatPayCapabilities(), mobileHint);
+  const capabilities = getWechatPayCapabilities();
+  const mode = selectWechatPayMode(request.headers.get('user-agent') || '', {
+    ...capabilities, jsapi: capabilities.jsapi && jsapiAllowed,
+  }, mobileHint);
   let openid: string | undefined;
   let clientIp: string | undefined;
   if (mode === 'jsapi') {
@@ -134,7 +139,7 @@ export async function POST(request: NextRequest) {
       color: { dark: '#111827', light: '#FFFFFF' },
     });
     return NextResponse.json({ mode, outTradeNo, qrDataUrl, expiresInSeconds: 900,
-      ...(mobileHint ? { notice: '手机直接付款尚未开放，目前请使用另一台设备展示二维码后扫码，或选择支付宝。' } : {}),
+      ...(mobileHint ? { notice: '当前浏览器暂不支持直接拉起微信付款。请在手机微信中打开本站付款，或用另一台设备展示下方二维码后扫码；也可选择支付宝。' } : {}),
     }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
     console.error('create wechat order error:', error instanceof Error ? error.message : 'unknown');

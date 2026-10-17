@@ -1,16 +1,22 @@
-import { randomUUID } from 'node:crypto';
-import { NextResponse } from 'next/server';
+import { createHash, randomUUID } from 'node:crypto';
+import { NextRequest, NextResponse } from 'next/server';
 import QRCode from 'qrcode';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getShopPackage, isLifetimeVipPackage } from '@/lib/payments/coinPackages';
-import { createWechatNativeOrder, getWechatPayReadiness } from '@/lib/payments/wechat';
+import { createWechatNativeOrder, createWechatMobileOrder, getWechatPayReadiness, getWechatPayCapabilities, getWechatMobilePayConfig, getWechatPayerClientIp } from '@/lib/payments/wechat';
+import { selectWechatPayMode } from '@/lib/payments/wechatShared';
+import { buildWechatPayAuthorizeUrl, openWechatPayContext, sealWechatPayContext, WECHAT_PAYER_COOKIE, WECHAT_PAY_COOKIE_PATH, WECHAT_PAY_OAUTH_COOKIE } from '@/lib/payments/wechatPayer';
+import { resolveSiteUrl } from '@/lib/auth/wechat';
 import { isLifetimeVip } from '@/utils/vip';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  if (request.headers.get('origin') !== new URL(resolveSiteUrl()).origin) {
+    return NextResponse.json({ error: '请从本站发起支付' }, { status: 403 });
+  }
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -22,9 +28,16 @@ export async function POST(request: Request) {
   }
 
   let packageId = '';
+  let mobileHint = false;
+  let attemptId = '';
   try {
-    const body = (await request.json()) as { packageId?: unknown };
+    const body = (await request.json()) as { packageId?: unknown; mobile?: unknown; attemptId?: unknown };
     packageId = typeof body.packageId === 'string' ? body.packageId : '';
+    mobileHint = body.mobile === true;
+    if (body.attemptId !== undefined && (typeof body.attemptId !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.attemptId))) {
+      return NextResponse.json({ error: '无效购买请求' }, { status: 400 });
+    }
+    attemptId = typeof body.attemptId === 'string' ? body.attemptId : '';
   } catch {
     return NextResponse.json({ error: '无效请求' }, { status: 400 });
   }
@@ -32,6 +45,33 @@ export async function POST(request: Request) {
   const coinPackage = getShopPackage(packageId);
   if (!coinPackage) {
     return NextResponse.json({ error: '服务包不存在' }, { status: 400 });
+  }
+
+  const mode = selectWechatPayMode(request.headers.get('user-agent') || '', getWechatPayCapabilities(), mobileHint);
+  let openid: string | undefined;
+  let clientIp: string | undefined;
+  if (mode === 'jsapi') {
+    const config = getWechatMobilePayConfig();
+    openid = openWechatPayContext(request.cookies.get(WECHAT_PAYER_COOKIE)?.value, config.appSecret,
+      { purpose: 'payer', userId: user.id, appId: config.appId })?.openid;
+    if (!openid) {
+      const state = randomUUID().replaceAll('-', '');
+      const now = Date.now();
+      const response = NextResponse.json({ mode: 'authorize', authorizationUrl: buildWechatPayAuthorizeUrl(config.appId, resolveSiteUrl(), state) });
+      response.headers.set('Cache-Control', 'private, no-store');
+      response.cookies.set(WECHAT_PAY_OAUTH_COOKIE, sealWechatPayContext({
+        purpose: 'oauth', state, userId: user.id, appId: config.appId, packageId,
+        issuedAt: now, expiresAt: now + 600_000,
+      }, config.appSecret), {
+        httpOnly: true, secure: resolveSiteUrl().startsWith('https://'), sameSite: 'lax',
+        path: WECHAT_PAY_COOKIE_PATH, maxAge: 600,
+      });
+      return response;
+    }
+  }
+  if (mode === 'h5') {
+    try { clientIp = getWechatPayerClientIp(request.headers); }
+    catch { return NextResponse.json({ error: '暂时无法发起手机微信支付，请稍后重试或选择支付宝' }, { status: 503 }); }
   }
 
   const admin = createAdminClient();
@@ -59,7 +99,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '操作过于频繁，请一分钟后再试' }, { status: 429 });
   }
 
-  const outTradeNo = `WX${Date.now()}${randomUUID().replaceAll('-', '').slice(0, 17)}`;
+  const outTradeNo = attemptId
+    ? `WX${createHash('sha256').update(`${user.id}\0${packageId}\0${attemptId}`).digest('hex').slice(0, 30)}`
+    : `WX${Date.now()}${randomUUID().replaceAll('-', '').slice(0, 17)}`;
   const { error: insertError } = await admin.from('wechat_payment_orders').insert({
     out_trade_no: outTradeNo,
     user_id: user.id,
@@ -71,11 +113,19 @@ export async function POST(request: Request) {
   });
 
   if (insertError) {
+    // 相同账户、商品、购买意向只创建一个订单；数据库唯一键处理并发重试。
+    if (insertError.code === '23505') {
+      return NextResponse.json({ mode: 'pending', outTradeNo }, { headers: { 'Cache-Control': 'private, no-store' } });
+    }
     console.error('create wechat payment order error:', insertError);
     return NextResponse.json({ error: '订单创建失败，请稍后重试' }, { status: 500 });
   }
 
   try {
+    if (mode !== 'native') {
+      const payment = await createWechatMobileOrder(mode, outTradeNo, coinPackage, { openid, clientIp });
+      return NextResponse.json({ ...payment, outTradeNo, expiresInSeconds: 900 }, { headers: { 'Cache-Control': 'private, no-store' } });
+    }
     const codeUrl = await createWechatNativeOrder(outTradeNo, coinPackage);
     const qrDataUrl = await QRCode.toDataURL(codeUrl, {
       errorCorrectionLevel: 'M',
@@ -83,14 +133,12 @@ export async function POST(request: Request) {
       width: 320,
       color: { dark: '#111827', light: '#FFFFFF' },
     });
-    return NextResponse.json({ outTradeNo, qrDataUrl, expiresInSeconds: 900 });
+    return NextResponse.json({ mode, outTradeNo, qrDataUrl, expiresInSeconds: 900,
+      ...(mobileHint ? { notice: '手机直接付款尚未开放，目前请使用另一台设备展示二维码后扫码，或选择支付宝。' } : {}),
+    }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (error) {
-    console.error('create wechat native order error:', error);
-    await admin
-      .from('wechat_payment_orders')
-      .delete()
-      .eq('out_trade_no', outTradeNo)
-      .eq('status', 'pending');
-    return NextResponse.json({ error: '微信支付二维码创建失败，请稍后再试' }, { status: 500 });
+    console.error('create wechat order error:', error instanceof Error ? error.message : 'unknown');
+    // 请求可能已被微信受理；保留订单供异步通知查找，不能因超时删除可入账订单。
+    return NextResponse.json({ error: '微信支付订单暂未确认，请先确认支付结果，无需重复购买', outTradeNo }, { status: 502 });
   }
 }

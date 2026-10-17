@@ -7,7 +7,9 @@ import {
   timingSafeEqual,
   verify,
 } from 'node:crypto';
+import { isIP } from 'node:net';
 import type { CoinPackage } from './coinPackages';
+import type { WechatJsapiParams } from './wechatShared';
 
 type WechatEnvironment = {
   appId: string;
@@ -96,6 +98,27 @@ export function getWechatPayReadiness() {
   return { ready: missing.length === 0, missing };
 }
 
+export function getWechatMobilePayConfig() {
+  return {
+    h5: process.env.WECHAT_PAY_H5_ENABLED === 'true',
+    jsapi: process.env.WECHAT_PAY_JSAPI_ENABLED === 'true',
+    appId: process.env.WECHAT_PAY_JSAPI_APP_ID?.trim() || '',
+    appSecret: process.env.WECHAT_PAY_JSAPI_APP_SECRET?.trim() || '',
+  };
+}
+
+export function getWechatPayCapabilities() {
+  const ready = getWechatPayReadiness().ready;
+  const mobile = getWechatMobilePayConfig();
+  return { native: ready, h5: ready && mobile.h5, jsapi: ready && mobile.jsapi && Boolean(mobile.appId && mobile.appSecret) };
+}
+
+function allowedPaymentAppId(appId: string | undefined) {
+  const mobile = getWechatMobilePayConfig();
+  // 已下单的 JSAPI 订单在关闭开关后仍须接收通知与查单。
+  return Boolean(appId && (appId === getEnvironment().appId || (mobile.appId && appId === mobile.appId)));
+}
+
 function requireEnvironment() {
   const readiness = getWechatPayReadiness();
   if (!readiness.ready) {
@@ -158,6 +181,7 @@ async function wechatRequest<T>(method: 'GET' | 'POST', canonicalPath: string, p
     },
     ...(body ? { body } : {}),
     cache: 'no-store',
+    signal: AbortSignal.timeout(15_000),
   });
 
   const responseBody = await response.text();
@@ -212,6 +236,52 @@ export async function createWechatNativeOrder(outTradeNo: string, coinPackage: C
   return result.code_url;
 }
 
+export function getWechatPayerClientIp(headers: Headers) {
+  // 生产 Nginx 用 remote_addr 覆盖 X-Real-IP，不能信任客户端的 X-Forwarded-For 首项。
+  const ip = headers.get('x-real-ip')?.trim() || '';
+  if (!isIP(ip)) throw new Error('无法确认付款设备的网络地址');
+  return ip;
+}
+
+export async function createWechatMobileOrder(
+  mode: 'h5' | 'jsapi', outTradeNo: string, coinPackage: CoinPackage,
+  context: { clientIp?: string; openid?: string },
+) {
+  const env = requireEnvironment();
+  if (!getWechatPayCapabilities()[mode]) throw new Error('该微信支付方式尚未配置');
+  const mobile = getWechatMobilePayConfig();
+  const appId = mode === 'jsapi' ? mobile.appId : env.appId;
+  if (mode === 'jsapi' && !context.openid) throw new Error('缺少微信付款身份');
+  if (mode === 'h5' && !isIP(context.clientIp || '')) throw new Error('缺少付款设备网络地址');
+  const result = await wechatRequest<{ h5_url?: string; prepay_id?: string }>('POST', `/v3/pay/transactions/${mode}`, {
+    appid: appId,
+    mchid: env.mchId,
+    description: `二·${coinPackage.name}数字内容服务包`,
+    out_trade_no: outTradeNo,
+    time_expire: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    notify_url: `${env.siteUrl}/api/payments/wechat/notify`,
+    amount: { total: coinPackage.amountCents, currency: 'CNY' },
+    ...(mode === 'jsapi' ? { payer: { openid: context.openid } } : {
+      scene_info: { payer_client_ip: context.clientIp, h5_info: { type: 'Wap' } },
+    }),
+  });
+  if (mode === 'h5') {
+    const url = new URL(result.h5_url || 'https://invalid.local');
+    if (url.protocol !== 'https:' || url.hostname !== 'wx.tenpay.com' || url.username || url.password || url.port) {
+      throw new Error('微信支付未返回有效付款链接');
+    }
+    url.searchParams.set('redirect_url', `${env.siteUrl}/shop?payment=return&channel=wechat&order=${encodeURIComponent(outTradeNo)}`);
+    return { mode, paymentUrl: url.toString() } as const;
+  }
+  if (!result.prepay_id || !/^[A-Za-z0-9_-]+$/.test(result.prepay_id)) throw new Error('微信支付未返回有效预支付订单');
+  const timeStamp = Math.floor(Date.now() / 1000).toString();
+  const nonceStr = randomBytes(16).toString('hex');
+  const packageValue = `prepay_id=${result.prepay_id}`;
+  const paySign = sign('RSA-SHA256', Buffer.from(`${appId}\n${timeStamp}\n${nonceStr}\n${packageValue}\n`), env.privateKey).toString('base64');
+  const jsapiParams: WechatJsapiParams = { appId, timeStamp, nonceStr, package: packageValue, signType: 'RSA', paySign };
+  return { mode, jsapiParams } as const;
+}
+
 export function verifyWechatNotification(
   body: string,
   headers: { timestamp: string; nonce: string; serial: string; signature: string }
@@ -259,7 +329,7 @@ export async function queryWechatTrade(outTradeNo: string) {
 export function validateWechatTrade(trade: WechatTrade, outTradeNo: string, amountCents: number) {
   const env = requireEnvironment();
   return Boolean(
-    trade.appid === env.appId &&
+    allowedPaymentAppId(trade.appid) &&
       trade.mchid === env.mchId &&
       trade.out_trade_no === outTradeNo &&
       trade.transaction_id &&
@@ -272,7 +342,7 @@ export function validateWechatTrade(trade: WechatTrade, outTradeNo: string, amou
 export function validateWechatNotification(notification: WechatPaymentNotification) {
   const env = requireEnvironment();
   return Boolean(
-    notification.appid === env.appId &&
+    allowedPaymentAppId(notification.appid) &&
       notification.mchid === env.mchId &&
       notification.out_trade_no &&
       notification.transaction_id &&

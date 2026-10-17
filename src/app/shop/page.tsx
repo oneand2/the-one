@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { AlertCircle, Check, Coins, Crown, QrCode, ShieldCheck, X } from 'lucide-react';
+import { AlertCircle, Check, Coins, Crown, Wallet, ShieldCheck, X } from 'lucide-react';
+import type { WechatJsapiParams, WechatPayMode } from '@/lib/payments/wechatShared';
+import { invokeWechatPay } from '@/lib/payments/wechatBrowser';
 import {
   COIN_PACKAGES,
   LIFETIME_VIP_PACKAGE,
@@ -20,7 +22,11 @@ type PaymentProvider = 'alipay' | 'wechat';
 type PaidKind = 'coins' | 'lifetime_vip';
 type WechatPayment = {
   outTradeNo: string;
-  qrDataUrl: string;
+  mode: WechatPayMode;
+  qrDataUrl?: string;
+  paymentUrl?: string;
+  jsapiParams?: WechatJsapiParams;
+  notice?: string;
   expiresAt: number;
   packageName: string;
   coins: number;
@@ -52,10 +58,11 @@ function paidItemCaption(item: { packageName: string; coins: number; kind: PaidK
   return item.kind === 'lifetime_vip' ? item.packageName : `${item.packageName} · ${item.coins} 枚铜币`;
 }
 
-function isMobilePaymentDevice() {
+function isMobilePaymentDevice(includeNarrowViewport = true) {
   const userAgent = window.navigator.userAgent;
   const isTouchMac = /Macintosh/i.test(userAgent) && window.navigator.maxTouchPoints > 1;
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent) || isTouchMac || !window.matchMedia('(min-width: 768px)').matches;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent) || isTouchMac
+    || (includeNarrowViewport && !window.matchMedia('(min-width: 768px)').matches);
 }
 
 /* —— 宣纸水墨视觉令牌（与 the-one-design 规范一致）；类名须完整出现在源码中以便 Tailwind 扫描 —— */
@@ -79,6 +86,10 @@ export default function ShopPage() {
   const [alipayPayment, setAlipayPayment] = useState<AlipayPayment | null>(null);
   const [agreementAttention, setAgreementAttention] = useState(false);
   const agreementRef = useRef<HTMLLabelElement>(null);
+  const purchaseInFlight = useRef(false);
+  const [returnedWechatOrder, setReturnedWechatOrder] = useState<string | null>(null);
+  const [checkingWechat, setCheckingWechat] = useState(false);
+  const [invokingWechat, setInvokingWechat] = useState(false);
 
   useEffect(() => {
     fetch('/api/user/profile', { credentials: 'include' })
@@ -92,6 +103,11 @@ export default function ShopPage() {
     const params = new URLSearchParams(window.location.search);
     const order = params.get('order');
     if (params.get('payment') !== 'return' || !order) return;
+    if (params.get('channel') === 'wechat') {
+      setReturnedWechatOrder(order);
+      setMessage({ type: 'info', text: '返回页面不代表付款已完成，请点击“确认支付结果”查看到账情况。' });
+      return;
+    }
 
     let cancelled = false;
     let attempts = 0;
@@ -243,8 +259,47 @@ export default function ShopPage() {
     }, 450);
   };
 
-  const handlePurchase = async (provider: PaymentProvider, packageId: string) => {
-    if (!accepted) {
+  const openWechatCashier = async (params: WechatJsapiParams) => {
+    setInvokingWechat(true);
+    try {
+      const result = await invokeWechatPay(params);
+      setMessage(current => current?.type === 'success' ? current : { type: result === 'fail' ? 'error' : 'info', text: result === 'ok'
+        ? '正在确认到账，请稍候…' : result === 'cancel'
+          ? '已取消付款，可以继续支付当前订单。' : '微信付款未完成，请重试或确认支付结果。' });
+    } catch (error) {
+      setMessage(current => current?.type === 'success' ? current : { type: 'error', text: error instanceof Error ? error.message : '微信支付未能打开。' });
+    } finally { setInvokingWechat(false); }
+  };
+
+  const confirmWechatPayment = async (order: string) => {
+    setCheckingWechat(true);
+    try {
+      const response = await fetch(`/api/payments/wechat/status?order=${encodeURIComponent(order)}&reconcile=1`, {
+        credentials: 'include', cache: 'no-store',
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || '暂时无法确认订单，请稍后重试。');
+      if (data.status === 'paid' && data.credited_at) {
+        setWechatPayment(current => current?.outTradeNo === order ? { ...current, status: 'paid' } : current);
+        setReturnedWechatOrder(null);
+        setMessage({ type: 'success', text: deliveryText(data) });
+        window.dispatchEvent(new CustomEvent('coins-should-refresh'));
+        const profile = await fetch('/api/user/profile', { credentials: 'include', cache: 'no-store' })
+          .then(response => response.ok ? response.json() : null).catch(() => null);
+        if (typeof profile?.coins_balance === 'number') setBalance(profile.coins_balance);
+        if (profile) setVipExpiresAt(profile.vip_expires_at ?? null);
+      } else {
+        setMessage({ type: 'info', text: data.status === 'pending'
+          ? '暂未确认到账；如已付款，请稍后再次确认，无需重复购买。' : '该订单已结束，请重新选择服务包。' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : '网络连接异常，请稍后重试。' });
+    } finally { setCheckingWechat(false); }
+  };
+
+  const handlePurchase = async (provider: PaymentProvider, packageId: string, resumedConsent = false) => {
+    if (purchaseInFlight.current) return;
+    if (!accepted && !resumedConsent) {
       focusAgreement();
       return;
     }
@@ -253,6 +308,7 @@ export default function ShopPage() {
     if (!coinPackage) return;
     const alipayDisplayMode = provider === 'alipay' && !isMobilePaymentDevice() ? 'embedded' : 'redirect';
 
+    purchaseInFlight.current = true;
     setLoadingPayment(`${provider}:${packageId}`);
     setMessage(null);
     try {
@@ -264,7 +320,7 @@ export default function ShopPage() {
           packageId,
           ...(provider === 'alipay'
             ? { displayMode: alipayDisplayMode }
-            : {}),
+            : { mobile: isMobilePaymentDevice(false), attemptId: window.crypto.randomUUID() }),
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -275,6 +331,7 @@ export default function ShopPage() {
         return;
       }
       if (!response.ok) {
+        if (provider === 'wechat' && typeof data.outTradeNo === 'string') setReturnedWechatOrder(data.outTradeNo);
         setMessage({ type: 'error', text: data.error || '暂时无法创建订单，请稍后再试。' });
         return;
       }
@@ -300,25 +357,78 @@ export default function ShopPage() {
         return;
       }
 
-      if (typeof data.outTradeNo !== 'string' || typeof data.qrDataUrl !== 'string') {
-        setMessage({ type: 'error', text: '微信支付二维码创建失败，请稍后再试。' });
+      if (data.mode === 'authorize' && typeof data.authorizationUrl === 'string') {
+        if (resumedConsent) {
+          setMessage({ type: 'error', text: '微信付款身份未能保存，请重新打开本页后付款。' });
+          return;
+        }
+        // 只恢复这次用户已同意规则并点击的购买，不因普通页面访问自动下单。
+        window.sessionStorage.setItem('wechat-pay-intent', JSON.stringify({ packageId, issuedAt: Date.now() }));
+        window.location.assign(data.authorizationUrl);
+        return;
+      }
+      if (data.mode === 'pending' && typeof data.outTradeNo === 'string') {
+        setReturnedWechatOrder(data.outTradeNo);
+        setMessage({ type: 'info', text: '这次购买已有订单，请先确认支付结果，无需重复购买。' });
+        return;
+      }
+      if (typeof data.outTradeNo !== 'string'
+        || !['native', 'h5', 'jsapi'].includes(data.mode)
+        || (data.mode === 'native' && typeof data.qrDataUrl !== 'string')
+        || (data.mode === 'h5' && typeof data.paymentUrl !== 'string')
+        || (data.mode === 'jsapi' && !data.jsapiParams)) {
+        setMessage({ type: 'error', text: '微信收银台创建失败，请稍后再试。' });
         return;
       }
       setWechatPayment({
         outTradeNo: data.outTradeNo,
+        mode: data.mode,
         qrDataUrl: data.qrDataUrl,
+        paymentUrl: data.paymentUrl,
+        jsapiParams: data.jsapiParams,
+        notice: data.notice,
         expiresAt: Date.now() + Number(data.expiresInSeconds || 900) * 1000,
         packageName: coinPackage.name,
         coins: coinPackage.coins,
         kind: paidKind(coinPackage),
         status: 'pending',
       });
+      if (data.mode === 'h5') window.location.assign(data.paymentUrl);
+      if (data.mode === 'jsapi') await openWechatCashier(data.jsapiParams);
     } catch {
       setMessage({ type: 'error', text: '网络连接异常，请稍后再试。' });
     } finally {
+      purchaseInFlight.current = false;
       setLoadingPayment(null);
     }
   };
+
+  const resumeWechatPurchase = useEffectEvent((packageId: string) => {
+    void handlePurchase('wechat', packageId, true);
+  });
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const authorization = url.searchParams.get('wechat');
+    if (!authorization) return;
+    const packageId = url.searchParams.get('package');
+    url.searchParams.delete('wechat');
+    url.searchParams.delete('package');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    let intent: { packageId?: string; issuedAt?: number } | null = null;
+    try {
+      intent = JSON.parse(window.sessionStorage.getItem('wechat-pay-intent') || 'null');
+      window.sessionStorage.removeItem('wechat-pay-intent');
+    } catch { /* 存储不可用时请用户重新点击付款。 */ }
+    if (authorization === 'authorized' && packageId && intent?.packageId === packageId
+      && typeof intent.issuedAt === 'number' && Date.now() >= intent.issuedAt && Date.now() - intent.issuedAt < 600_000) {
+      setAccepted(true);
+      resumeWechatPurchase(packageId);
+    } else {
+      setMessage({ type: authorization === 'authorized' ? 'info' : 'error', text: authorization === 'authorized'
+        ? '微信已就绪，请选择服务包并付款。' : '微信付款授权未完成，请重新选择微信支付。' });
+    }
+  }, []);
 
   const alreadyLifetime = isLifetimeVip(vipExpiresAt);
 
@@ -355,7 +465,7 @@ export default function ShopPage() {
         </header>
 
         {message && (
-          <div className={`mb-8 flex items-start gap-3 rounded-[13px] border px-4 py-3 text-[13px] leading-6 ${
+          <div role="status" className={`mb-8 flex flex-wrap items-start gap-3 rounded-[13px] border px-4 py-3 text-[13px] leading-6 ${
             message.type === 'success'
               ? 'border-[#5B7A5B]/25 bg-[#5B7A5B]/[0.07] text-[#4e6b4e]'
               : message.type === 'error'
@@ -364,6 +474,12 @@ export default function ShopPage() {
           }`}>
             {message.type === 'success' ? <Check className="mt-1 h-3.5 w-3.5 shrink-0" /> : <AlertCircle className="mt-1 h-3.5 w-3.5 shrink-0" />}
             <span>{message.text}</span>
+            {returnedWechatOrder && (
+              <button type="button" disabled={checkingWechat} className={secondaryBtn}
+                onClick={() => void confirmWechatPayment(returnedWechatOrder)}>
+                {checkingWechat ? '正在确认…' : '确认支付结果'}
+              </button>
+            )}
           </div>
         )}
 
@@ -394,8 +510,8 @@ export default function ShopPage() {
                     disabled={loadingPayment !== null}
                     className={primaryBtn}
                   >
-                    <QrCode className="h-4 w-4" />
-                    {loadingPayment === `wechat:${LIFETIME_VIP_PACKAGE.id}` ? '正在生成二维码…' : '微信扫码支付'}
+                    <Wallet className="h-4 w-4" />
+                    {loadingPayment === `wechat:${LIFETIME_VIP_PACKAGE.id}` ? '正在打开微信支付…' : '微信支付'}
                   </button>
                   <button
                     type="button"
@@ -443,8 +559,8 @@ export default function ShopPage() {
                   disabled={loadingPayment !== null}
                   className={primaryBtn}
                 >
-                  <QrCode className="h-4 w-4" />
-                  {loadingPayment === `wechat:${item.id}` ? '正在生成二维码…' : '微信扫码支付'}
+                  <Wallet className="h-4 w-4" />
+                  {loadingPayment === `wechat:${item.id}` ? '正在打开微信支付…' : '微信支付'}
                 </button>
                 <button
                   type="button"
@@ -545,10 +661,14 @@ export default function ShopPage() {
             ) : wechatPayment.status === 'expired' ? (
               <div className="py-8">
                 <AlertCircle className="mx-auto h-10 w-10 text-[#B09F73]" />
-                <h2 id="wechat-payment-title" className="mt-6 font-serif text-2xl tracking-[0.12em] text-stone-900">二维码已失效</h2>
-                <p className="mt-3 text-[13px] leading-6 text-stone-500">请关闭窗口后重新选择微信支付。</p>
+                <h2 id="wechat-payment-title" className="mt-6 font-serif text-2xl tracking-[0.12em] text-stone-900">付款时间已结束</h2>
+                <p className="mt-3 text-[13px] leading-6 text-stone-500">如已付款，请先确认支付结果；尚未付款可关闭窗口后重新选择微信支付。</p>
+                <button type="button" disabled={checkingWechat} className={`mt-6 ${secondaryBtn}`}
+                  onClick={() => void confirmWechatPayment(wechatPayment.outTradeNo)}>
+                  {checkingWechat ? '正在确认…' : '确认支付结果'}
+                </button>
               </div>
-            ) : (
+            ) : wechatPayment.mode === 'native' ? (
               <>
                 <p className={eyebrow}>微 信 扫 码 支 付</p>
                 <h2 id="wechat-payment-title" className="mt-4 font-serif text-2xl tracking-[0.12em] text-stone-900">
@@ -557,7 +677,7 @@ export default function ShopPage() {
                 <p className="mt-2 text-xs tracking-[0.06em] text-stone-400">{paidItemCaption(wechatPayment)}</p>
                 <div className="mx-auto mt-6 w-fit rounded-2xl border border-stone-900/[0.07] bg-[#FDFCF9] p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
                   <Image
-                    src={wechatPayment.qrDataUrl}
+                    src={wechatPayment.qrDataUrl!}
                     width={320}
                     height={320}
                     unoptimized
@@ -567,6 +687,28 @@ export default function ShopPage() {
                 </div>
                 <p className="mt-5 text-[13px] leading-6 text-stone-500">二维码将在15分钟后失效，付款完成后本页会自动确认到账。</p>
                 <p className="mt-2 text-[11px] leading-5 text-stone-400">请直接打开微信“扫一扫”，不要从相册识别二维码。</p>
+                {wechatPayment.notice && <p className="mt-3 text-[13px] leading-6 text-stone-500">{wechatPayment.notice}</p>}
+              </>
+            ) : (
+              <>
+                <p className={eyebrow}>微 信 支 付</p>
+                <h2 id="wechat-payment-title" className="mt-4 font-serif text-2xl tracking-[0.12em] text-stone-900">请在微信中完成付款</h2>
+                <p className="mt-3 text-xs leading-6 text-stone-500">{paidItemCaption(wechatPayment)}</p>
+                <p className="mt-4 text-[13px] leading-6 text-stone-500">如已付款，请确认到账情况。取消付款后，可继续支付当前订单。</p>
+                {message && <p role="status" className="mt-3 text-[13px] leading-6 text-stone-600">{message.text}</p>}
+                <div className="mt-6 grid gap-3">
+                  <button type="button" className={primaryBtn} disabled={invokingWechat}
+                    onClick={() => {
+                      if (wechatPayment.mode === 'h5' && wechatPayment.paymentUrl) window.location.assign(wechatPayment.paymentUrl);
+                      else if (wechatPayment.jsapiParams) void openWechatCashier(wechatPayment.jsapiParams);
+                    }}>
+                    {invokingWechat ? '请在微信中确认…' : '继续微信付款'}
+                  </button>
+                  <button type="button" className={secondaryBtn} disabled={checkingWechat}
+                    onClick={() => void confirmWechatPayment(wechatPayment.outTradeNo)}>
+                    {checkingWechat ? '正在确认…' : '确认支付结果'}
+                  </button>
+                </div>
               </>
             )}
           </section>

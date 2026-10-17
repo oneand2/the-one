@@ -1,6 +1,14 @@
 # 手机网页微信支付
 
-## 当前核验结果（2026-10-16）
+## 接管配置（2026-10-17）
+
+用户确认服务号与商户号已完成双向授权、网页授权域名已保存；最新截图确认 JSAPI 支付授权目录为 `https://www.the-one-and-the-two.com/`，服务号 AppID 为 `wx1016c194159c39c9`。
+
+经用户明确授权，公众号 AppID、AppSecret 已加密保存到仓库 Actions Secrets `WECHAT_PAY_JSAPI_APP_ID`、`WECHAT_PAY_JSAPI_APP_SECRET`；仓库 Variables 已设置 `WECHAT_PAY_JSAPI_ENABLED=true`、`WECHAT_PAY_H5_ENABLED=false`。密钥不写入源码、本文件、本地环境文件或日志。后续如轮换 AppSecret，须同步更新同名 Secret 并重新发布。
+
+部署流程在启用 JSAPI 时额外核验实际应用容器中的开关、公众号 AppID 和 AppSecret 格式，避免只保存 GitHub 配置而未应用到生产。配置及部署检查不代表实际支付已验收；仍需商户本人在手机微信内完成受控交易，确认收银台调起及到账，不能将授权回跳或 Bridge 成功当作到账证据。外部手机浏览器的 H5 支付仍不启用。
+
+## 初始核验记录（2026-10-16 起）
 
 用户提供的商户后台截图显示：H5支付产品权限被驳回，原因为「目前该类业务形态暂不支持开通 H5 支付进行收款，请使用其他支付方式」。这是产品权限限制，修改代码或域名不能解决。H5 开关保持关闭；不能通过更换接口、AppID 或虚假经营内容绕过审核。用户另行确认 JSAPI 支付已开通；AppID 账号列表截图只有「决行藏」小程序，没有已关联的公众号。用户随后找到显示为「新注册公众号」的服务号；账号详情截图明确显示「认证情况：未认证」。需要用户先完成微信认证，再核实主体、关联 AppID 和配置域名。目前未具备启用网页 JSAPI 的条件。
 
@@ -37,9 +45,9 @@ WECHAT_PAY_JSAPI_APP_ID=
 WECHAT_PAY_JSAPI_APP_SECRET=
 ```
 
-开关只表示运营方已核验产品权限，不是微信权限查询接口。只有产品审批和域名配置均完成、真机验收通过后才设为 `true`。运行中的配置由现有生产环境管理；改示例文件不会更新生产配置。
+开关只表示运营方已核验产品权限，不是微信权限查询接口。产品审批、域名及密钥配置均完成后，可设为 `true` 发布并进行受控真机验收；验收完成前不宣称支付链路已验证。运行中的配置由现有生产环境管理；改示例文件不会更新生产配置。
 
-现有 GitHub Actions 已支持通过 repository Variables 设置两项 `*_ENABLED` 开关（字符串 `true` / `false`），通过 Secrets 设置 `WECHAT_PAY_JSAPI_APP_ID` 和 `WECHAT_PAY_JSAPI_APP_SECRET`。空值不会覆盖服务器已有配置；显式关闭应填 `false`。未修改 GitHub 或生产服务器上的实际配置。
+现有 GitHub Actions 已支持通过 repository Variables 设置两项 `*_ENABLED` 开关（字符串 `true` / `false`），通过 Secrets 设置 `WECHAT_PAY_JSAPI_APP_ID` 和 `WECHAT_PAY_JSAPI_APP_SECRET`。空值不会覆盖服务器已有配置；显式关闭应填 `false`。实际配置进展见本文顶部记录。
 
 ## JSAPI 待配置项
 

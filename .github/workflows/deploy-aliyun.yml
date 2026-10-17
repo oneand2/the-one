@@ -245,6 +245,16 @@ jobs:
             scripts/deploy/release.sh scripts/deploy/rollback.sh scripts/deploy/cleanup.py scripts/deploy/renew-certificate.sh \
             "$REMOTE:$INCOMING/"
           $SSH "$REMOTE" "sudo bash '$INCOMING/release.sh' '$GITHUB_SHA'"
+          if test "${WECHAT_PAY_JSAPI_ENABLED:-false}" = 'true'; then
+            $SSH "$REMOTE" "sudo docker exec -i 'the-one-release-$GITHUB_SHA' node" <<'NODE'
+          const env = process.env;
+          const valid = env.WECHAT_PAY_JSAPI_ENABLED === 'true'
+            && /^wx[0-9a-f]{16}$/.test(env.WECHAT_PAY_JSAPI_APP_ID || '')
+            && /^[0-9a-f]{32}$/.test(env.WECHAT_PAY_JSAPI_APP_SECRET || '');
+          if (!valid) throw new Error('JSAPI runtime configuration verification failed');
+          console.log('JSAPI runtime configuration verified; no credentials displayed.');
+          NODE
+          fi
           $SSH "$REMOTE" "sudo cat '$DEPLOY_PATH/releases/$GITHUB_SHA/result.json'" > "$RUNNER_TEMP/metrics/release.json"
           echo "Pull and release: $(( $(date +%s) - started )) seconds" >> "$GITHUB_STEP_SUMMARY"
           cat "$RUNNER_TEMP/metrics/release.json" >> "$GITHUB_STEP_SUMMARY"

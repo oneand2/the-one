@@ -1,36 +1,160 @@
 .page {
   min-height: 100vh;
-  padding: 120px 32px;
+  padding: 112rpx 48rpx 80rpx;
+  padding-bottom: calc(80rpx + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.brand {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  box-sizing: border-box;
 }
 
 .emblem {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 32px;
-  height: 32px;
-  margin-bottom: 28px;
+  display: block;
+  width: 64rpx;
+  height: 64rpx;
+  margin-bottom: 40rpx;
 }
 
-.bar {
-  height: 7px;
-  background: #2c2c2c;
+.eyebrow {
+  margin-bottom: 16rpx;
+  color: #8a8175;
+  font-size: 18rpx;
+  letter-spacing: 0.24em;
 }
 
 .title {
   font-family: "Songti SC", "STSong", serif;
-  font-size: 28px;
-  letter-spacing: 0.16em;
+  font-size: 60rpx;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.2em;
+  padding-left: 0.2em;
+}
+
+.motto {
+  margin-top: 16rpx;
+  color: #78716c;
+  font-family: "Kaiti SC", KaiTi, STKaiti, serif;
+  font-size: 26rpx;
+  line-height: 1.8;
+  letter-spacing: 0.12em;
+}
+
+.entry {
+  width: 100%;
+  max-width: 688rpx;
+  margin-top: 96rpx;
+}
+
+.entry-heading {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+  color: #8a8175;
+  font-family: "Kaiti SC", KaiTi, STKaiti, serif;
+  font-size: 24rpx;
+  letter-spacing: 0.12em;
+}
+
+.hairline {
+  flex: 1;
+  height: 1px;
+  margin-left: 24rpx;
+  background: #e8e3d8;
+}
+
+.login-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 144rpx;
+  margin: 0;
+  padding: 28rpx;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 26rpx;
+  color: #3d3935;
+  background: #fbf9f4;
+  font-weight: 400;
+  text-align: left;
+  line-height: 1.5;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.035);
+}
+
+.login-link::after,
+.copy-link::after {
+  border: 0;
+}
+
+.login-link[disabled] {
+  color: #78716c;
+  background: #fbf9f4;
+}
+
+.login-link-pressed {
+  background: #f5f5f4;
+}
+
+.link-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.link-title {
+  display: block;
+  font-size: 28rpx;
+  letter-spacing: 0.08em;
+}
+
+.url {
+  display: block;
+  margin-top: 12rpx;
+  color: #78716c;
+  font-size: 21rpx;
+  line-height: 1.7;
+  word-break: break-all;
+}
+
+.arrow {
+  width: 12rpx;
+  height: 12rpx;
+  margin-left: 20rpx;
+  border-top: 1px solid #8a8175;
+  border-right: 1px solid #8a8175;
+  transform: rotate(45deg);
 }
 
 .hint {
-  margin-top: 16px;
+  display: block;
+  margin-top: 24rpx;
   color: #8a8175;
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 24rpx;
+  line-height: 1.8;
+}
+
+.copy-link {
+  min-height: 88rpx;
+  margin: 16rpx 0 0;
+  padding: 20rpx 0;
+  border-radius: 0;
+  color: #57534e;
+  background: transparent;
+  font-size: 24rpx;
+  font-weight: 400;
+  text-align: left;
+  line-height: 2;
+  text-decoration: underline;
+  text-underline-offset: 8rpx;
+}
+
+.copy-link-pressed {
+  color: #3d3935;
 }

@@ -1,8 +1,24 @@
 <view class="page">
-  <view class="emblem">
-    <view class="bar"></view>
-    <view class="bar"></view>
+  <view class="brand">
+    <image class="emblem" src="/assets/brand-mark.svg" mode="aspectFit" aria-hidden="true"></image>
+    <text class="eyebrow">THE ONE · THE TWO</text>
+    <text class="title">决行藏</text>
+    <text class="motto">世间即道场，人生是修行</text>
   </view>
-  <text class="title">决行藏</text>
-  <text class="hint">请从网站登录页进入，以确认身份</text>
+
+  <view class="entry">
+    <view class="entry-heading">
+      <text>从这里，回到自己</text>
+      <view class="hairline"></view>
+    </view>
+    <button class="login-link" bindtap="openLogin" disabled="{{opening}}" hover-class="login-link-pressed" aria-label="打开网站登录页">
+      <view class="link-copy">
+        <text class="link-title">{{opening ? '正在打开登录页' : '前往网站登录'}}</text>
+        <text class="url">{{loginUrl}}</text>
+      </view>
+      <view class="arrow" aria-hidden="true"></view>
+    </button>
+    <text class="hint">在小程序内打开网站，登录后继续探索。</text>
+    <button class="copy-link" bindtap="copyLoginUrl" hover-class="copy-link-pressed">复制登录网址</button>
+  </view>
 </view>

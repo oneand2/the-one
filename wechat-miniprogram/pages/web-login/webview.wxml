@@ -1,1 +1,8 @@
-<web-view wx:if="{{src}}" src="{{src}}"></web-view>
+<web-view wx:if="{{src && !loadError}}" src="{{src}}" binderror="onLoadError"></web-view>
+<view wx:else class="fallback">
+  <text class="fallback-title">暂时未能打开网站</text>
+  <text class="fallback-hint">可复制登录网址，在微信或手机浏览器中打开。</text>
+  <text class="fallback-url" selectable="true">{{loginUrl}}</text>
+  <button class="fallback-copy" bindtap="copyLoginUrl">复制登录网址</button>
+  <button wx:if="{{src}}" class="fallback-retry" bindtap="retry">重新打开</button>
+</view>

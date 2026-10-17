@@ -6,6 +6,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { getShopPackage, isLifetimeVipPackage } from '@/lib/payments/coinPackages';
 import { createWechatNativeOrder, createWechatMobileOrder, getWechatPayReadiness, getWechatPayCapabilities, getWechatMobilePayConfig, getWechatPayerClientIp } from '@/lib/payments/wechat';
 import { selectWechatPayMode } from '@/lib/payments/wechatShared';
+import { buildWechatWebEntryUrl, shouldUseWechatWebEntry } from '@/lib/payments/wechatWebEntry';
 import { buildWechatPayAuthorizeUrl, openWechatPayContext, sealWechatPayContext, WECHAT_PAYER_COOKIE, WECHAT_PAY_COOKIE_PATH, WECHAT_PAY_OAUTH_COOKIE } from '@/lib/payments/wechatPayer';
 import { resolveSiteUrl } from '@/lib/auth/wechat';
 import { isLifetimeVip } from '@/utils/vip';
@@ -53,6 +54,16 @@ export async function POST(request: NextRequest) {
   const mode = selectWechatPayMode(request.headers.get('user-agent') || '', {
     ...capabilities, jsapi: capabilities.jsapi && jsapiAllowed,
   }, mobileHint);
+  if (shouldUseWechatWebEntry(request.headers.get('user-agent') || '', capabilities, mobileHint)) {
+    const entryUrl = buildWechatWebEntryUrl(resolveSiteUrl(), packageId);
+    const qrDataUrl = await QRCode.toDataURL(entryUrl, {
+      errorCorrectionLevel: 'M', margin: 4, width: 720,
+      color: { dark: '#171717', light: '#FFFFFF' },
+    });
+    return NextResponse.json({ mode: 'web_entry', entryUrl, qrDataUrl }, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    });
+  }
   let openid: string | undefined;
   let clientIp: string | undefined;
   if (mode === 'jsapi') {

@@ -17,14 +17,16 @@ import {
 import { requestAppLogin } from '@/utils/iosEmbed';
 import { isLifetimeVip } from '@/utils/vip';
 import { hasPurchaseConsent, savePurchaseConsent } from '@/lib/payments/purchaseConsent';
+import { buildWechatWebEntryPath, getWechatWebEntryPackage, isWechatWebEntryUrl } from '@/lib/payments/wechatWebEntry';
 
 type PaymentMessage = { type: 'success' | 'error' | 'info'; text: string } | null;
 type PaymentProvider = 'alipay' | 'wechat';
 type PaidKind = 'coins' | 'lifetime_vip';
 type WechatPayment = {
   outTradeNo: string;
-  mode: WechatPayMode;
+  mode: WechatPayMode | 'web_entry';
   qrDataUrl?: string;
+  entryUrl?: string;
   paymentUrl?: string;
   jsapiParams?: WechatJsapiParams;
   notice?: string;
@@ -94,6 +96,11 @@ export default function ShopPage() {
   const [returnedWechatOrder, setReturnedWechatOrder] = useState<string | null>(null);
   const [checkingWechat, setCheckingWechat] = useState(false);
   const [invokingWechat, setInvokingWechat] = useState(false);
+  const [webEntryPackage, setWebEntryPackage] = useState<ReturnType<typeof getShopPackage>>(null);
+
+  useEffect(() => {
+    setWebEntryPackage(getWechatWebEntryPackage(`${window.location.pathname}${window.location.search}`));
+  }, []);
 
   const syncConsentUser = useEffectEvent((userId: unknown) => {
     const nextUser = typeof userId === 'string' && userId ? userId : null;
@@ -207,7 +214,7 @@ export default function ShopPage() {
   }, []);
 
   useEffect(() => {
-    if (!wechatPayment || wechatPayment.status !== 'pending') return;
+    if (!wechatPayment || wechatPayment.mode === 'web_entry' || wechatPayment.status !== 'pending') return;
 
     let cancelled = false;
     let attempts = 0;
@@ -383,7 +390,7 @@ export default function ShopPage() {
       const data = await response.json().catch(() => ({}));
       if (response.status === 401) {
         if (!requestAppLogin()) {
-          window.location.href = `/login?next=${encodeURIComponent('/shop')}`;
+          window.location.href = `/login?next=${encodeURIComponent(webEntryPackage ? buildWechatWebEntryPath(webEntryPackage.id) : '/shop')}`;
         }
         return;
       }
@@ -417,6 +424,19 @@ export default function ShopPage() {
       if ((data.mode === 'authorize' || data.mode === 'jsapi') && !isWechatJsapiEnvironment()) {
         if (typeof data.outTradeNo === 'string') setReturnedWechatOrder(data.outTradeNo);
         setMessage({ type: 'error', text: '当前不在手机微信浏览器中，已停止微信内付款流程。请刷新页面使用扫码支付，或在微信中打开本站付款。' });
+        return;
+      }
+      if (data.mode === 'web_entry') {
+        if (typeof data.entryUrl !== 'string' || typeof data.qrDataUrl !== 'string'
+          || !isWechatWebEntryUrl(data.entryUrl, window.location.origin, packageId)) {
+          setMessage({ type: 'error', text: '微信网页入口生成失败，请稍后重试。' });
+          return;
+        }
+        setWechatPayment({
+          outTradeNo: '', mode: 'web_entry', entryUrl: data.entryUrl, qrDataUrl: data.qrDataUrl,
+          expiresAt: 0, packageName: coinPackage.name, coins: coinPackage.coins,
+          kind: paidKind(coinPackage), status: 'pending',
+        });
         return;
       }
       if (data.mode === 'authorize' && typeof data.authorizationUrl === 'string') {
@@ -471,6 +491,16 @@ export default function ShopPage() {
     updateAccepted(true);
     setPendingPurchase(null);
     await handlePurchase(purchase.provider, purchase.packageId, { consentConfirmed: true });
+  };
+
+  const copyWechatEntryUrl = async () => {
+    if (!wechatPayment?.entryUrl) return;
+    try {
+      await window.navigator.clipboard.writeText(wechatPayment.entryUrl);
+      setMessage({ type: 'info', text: '网页链接已复制，也可发到微信聊天后点开。请在微信网页中核对账号和金额再付款。' });
+    } catch {
+      setMessage({ type: 'error', text: '未能复制，请长按下方网页地址手动复制，或保存入口码图片。' });
+    }
   };
 
   const resumeWechatPurchase = useEffectEvent((packageId: string) => {
@@ -534,6 +564,25 @@ export default function ShopPage() {
             )}
           </div>
         </header>
+
+        {webEntryPackage && (
+          <section aria-label="微信网页付款" className={`mb-8 p-6 ${hairlineCard}`}>
+            <p className={eyebrow}>微 信 网 页 付 款</p>
+            <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
+              <h2 className="font-serif text-xl tracking-[0.08em]">继续购买{webEntryPackage.name}</h2>
+              <span className="font-serif text-2xl">{formatCny(webEntryPackage.amountCents)}</span>
+            </div>
+            <p className="mt-3 text-[13px] leading-6 text-stone-500">权益将交付给当前登录账号，请先核对右上角账号。识别入口码不会下单或扣费，确认后再付款。</p>
+            <button type="button" disabled={loadingPayment !== null} className={`mt-5 w-full ${primaryBtn}`}
+              onClick={() => {
+                if (!isWechatJsapiEnvironment()) {
+                  setMessage({ type: 'info', text: '请在手机微信“扫一扫 → 相册”中识别入口码，进入微信普通网页后再付款。' });
+                  return;
+                }
+                void handlePurchase('wechat', webEntryPackage.id);
+              }}>确认账号并使用微信付款</button>
+          </section>
+        )}
 
         {message && (
           <div ref={paymentMessageRef} role="status" className={`mb-8 flex flex-wrap items-start gap-3 rounded-[13px] border px-4 py-3 text-[13px] leading-6 ${
@@ -768,6 +817,24 @@ export default function ShopPage() {
                   {checkingWechat ? '正在确认…' : '确认支付结果'}
                 </button>
               </div>
+            ) : wechatPayment.mode === 'web_entry' ? (
+              <>
+                <p className={eyebrow}>微 信 网 页 入 口</p>
+                <h2 id="wechat-payment-title" className="mt-4 font-serif text-2xl tracking-[0.1em] text-stone-900">保存入口码，在微信中打开</h2>
+                <p className="mt-3 text-xs leading-6 text-stone-500">{paidItemCaption(wechatPayment)} · 请在网页内核对价格</p>
+                <div className="mx-auto mt-5 w-fit rounded-2xl border border-stone-900/[0.07] bg-[#FDFCF9] p-3">
+                  <Image src={wechatPayment.qrDataUrl!} width={720} height={720} unoptimized alt="微信网页付款入口二维码"
+                    className="h-auto w-full max-w-64" />
+                </div>
+                <p className="mt-5 text-[13px] leading-7 text-stone-600">长按入口码保存图片 → 微信扫一扫 → 从相册选择 → 登录原网站账号后付款。</p>
+                <p className="mt-2 text-[11px] leading-5 text-stone-400">这是普通网页入口，不是付款码，也不会跳转小程序。尚未创建支付订单，请在微信网页中核对账号和金额。</p>
+                <div className="mt-5 grid gap-3">
+                  <a href={wechatPayment.qrDataUrl} download="二-微信网页入口码.png" className={primaryBtn}>保存入口码图片</a>
+                  <button type="button" className={secondaryBtn} onClick={() => void copyWechatEntryUrl()}>复制付款网页链接</button>
+                </div>
+                <p className="mt-3 break-all text-[11px] leading-5 text-stone-400 select-all">{wechatPayment.entryUrl}</p>
+                {message && <p role="status" className="mt-3 text-[13px] leading-6 text-stone-600">{message.text}</p>}
+              </>
             ) : wechatPayment.mode === 'native' ? (
               <>
                 <p className={eyebrow}>微 信 扫 码 支 付</p>

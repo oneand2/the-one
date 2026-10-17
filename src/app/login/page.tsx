@@ -9,6 +9,7 @@ import {
 import { createClient } from '@/utils/supabase/server';
 import { LoginForm } from './LoginForm';
 import styles from './login.module.css';
+import { getWechatWebEntryPackage } from '@/lib/payments/wechatWebEntry';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,11 +23,14 @@ export default async function LoginPage({
   const { data: { user } } = await supabase.auth.getUser();
   
   const params = await searchParams;
-  const next = (params.next as string) || '/';
-  const message = params.message as string;
-  const wechatRelay = getWechatMiniProgramConfig().enabled
+  const next = typeof params.next === 'string' ? params.next : '/';
+  const paymentEntry = getWechatWebEntryPackage(next);
+  const message = paymentEntry
+    ? '请用原网站账号的邮箱或用户名登录，再核对账号付款。此入口不会跳转小程序，权益将交付给当前登录账号。'
+    : params.message as string;
+  const wechatRelay = !paymentEntry && getWechatMiniProgramConfig().enabled
     && shouldUseMiniProgramRelay((await headers()).get('user-agent'));
-  const wechatEnabled = getWechatLoginConfig().enabled || wechatRelay;
+  const wechatEnabled = !paymentEntry && (getWechatLoginConfig().enabled || wechatRelay);
   
   if (user) {
     redirect(next);

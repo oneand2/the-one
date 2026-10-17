@@ -6,6 +6,7 @@ import ts from 'typescript';
 import * as packages from '../src/lib/payments/coinPackages';
 import { isWechatJsapiEnvironment } from '../src/lib/payments/wechatBrowser';
 import * as consent from '../src/lib/payments/purchaseConsent';
+import * as webEntry from '../src/lib/payments/wechatWebEntry';
 
 type View = {
   type: unknown;
@@ -15,6 +16,7 @@ type View = {
     role?: string;
     checked?: boolean;
     disabled?: boolean;
+    href?: string;
     onChange?: (event: { target: { checked: boolean } }) => void;
     onClick?: () => void | Promise<void>;
   };
@@ -56,6 +58,7 @@ function loadShop(invoke: () => Promise<'ok'>) {
     },
     '@/lib/payments/coinPackages': packages,
     '@/lib/payments/purchaseConsent': consent,
+    '@/lib/payments/wechatWebEntry': webEntry,
     '@/lib/payments/wechatBrowser': { isWechatJsapiEnvironment, invokeWechatPay: invoke },
     '@/lib/payments/wechatMiniBrowser': { isMiniProgramPaymentEnvironment: async () => false },
     '@/utils/iosEmbed': { requestAppLogin: () => false },
@@ -82,7 +85,7 @@ function loadShop(invoke: () => Promise<'ok'>) {
 const mobileUa = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0) Mobile Safari/604.1';
 const notice = '当前浏览器暂不支持直接拉起微信付款。请在手机微信中打开本站付款。';
 
-for (const scenario of ['native', 'authorize', 'jsapi', 'wechat-jsapi'] as const) {
+for (const scenario of ['native', 'web_entry', 'authorize', 'jsapi', 'wechat-jsapi'] as const) {
   test(`shop handles ${scenario} without silently sending external browsers to the WeChat-only cashier`, async (context) => {
     const originalWindow = globalThis.window;
     const redirects: string[] = [];
@@ -92,7 +95,7 @@ for (const scenario of ['native', 'authorize', 'jsapi', 'wechat-jsapi'] as const
       globalThis.window = {
         navigator: { userAgent: `${mobileUa}${insideWechat ? ' MicroMessenger/8.0' : ''}`, maxTouchPoints: 0 },
         crypto: { randomUUID: () => 'aab522e3-9b08-4e4b-a3fb-ebbd0018fb8b' },
-        location: { assign: (url: string) => redirects.push(url) },
+        location: { origin: 'https://shop.example.test', assign: (url: string) => redirects.push(url) },
         sessionStorage: { setItem() { assert.fail('external browsers must not store OAuth purchase intent'); } },
       } as unknown as Window & typeof globalThis;
       context.mock.method(globalThis, 'fetch', async (url: URL | RequestInfo, options?: RequestInit) => {
@@ -100,6 +103,8 @@ for (const scenario of ['native', 'authorize', 'jsapi', 'wechat-jsapi'] as const
         assert.equal(JSON.parse(String(options?.body)).jsapi, insideWechat);
         return Response.json(scenario === 'native'
           ? { mode: 'native', outTradeNo: 'WX-test', qrDataUrl: 'data:image/png;base64,test', notice }
+          : scenario === 'web_entry'
+            ? { mode: 'web_entry', qrDataUrl: 'data:image/png;base64,test', entryUrl: webEntry.buildWechatWebEntryUrl('https://shop.example.test', packages.LIFETIME_VIP_PACKAGE.id) }
           : scenario === 'authorize'
             ? { mode: 'authorize', authorizationUrl: 'https://open.weixin.qq.com/test' }
             : { mode: 'jsapi', outTradeNo: 'WX-test', jsapiParams: { appId: 'test' } });
@@ -114,7 +119,16 @@ for (const scenario of ['native', 'authorize', 'jsapi', 'wechat-jsapi'] as const
       const result = render();
       assert.deepEqual(redirects, []);
       assert.equal(invocations, insideWechat ? 1 : 0);
-      if (scenario === 'native') {
+      if (scenario === 'web_entry') {
+        const dialog = elements(result).find(view => view.props.role === 'dialog');
+        assert.ok(dialog);
+        assert.match(textContent(dialog), /微信扫一扫 → 从相册选择/);
+        assert.match(textContent(dialog), /尚未创建支付订单/);
+        assert.ok(!textContent(dialog).includes('二维码将在15分钟后失效'));
+        assert.ok(!textContent(dialog).includes('不要从相册识别'));
+        assert.equal(elements(dialog).some(view => textContent(view) === '确认支付结果'), false);
+        assert.ok(elements(dialog).some(view => view.type === 'a' && textContent(view) === '保存入口码图片'));
+      } else if (scenario === 'native') {
         const dialog = elements(result).find(view => view.props.role === 'dialog');
         assert.ok(dialog);
         assert.match(textContent(dialog), /请使用微信扫一扫/);

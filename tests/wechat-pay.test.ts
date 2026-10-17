@@ -9,6 +9,7 @@ import { selectWechatPayMode } from '../src/lib/payments/wechatShared';
 import * as payer from '../src/lib/payments/wechatPayer';
 import * as packages from '../src/lib/payments/coinPackages';
 import { invokeWechatPay, isWechatJsapiEnvironment } from '../src/lib/payments/wechatBrowser';
+import * as webEntry from '../src/lib/payments/wechatWebEntry';
 
 const realRequire = createRequire(`${process.cwd()}/package.json`);
 const wechat = loadIsolatedModule('src/lib/payments/wechat.ts', { 'server-only': {} }) as typeof import('../src/lib/payments/wechat');
@@ -205,6 +206,7 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
   let inserted = 0;
   let failOrder = false;
   let duplicate = false;
+  let qrPayload = '';
   const orderNumbers: string[] = [];
   const builder = {
     select() { return this; }, eq() { return this; },
@@ -217,6 +219,7 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
     '@/utils/supabase/admin': { createAdminClient: () => ({ from: () => builder }) },
     '@/lib/payments/coinPackages': packages,
     '@/lib/payments/wechatShared': { selectWechatPayMode },
+    '@/lib/payments/wechatWebEntry': webEntry,
     '@/lib/payments/wechatPayer': payer,
     '@/lib/auth/wechat': { resolveSiteUrl: () => configured.NEXT_PUBLIC_SITE_URL },
     '@/utils/vip': { isLifetimeVip: () => false },
@@ -228,7 +231,7 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
         return { mode, ...(mode === 'h5' ? { paymentUrl: 'https://wx.tenpay.com/test' } : { jsapiParams: { appId: 'test' } }) };
       },
     },
-    qrcode: { toDataURL: async () => 'data:image/png;base64,test' },
+    qrcode: { toDataURL: async (payload: string) => { qrPayload = payload; return 'data:image/png;base64,test'; } },
   });
   const request = (ua: string, extra: Record<string, string> = {}, attemptId?: string, jsapi?: boolean) => new NextRequest('https://shop.example.test/api/payments/wechat/create', {
     method: 'POST', headers: { Origin: configured.NEXT_PUBLIC_SITE_URL, 'User-Agent': ua, 'Content-Type': 'application/json', ...extra },
@@ -268,16 +271,21 @@ test('create route enforces origin/login, obtains payer before inserting, and ro
   assert.equal(orderNumbers.at(-1), orderNumbers.at(-2), 'retried purchase intent uses the same order');
   duplicate = false;
   caps = { ...allCaps, h5: false };
+  const beforeEntry = inserted;
   for (const ua of [mobileUa, `${mobileUa} Safari/604.1`, `${mobileUa} CriOS/130.0`]) {
     const externalResponse = await route.POST(request(ua, { Cookie: `${payer.WECHAT_PAYER_COOKIE}=${cookie}` }, undefined, true));
     const externalPayment = await externalResponse.json();
-    assert.equal(externalPayment.mode, 'native');
+    assert.equal(externalPayment.mode, 'web_entry');
     assert.ok(externalPayment.qrDataUrl);
-    assert.match(externalPayment.notice, /当前浏览器暂不支持直接拉起微信付款/);
+    assert.equal(externalPayment.entryUrl, webEntry.buildWechatWebEntryUrl(configured.NEXT_PUBLIC_SITE_URL, 'insight_100'));
+    assert.equal(qrPayload, externalPayment.entryUrl);
+    assert.equal(externalPayment.outTradeNo, undefined);
     assert.equal(externalPayment.authorizationUrl, undefined);
     assert.equal(externalPayment.jsapiParams, undefined);
     assert.equal(externalResponse.headers.get('set-cookie'), null);
   }
+  assert.equal(inserted, beforeEntry, 'ordinary webpage entry must not create pending payment orders');
+  assert.equal((await (await route.POST(request('Mozilla/5.0 (Windows NT 10.0) Chrome/130.0'))).json()).mode, 'native');
   const vetoResponse = await route.POST(request(wechatUa, {}, undefined, false));
   assert.equal((await vetoResponse.json()).mode, 'native');
   assert.equal(vetoResponse.headers.get('set-cookie'), null);

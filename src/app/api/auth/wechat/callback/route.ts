@@ -1,5 +1,5 @@
 import { validReferralToken } from '@/lib/ambassadors/server';
-import { REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
+import { referralCode, REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   buildAppAbsoluteUrl,
@@ -48,12 +48,13 @@ export async function GET(request: NextRequest) {
     request.cookies.get(WECHAT_OAUTH_COOKIE)?.value,
     config.appSecret,
   );
+  const retryLoginPath = referralCode(context?.ambassadorCode) ? `/login?ref=${encodeURIComponent(context!.ambassadorCode!)}` : '/login';
   const returnedState = request.nextUrl.searchParams.get('state');
   const code = request.nextUrl.searchParams.get('code');
   if (!context || !returnedState || returnedState !== context.state || !code) {
     return setRedirect(
       response,
-      context?.mode === 'bind' ? '/profile' : '/login',
+      context?.mode === 'bind' ? '/profile' : retryLoginPath,
       '微信授权已失效，请重新扫码',
     );
   }
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
     console.error('wechat oauth callback failed:', error);
     return setRedirect(
       response,
-      context.mode === 'bind' ? '/profile' : '/login',
+      context.mode === 'bind' ? '/profile' : retryLoginPath,
       '微信登录失败，请稍后重试',
     );
   }

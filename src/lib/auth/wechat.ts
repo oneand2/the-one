@@ -17,6 +17,7 @@ export type WechatOAuthContext = {
   next: string;
   bindUserId?: string;
   ambassadorToken?: string;
+  ambassadorCode?: string;
   issuedAt: number;
 };
 

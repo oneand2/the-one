@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest, { params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
   if (!CODE_PATTERN.test(code)) return new NextResponse('推广链接无效', { status: 404 });
-  const canonical = canonicalSiteRequest(request.url, process.env.NEXT_PUBLIC_SITE_URL);
+  const canonical = canonicalSiteRequest(request.url, process.env.NEXT_PUBLIC_SITE_URL, request.headers.get('host'));
   if (canonical) return NextResponse.redirect(canonical);
   try {
     const admin = createAdminClient();

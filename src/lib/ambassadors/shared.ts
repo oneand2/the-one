@@ -14,11 +14,15 @@ export function referralCode(value: unknown) {
 }
 
 /** Canonicalize only our two production hostnames; never redirect arbitrary hosts. */
-export function canonicalSiteRequest(requestUrl: string, siteUrl?: string) {
+export function canonicalSiteRequest(requestUrl: string, siteUrl?: string, hostHeader?: string | null) {
   if (!siteUrl) return null;
   const request = new URL(requestUrl), site = new URL(siteUrl);
   const hosts = ['the-one-and-the-two.com', 'www.the-one-and-the-two.com'];
-  if (!hosts.includes(request.hostname) || !hosts.includes(site.hostname) || request.hostname === site.hostname) return null;
+  // Self-hosted Next may use its internal hostname in request.url. Nginx
+  // forwards the actual Host; only our explicit production allowlist is trusted.
+  const forwardedHost = hostHeader?.toLowerCase().replace(/:\d+$/, '');
+  const hostname = forwardedHost && hosts.includes(forwardedHost) ? forwardedHost : request.hostname;
+  if (!hosts.includes(hostname) || !hosts.includes(site.hostname) || hostname === site.hostname) return null;
   const target = new URL(request.pathname + request.search, site.origin);
   return target;
 }

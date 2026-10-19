@@ -78,6 +78,9 @@ test('canonical host redirect precedes cookies and avoids HTTPS termination loop
   assert.equal(shared.canonicalSiteRequest('http://www.the-one-and-the-two.com/login', site), null);
   assert.equal(shared.canonicalSiteRequest('https://evil.test/r/xiaoye', site), null);
   assert.equal(shared.canonicalSiteRequest('http://localhost:3000/', site), null);
+  assert.equal(shared.canonicalSiteRequest('http://0.0.0.0:3000/r/xiaoye', site, 'the-one-and-the-two.com')?.href, `${site}/r/xiaoye`);
+  assert.equal(shared.canonicalSiteRequest('http://0.0.0.0:3000/login?ref=xiaoye', site, 'www.the-one-and-the-two.com'), null);
+  assert.equal(shared.canonicalSiteRequest('http://0.0.0.0:3000/', site, 'evil.test'), null);
 });
 
 test('referral entry redirects to a shareable homepage, retaining first touch and original expiry', async () => {
@@ -85,7 +88,7 @@ test('referral entry redirects to a shareable homepage, retaining first touch an
   try {
     const db = client();
     const route = load('src/app/r/[code]/route.ts', { '@/utils/supabase/admin': { createAdminClient: () => db.fake }, '@/lib/ambassadors/shared': shared, '@/lib/ambassadors/referral': referrals });
-    const alias = await route.GET(new NextRequest('https://the-one-and-the-two.com/r/xiaoye'), { params: Promise.resolve({ code: 'xiaoye' }) });
+    const alias = await route.GET(new NextRequest('http://0.0.0.0:3000/r/xiaoye', { headers: { Host: 'the-one-and-the-two.com' } }), { params: Promise.resolve({ code: 'xiaoye' }) });
     assert.equal(alias.headers.get('location'), `${site}/r/xiaoye`); assert.equal(alias.headers.get('set-cookie'), null);
     const response = await route.GET(new NextRequest(`${site}/r/another`, { headers: { Cookie: `${shared.REFERRAL_COOKIE}=${tokenA}` } }), { params: Promise.resolve({ code: 'another' }) });
     assert.equal(response.headers.get('location'), `${site}/?ref=xiaoye`);
@@ -136,18 +139,21 @@ test('WeChat start snapshots restored referral in both mini-program ticket and s
     const desktop = await route.GET(new NextRequest(`${site}/api/auth/wechat/start?mode=login&ref=xiaoye`, { headers: { Cookie: `${shared.REFERRAL_COOKIE}=${tokenA}`, 'User-Agent': 'Macintosh Chrome' } }));
     const sealed = desktop.cookies.get(wechat.WECHAT_OAUTH_COOKIE)!.value;
     assert.equal(wechat.verifyWechatOAuthContext(sealed, 'test-secret')?.ambassadorToken, tokenA);
+    assert.equal(wechat.verifyWechatOAuthContext(sealed, 'test-secret')?.ambassadorCode, 'xiaoye');
     assert.equal(wechat.verifyWechatOAuthContext(sealed + 'tampered', 'test-secret'), null);
     assert.ok(!desktop.headers.get('location')!.includes(tokenA));
     db.fail(); ticket = undefined;
     const failed = await route.GET(new NextRequest(`${site}/api/auth/wechat/start?ref=xiaoye`, { headers: { 'User-Agent': 'iPhone' } }));
-    assert.ok(failed.headers.get('location')!.includes('message=')); assert.equal(ticket, undefined);
+    assert.ok(failed.headers.get('location')!.includes('message='));
+    assert.equal(new URL(failed.headers.get('location')!).searchParams.get('ref'), 'xiaoye');
+    assert.equal(ticket, undefined);
   } finally { if (originalSite === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = originalSite; }
 });
 
 test('OAuth callback uses the signed start-time referral even when separate referral cookie disappears or changes', async () => {
   for (const cookie of ['', `${shared.REFERRAL_COOKIE}=${tokenB}`]) {
     let captured: string | undefined;
-    const context = { state: 'state-a', mode: 'login' as const, next: '/', ambassadorToken: tokenA, issuedAt: Date.now() };
+    const context = { state: 'state-a', mode: 'login' as const, next: '/', ambassadorToken: tokenA, ambassadorCode: 'xiaoye', issuedAt: Date.now() };
     const route = load('src/app/api/auth/wechat/callback/route.ts', {
       '@/lib/ambassadors/shared': shared,
       '@/lib/ambassadors/server': { validReferralToken: async (_client: unknown, value?: string) => value },
@@ -157,6 +163,8 @@ test('OAuth callback uses the signed start-time referral even when separate refe
     });
     const response = await route.GET(new NextRequest(`${site}/api/auth/wechat/callback?state=state-a&code=test`, { headers: { Cookie: cookie } }));
     assert.equal(response.status, 307); assert.equal(captured, tokenA);
+    const rejected = await route.GET(new NextRequest(`${site}/api/auth/wechat/callback?state=wrong&code=test`));
+    assert.equal(new URL(rejected.headers.get('location')!).searchParams.get('ref'), 'xiaoye');
   }
 });
 

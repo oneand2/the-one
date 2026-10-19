@@ -5,7 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  const canonical = canonicalSiteRequest(request.url, process.env.NEXT_PUBLIC_SITE_URL);
+  const canonical = canonicalSiteRequest(request.url, process.env.NEXT_PUBLIC_SITE_URL, request.headers.get('host'));
   if (canonical && ['GET', 'HEAD'].includes(request.method)) return NextResponse.redirect(canonical);
 
   let referral: ReferralVisit | undefined;

@@ -34,10 +34,13 @@ export async function GET(request: NextRequest) {
     mode === 'bind' ? '/profile' : '/',
   );
 
+  let ambassadorCode = referralCode(request.nextUrl.searchParams.get('ref'));
+  const retryLoginPath = () => ambassadorCode ? `/login?ref=${encodeURIComponent(ambassadorCode)}` : '/login';
+
   const useMiniProgramRelay = miniProgram.enabled && shouldUseMiniProgramRelay(request.headers.get('user-agent'));
   if (!config.enabled && !useMiniProgramRelay) {
     return redirectWithMessage(
-      mode === 'bind' ? '/profile' : '/login',
+      mode === 'bind' ? '/profile' : retryLoginPath(),
       '微信登录尚未配置，请稍后再试',
     );
   }
@@ -57,9 +60,11 @@ export async function GET(request: NextRequest) {
   let ambassadorToken: string | undefined;
   if (mode === 'login') {
     try {
-      ambassadorToken = (await resolveReferralVisit(createAdminClient(), request.cookies.get(REFERRAL_COOKIE)?.value, referralCode(request.nextUrl.searchParams.get('ref'))))?.token;
+      const visit = await resolveReferralVisit(createAdminClient(), request.cookies.get(REFERRAL_COOKIE)?.value, ambassadorCode);
+      ambassadorToken = visit?.token;
+      ambassadorCode = visit?.code || ambassadorCode;
     } catch {
-      return redirectWithMessage('/login', '推广来源暂时无法确认，请返回推广链接重试');
+      return redirectWithMessage(retryLoginPath(), '推广来源暂时无法确认，请返回推广链接重试');
     }
   }
 
@@ -70,7 +75,7 @@ export async function GET(request: NextRequest) {
     } catch (error) {
       console.error('wechat miniprogram ticket insert failed:', error);
       return redirectWithMessage(
-        mode === 'bind' ? '/profile' : '/login',
+        mode === 'bind' ? '/profile' : retryLoginPath(),
         '暂时无法打开小程序登录，请稍后重试',
       );
     }
@@ -82,14 +87,14 @@ export async function GET(request: NextRequest) {
 
   if (!config.enabled) {
     return redirectWithMessage(
-      mode === 'bind' ? '/profile' : '/login',
+      mode === 'bind' ? '/profile' : retryLoginPath(),
       '微信登录尚未配置，请稍后再试',
     );
   }
 
   const state = randomBytes(32).toString('hex');
   const context = signWechatOAuthContext(
-    { state, mode, next, bindUserId, ambassadorToken, issuedAt: Date.now() },
+    { state, mode, next, bindUserId, ambassadorToken, ambassadorCode: mode === 'login' ? ambassadorCode : undefined, issuedAt: Date.now() },
     config.appSecret,
   );
   const callbackUrl = `${config.siteUrl}/api/auth/wechat/callback`;

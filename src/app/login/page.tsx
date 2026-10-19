@@ -1,3 +1,4 @@
+import { referralCode } from '@/lib/ambassadors/shared';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
@@ -44,6 +45,7 @@ export default async function LoginPage({
       </Link>
       <LoginForm
         next={next}
+        referralCode={referralCode(params.ref)}
         wechatEnabled={wechatEnabled}
         wechatRelay={wechatRelay}
         message={message}

@@ -1,3 +1,6 @@
+import { resolveReferralVisit } from '@/lib/ambassadors/referral';
+import { referralCode, REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
+import { createAdminClient } from '@/utils/supabase/admin';
 import { randomBytes } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
@@ -51,10 +54,19 @@ export async function GET(request: NextRequest) {
     bindUserId = user.id;
   }
 
+  let ambassadorToken: string | undefined;
+  if (mode === 'login') {
+    try {
+      ambassadorToken = (await resolveReferralVisit(createAdminClient(), request.cookies.get(REFERRAL_COOKIE)?.value, referralCode(request.nextUrl.searchParams.get('ref'))))?.token;
+    } catch {
+      return redirectWithMessage('/login', '推广来源暂时无法确认，请返回推广链接重试');
+    }
+  }
+
   if (useMiniProgramRelay) {
     const ticketId = randomBytes(16).toString('hex');
     try {
-      await insertWechatLoginTicket({ id: ticketId, mode, next, bindUserId });
+      await insertWechatLoginTicket({ id: ticketId, mode, next, bindUserId, ambassadorToken });
     } catch (error) {
       console.error('wechat miniprogram ticket insert failed:', error);
       return redirectWithMessage(
@@ -77,7 +89,7 @@ export async function GET(request: NextRequest) {
 
   const state = randomBytes(32).toString('hex');
   const context = signWechatOAuthContext(
-    { state, mode, next, bindUserId, issuedAt: Date.now() },
+    { state, mode, next, bindUserId, ambassadorToken, issuedAt: Date.now() },
     config.appSecret,
   );
   const callbackUrl = `${config.siteUrl}/api/auth/wechat/callback`;

@@ -11,6 +11,7 @@ import { CopperCoinIcon } from './CopperCoinIcon';
 import { isLifetimeVip } from '@/utils/vip';
 import { clearRecordsCaches } from '@/utils/cache';
 import { SITE_INFO } from '@/config/siteInfo';
+import { referralLoginPath } from '@/lib/ambassadors/shared';
 import { requestAppLogin } from '@/utils/iosEmbed';
 
 export function AuthButton() {
@@ -362,7 +363,7 @@ export function AuthButton() {
         type="button"
         aria-busy={loading}
         onClick={() => {
-          if (!requestAppLogin()) router.push('/login');
+          if (!requestAppLogin()) router.push(referralLoginPath(window.location.search));
         }}
         className="px-3 py-1.5 bg-stone-800 text-white font-sans text-xs rounded-lg hover:bg-stone-700 active:bg-stone-900 transition-colors md:px-4 md:py-2 md:text-sm"
       >

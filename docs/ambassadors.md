@@ -54,3 +54,24 @@ GoTrue 的 Admin createUser 先插入账户，再更新 app_metadata；仅把推
 通过真实 Auth API 验证：修复前微信新账户漏记；修复后微信新注册、重复登录、跨应用 unionid 账户复用、旧账户排除、邮箱 generateLink 注册以及汇总查询均通过。测试不会发送邮件或创建支付订单，临时账户与访问记录自动删除。手动执行：`AMBASSADOR_TEST_CODE=<启用的大使代号> node --import tsx scripts/check-wechat-referral.ts`。此测试会短暂影响该大使的注册数，勿放入自动构建。
 
 已漏记的记录使用 `supabase/repairs/backfill_wechat_signup_referrals.sql` 核验补回：必须同时有服务端注册元数据、注册前已创建的授权 ticket、有效访问记录；保留真实注册时间，不覆盖已有归属，不将老账户再次登录计作新增。该文件是受控数据修复脚本，不修改数据库结构或权限。
+
+## 跨浏览器推广来源保留（2026-10-19）
+
+排查蒿泽注册时的留存日志发现，同一网络标识先在 iPhone 微信访问 `/r/xiaoye`，随后切换 Safari 访问普通首页并发起微信小程序中转注册；首次登录 ticket 与注册资料均无推广 token。IP/浏览器相邻请求只能说明与该失效方式吻合，不能单独作为人工补录历史归属的依据。
+
+修复以下可复现链路：
+
+- `/r/代号` 跳转后保留公开的 `?ref=代号`，复制首页、从微信转到 Safari 时仍能识别分享来源；私有随机 token 不进入 URL。
+- 带 `ref` 的页面请求在服务端验证启用状态、恢复 HttpOnly Cookie，并将同一凭证传给当前请求。登录按钮、登录页、邮箱注册与微信登录起点继续保留公开代号，Cookie 暂时缺失时也可恢复。
+- 两个生产域名在建立 Cookie 前统一到规范域名，保留路径和查询参数；已由代理终止的 HTTPS 不会反复重定向。
+- 微信登录起点固定保存经验证的 token：手机进入服务器 ticket，桌面进入签名 OAuth context。桌面回调优先使用开始时的凭证，不依赖授权后另一个 Cookie 是否仍在。
+- 首次有效来源优先，原访问的 30 天到期时间不延长；旧账号登录和微信绑定不重新归属。查询失败明确提示重试，不静默降级为无来源注册。
+
+真实链路验证（仅对本机预览服务执行；创建临时测试账号、访问凭证与 ticket，在 finally 中清理；不发邮件、不创建会话或支付）：
+
+```sh
+node --import tsx --test tests/referral-transport.test.ts tests/ambassadors.test.ts tests/admin-recharges.test.ts
+REFERRAL_TEST_BASE_URL=http://127.0.0.1:3040 AMBASSADOR_TEST_CODE=xiaoye node --import tsx scripts/check-referral-transport.ts
+```
+
+`ref` 需要随链接保留。删除查询参数后再转发普通首页、仅口头推荐、在独立原生 App 直接注册仍无法自动还原来源，不能依据相同 IP 给历史账号批量归属。

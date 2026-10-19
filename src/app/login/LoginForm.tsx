@@ -10,6 +10,7 @@ import { login, signup, verifySignupOtp } from './actions';
 import styles from './login.module.css';
 
 type Props = {
+  referralCode?: string;
   next: string;
   wechatEnabled: boolean;
   wechatRelay?: boolean;
@@ -86,7 +87,7 @@ function StateFrame({ stateKey, children }: { stateKey: string; children: ReactN
   );
 }
 
-export function LoginForm({ next, wechatEnabled, wechatRelay = false, message }: Props) {
+export function LoginForm({ referralCode, next, wechatEnabled, wechatRelay = false, message }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -103,6 +104,7 @@ export function LoginForm({ next, wechatEnabled, wechatRelay = false, message }:
     setError(null);
     setPending(true);
     const formData = new FormData(e.currentTarget);
+    if (referralCode) formData.set('ref', referralCode);
     const timeoutMsg = '登录请求超时，请检查网络后重试或切换网络（如改用流量）';
 
     try {
@@ -185,7 +187,7 @@ export function LoginForm({ next, wechatEnabled, wechatRelay = false, message }:
 
   const showSignupChoice = mode === 'signup' && signupChoice === null && !otpPending;
   const showEmailSignupForm = mode === 'signup' && signupChoice === 'email' && !otpPending;
-  const wechatStartHref = `/api/auth/wechat/start?mode=login&next=${encodeURIComponent(next)}`;
+  const wechatStartHref = `/api/auth/wechat/start?mode=login&next=${encodeURIComponent(next)}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ''}`;
   const stateKey = otpPending ? 'otp' : mode === 'login' ? 'login' : signupChoice ?? 'signup-choice';
   const title = otpPending ? '验证' : mode === 'login' ? '归来' : '初见';
   const subtitle = otpPending

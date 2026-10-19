@@ -1,6 +1,3 @@
-import { cookies } from 'next/headers';
-import { validReferralToken } from '@/lib/ambassadors/server';
-import { REFERRAL_COOKIE } from '@/lib/ambassadors/shared';
 import { NextResponse } from 'next/server';
 import {
   getWechatMiniProgramConfig,
@@ -54,6 +51,7 @@ export async function insertWechatLoginTicket(input: {
   mode: WechatOAuthMode;
   next: string;
   bindUserId?: string;
+  ambassadorToken?: string;
 }) {
   const admin = createAdminClient();
   const inserted = await admin.from('wechat_login_tickets').insert({
@@ -62,7 +60,7 @@ export async function insertWechatLoginTicket(input: {
     next_path: sanitizeNextPath(input.next, input.mode === 'bind' ? '/profile' : '/'),
     bind_user_id: input.bindUserId ?? null,
     status: 'pending',
-    ambassador_token: input.mode === 'login' ? await validReferralToken(admin, (await cookies()).get(REFERRAL_COOKIE)?.value) : null,
+    ambassador_token: input.mode === 'login' ? input.ambassadorToken ?? null : null,
     expires_at: new Date(Date.now() + WECHAT_OAUTH_MAX_AGE_SECONDS * 1000).toISOString(),
   });
   if (inserted.error) throw inserted.error;

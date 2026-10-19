@@ -21,6 +21,7 @@ const DESCRIPTIONS: Record<AdminModule, string> = {
 };
 const str = (value: unknown) => value === null || value === undefined || value === '' ? '—' : String(value);
 const dateTime = (value: unknown) => value && !Number.isNaN(Date.parse(String(value))) ? new Date(String(value)).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false }) : '—';
+const money = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `¥${(value / 100).toFixed(2)}` : '暂不可用';
 const num = (value: number | null | undefined) => value == null ? '—' : value.toLocaleString('zh-CN');
 const vipLabel = (value: unknown) => isLifetimeVip(value as string) ? '终身会员' : isVip(value as string) ? '有效会员' : '普通用户';
 const suspended = (row: AdminRow) => new Date(String(row.community_suspended_until)).getTime() > Date.now();
@@ -49,6 +50,7 @@ function Console() {
   const cohort = params.get('cohort') || 'all';
   const source = params.get('source') || 'all';
   const ambassador = params.get('ambassador') || '';
+  const userId = params.get('user') || '';
   const start = params.get('start') || '';
   const end = params.get('end') || '';
   const [search, setSearch] = useState(q);
@@ -67,7 +69,7 @@ function Console() {
   useEffect(() => {
     const controller = new AbortController();
     const request = ++currentRequest.current;
-    const query = new URLSearchParams({ view, page: String(page), q, status, channel, days, cohort, source, ambassador, start, end });
+    const query = new URLSearchParams({ view, page: String(page), q, status, channel, days, cohort, source, ambassador, start, end, user: userId });
     fetch(`/api/admin/console?${query}`, { cache: 'no-store', signal: controller.signal }).then(async res => {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error || '数据读取失败');
@@ -75,7 +77,7 @@ function Console() {
     }).catch(err => { if (err.name !== 'AbortError' && request === currentRequest.current) setError(err.message); })
       .finally(() => { if (request === currentRequest.current) setLoading(false); });
     return () => controller.abort();
-  }, [view, page, q, status, channel, days, cohort, source, ambassador, start, end, revision]);
+  }, [view, page, q, status, channel, days, cohort, source, ambassador, start, end, userId, revision]);
   const refresh = () => { setLoading(true); setError(''); setData(null); setRevision(v => v + 1); };
   const title = navigation.find(item => item.id === view)?.label;
   const options = view === 'users' ? [['all', '全部用户'], ['vip', '有效会员'], ['suspended', '暂停发言']]
@@ -88,6 +90,7 @@ function Console() {
     <div className={styles.heading}><div><span className={styles.eyebrow}>日 常 有 序</span><h1>{title}</h1><p>{DESCRIPTIONS[view]}</p></div><button className={styles.button} disabled={loading} onClick={refresh}><RefreshCw size={14} className={loading ? styles.spinning : ''} />{loading ? '读取中' : '刷新数据'}</button></div>
     <div className={styles.sync}><span className={styles.dot} data-error={Boolean(error || data?.warnings?.length)} />{loading ? '正在读取网站数据…' : error ? '读取未完成' : `读取于 ${dateTime(data?.updatedAt)} · 北京时间`}</div>
     {(ambassador || access.role === 'ambassador') && <p className={styles.notice}>当前仅显示这位推广大使名下的数据。<Link href="/admin?view=ambassadors">查看推广汇总</Link>{access.role === 'owner' && <> · <Link href={`/admin?view=${view}`}>返回全站数据</Link></>}</p>}
+    {view === 'orders' && userId && <p className={styles.notice}>当前仅显示用户 {userId} 的充值记录，可切换支付渠道查看。<button className={styles.textButton} onClick={() => update({ user: '', page: '1' })}>查看全部用户交易</button></p>}
     {view === 'orders' && (start || end) && <p className={styles.explanation}>支付日期：{start || '不限'} 至 {end || '不限'}（北京时间）。<button onClick={() => update({ start: '', end: '', page: '1' })}>查看全部时间</button></p>}
     {notice && <p className={styles.notice} role="status">{notice}</p>}
     {error && <div className={styles.error} role="alert"><AlertCircle size={18} /><span>{error}</span><button onClick={refresh}>重新读取</button><Link href="/login?next=%2Fadmin">重新登录</Link></div>}
@@ -108,6 +111,7 @@ function Console() {
         {view === 'orders' && <p className={styles.explanation}>{channel === 'apple' ? 'Apple 记录区分正式与测试环境；数据库未保存实付金额，因此不估算收入。记录入账不代表后续未发生退款。' : '支付与入账状态来自网站订单记录。待支付不等于未到账，请结合支付平台核对。此处不执行扣款或退款。'}</p>}
         {(view === 'answers' || view === 'comments') && <p className={styles.explanation}>此处只统计用户提交的内容；随网站发布的示例手记与示例回应不计入用户数据。</p>}
         {view === 'insights' && <p className={styles.explanation}>日期决定见闻所属的日历页。保存会直接更新该日期的线上内容，请核对原文与出处。</p>}
+        {view === 'users' && <p className={styles.explanation}>累计成功充值按账户全部历史的支付宝、微信已支付且已入账订单统计，不受近 7 / 30 天及注册日期筛选影响；退款单列并从成功充值中排除。通过推广链接注册后，该账户后续在网站或 App 的充值持续归属原推广大使。Apple 正式记录单列，实付金额未记录，不计入人民币合计。</p>}
         <RecordTable view={view} rows={data.rows || []} channel={channel} onSelect={setSelected} />
         <div className={styles.pagination}><span>共 {num(data.total)} 条 · 每页 {PAGE_SIZE} 条</span><div><button className={styles.button} aria-label="上一页" disabled={page <= 1} onClick={() => update({ page: String(page - 1) })}><ChevronLeft size={15} /></button><span>{page} / {Math.max(1, Math.ceil((data.total || 0) / PAGE_SIZE))}</span><button className={styles.button} aria-label="下一页" disabled={page * PAGE_SIZE >= (data.total || 0)} onClick={() => update({ page: String(page + 1) })}><ChevronRight size={15} /></button></div></div>
       </>}
@@ -143,10 +147,18 @@ function Settings({ data }: { data: AdminData }) {
   return <div className={styles.overviewGrid}><section className={styles.panel}><h2>数据连接</h2><p className={styles.explanation}>每次打开或刷新时检查可读性。读取失败显示“不可用”，不替换成零。</p><dl className={styles.inventory}>{data.sources?.map(source => <div key={source.name}><dt>{source.name}</dt><dd>{source.ok ? `${num(source.count)} 条 · 已连接` : '不可用'}</dd></div>)}</dl></section><section className={styles.panel}><h2>权限与统计说明</h2><div className={styles.prose}><p>使用现有网站管理员账户登录。每个数据接口独立验证管理员身份，普通用户不能读取后台数据。</p><p>注册账户来自登录系统，用户档案仅包含已建立资料的账户。有效会员按当前到期时间统计。</p><p>后台列表提供搜索、筛选与分页；手记和评论仅包含用户提交的记录。示例内容由项目内容文件维护。</p><p>隐藏与恢复会同步影响公开页面，处理原因、时间和管理员编号保存在内容记录中。</p><p>新增用户以账户创建时间为准；注册方式来自服务端账户记录。活跃用户按已登录访问与已接入的功能请求采集，按北京时间每日去重；历史未采集日期不补零。登录用户按最近登录时间统计，不代表完整的每日登录历史。推广链接注册的用户归属已单独记录，推广大使只能读取自己名下数据。匿名访客及城市尚未采集。</p><p>支付金额以订单保存的人民币分为准。Apple 记录未保存实付金额，不能用于计算收入。</p></div></section></div>;
 }
 
-function RecordTable({ view, rows, channel, onSelect }: { view: AdminModule; rows: AdminRow[]; channel: string; onSelect: (row: AdminRow) => void }) {
-  const headers = view === 'users' ? ['用户', '注册方式', '会员 / 权限', '铜币余额', '注册时间', '最近活跃 / 登录'] : view === 'orders' ? ['订单 / 交易编号', '商品', channel === 'apple' ? '铜币' : '金额', '状态', '创建时间'] : view === 'insights' ? ['见闻', '出处', '原文语种', '所属日期'] : view === 'reports' ? ['被举报内容', '举报原因', '处理状态', '举报时间'] : ['内容', '作者', '状态', '发布时间'];
+export function RecordTable({ view, rows, channel, onSelect }: { view: AdminModule; rows: AdminRow[]; channel: string; onSelect: (row: AdminRow) => void }) {
+  const params = useSearchParams();
+  const access = useConsoleAccess();
+  const orderLink = (row: AdminRow) => {
+    const next = new URLSearchParams({ view: 'orders', user: String(row.id), channel: 'alipay' });
+    const scope = params.get('ambassador') || access.ambassadorId;
+    if (scope) next.set('ambassador', scope);
+    return `/admin?${next}`;
+  };
+  const headers = view === 'users' ? ['用户', '注册方式', '会员 / 权限', '铜币余额', '累计成功充值', '注册时间', '最近活跃 / 登录'] : view === 'orders' ? ['订单 / 交易编号', '商品', channel === 'apple' ? '铜币' : '金额', '状态', '创建时间'] : view === 'insights' ? ['见闻', '出处', '原文语种', '所属日期'] : view === 'reports' ? ['被举报内容', '举报原因', '处理状态', '举报时间'] : ['内容', '作者', '状态', '发布时间'];
   return <div className={styles.tableWrap}><table className={styles.table}><thead><tr>{headers.map(h => <th scope="col" key={h}>{h}</th>)}<th scope="col">操作</th></tr></thead><tbody>{rows.map(row => <tr key={String(row.id)}>
-    {view === 'users' ? <><td><span className={styles.cellTitle}>{str(row.nickname || row.email || '未命名用户')}</span><small>{str(row.email)}</small></td><td>{SIGNUP_SOURCES[row.signup_source as keyof typeof SIGNUP_SOURCES] || '未记录'}</td><td><Badge value={vipLabel(row.vip_expires_at)} /><small>{suspended(row) ? '暂停发言' : '正常发言'}</small></td><td>{str(row.coins_balance)}</td><td>{dateTime(row.created_at)}</td><td>{row.last_activity_at ? dateTime(row.last_activity_at) : '期间无活跃记录'}<small>登录：{dateTime(row.last_sign_in_at)}</small></td></>
+    {view === 'users' ? <><td><span className={styles.cellTitle}>{str(row.nickname || row.email || '未命名用户')}</span><small>{str(row.email)}</small></td><td>{SIGNUP_SOURCES[row.signup_source as keyof typeof SIGNUP_SOURCES] || '未记录'}</td><td><Badge value={vipLabel(row.vip_expires_at)} /><small>{suspended(row) ? '暂停发言' : '正常发言'}</small></td><td>{str(row.coins_balance)}</td><td><span className={styles.cellTitle}>{money(row.paid_cents)}</span><small>{row.paid_orders == null ? '充值笔数暂不可用' : `${row.paid_orders} 笔成功充值`}</small>{Number(row.refunded_orders) > 0 && <small>已退款 {money(row.refunded_cents)} · {row.refunded_orders} 笔</small>}{Number(row.apple_orders) > 0 && <small>另有 Apple 正式记录 {row.apple_orders} 笔 · 金额未记录</small>}<Link className={styles.textButton} href={orderLink(row)}>充值明细 <ArrowRight size={13} /></Link></td><td>{dateTime(row.created_at)}</td><td>{row.last_activity_at ? dateTime(row.last_activity_at) : '期间无活跃记录'}<small>登录：{dateTime(row.last_sign_in_at)}</small></td></>
       : view === 'orders' ? <><td className={styles.mono}>{str(row.out_trade_no || row.transaction_id)}</td><td>{str(row.subject || row.product_id)}</td><td>{channel === 'apple' ? str(row.coins) : `¥${(Number(row.amount_cents) / 100).toFixed(2)}`}</td><td><Badge value={row.status || row.environment} /></td><td>{dateTime(row.created_at)}</td></>
       : view === 'insights' ? <><td className={styles.cellTitle}>{str(row.title)}</td><td>{str(row.source_label)}</td><td>{str(row.original_language)}</td><td>{str(row.insight_date)}</td></>
       : view === 'reports' ? <><td><span className={styles.excerpt}>{str(row.snapshot_body)}</span><small>{str(row.snapshot_display_id)} · {row.content_type === 'answer' ? '手记' : '评论'}</small></td><td>{LABELS[String(row.reason)] || str(row.reason)}</td><td><Badge value={row.status} /></td><td>{dateTime(row.created_at)}</td></>
@@ -184,7 +196,7 @@ function RecordDialog({ row, view, channel, onClose, onSaved }: { row: AdminRow;
     <div className={styles.dialogBody}>
       <p className={styles.recordId}>编号 {str(row.id)}</p>
       {view === 'users' && access.role === 'owner' && <p className={styles.notice}><Link href={`/admin?view=ambassadors&userId=${row.id}`}>为此用户开通推广大使</Link></p>}
-      {view === 'users' ? <dl className={styles.inventory}><div><dt>邮箱</dt><dd>{str(row.email)}</dd></div><div><dt>铜币余额</dt><dd>{str(row.coins_balance)}</dd></div><div><dt>会员状态</dt><dd>{vipLabel(row.vip_expires_at)}</dd></div><div><dt>会员到期</dt><dd>{isLifetimeVip(row.vip_expires_at as string) ? '终身' : dateTime(row.vip_expires_at)}</dd></div><div><dt>暂停发言至</dt><dd>{dateTime(row.community_suspended_until)}</dd></div><div><dt>注册方式</dt><dd>{SIGNUP_SOURCES[row.signup_source as keyof typeof SIGNUP_SOURCES] || '未记录'}</dd></div><div><dt>注册时间</dt><dd>{dateTime(row.created_at)}</dd></div><div><dt>期间最近活跃</dt><dd>{row.last_activity_at ? dateTime(row.last_activity_at) : '无已采集记录'}</dd></div><div><dt>最近登录</dt><dd>{dateTime(row.last_sign_in_at)}</dd></div></dl>
+      {view === 'users' ? <dl className={styles.inventory}><div><dt>邮箱</dt><dd>{str(row.email)}</dd></div><div><dt>铜币余额</dt><dd>{str(row.coins_balance)}</dd></div><div><dt>累计成功充值</dt><dd>{money(row.paid_cents)}{row.paid_orders != null && ` · ${row.paid_orders} 笔`}</dd></div><div><dt>已退款</dt><dd>{money(row.refunded_cents)}{row.refunded_orders != null && ` · ${row.refunded_orders} 笔`}</dd></div><div><dt>最近成功充值</dt><dd>{dateTime(row.last_paid_at)}</dd></div><div><dt>Apple 正式记录</dt><dd>{row.apple_orders == null ? '暂不可用' : `${row.apple_orders} 笔 · 实付金额未记录`}</dd></div><div><dt>会员状态</dt><dd>{vipLabel(row.vip_expires_at)}</dd></div><div><dt>会员到期</dt><dd>{isLifetimeVip(row.vip_expires_at as string) ? '终身' : dateTime(row.vip_expires_at)}</dd></div><div><dt>暂停发言至</dt><dd>{dateTime(row.community_suspended_until)}</dd></div><div><dt>注册方式</dt><dd>{SIGNUP_SOURCES[row.signup_source as keyof typeof SIGNUP_SOURCES] || '未记录'}</dd></div><div><dt>注册时间</dt><dd>{dateTime(row.created_at)}</dd></div><div><dt>期间最近活跃</dt><dd>{row.last_activity_at ? dateTime(row.last_activity_at) : '无已采集记录'}</dd></div><div><dt>最近登录</dt><dd>{dateTime(row.last_sign_in_at)}</dd></div></dl>
       : view === 'orders' ? <dl className={styles.inventory}>{(channel === 'apple' ? [['交易编号', row.transaction_id], ['商品', row.product_id], ['交易环境', LABELS[String(row.environment)] || row.environment], ['铜币', row.coins], ['用户编号', row.user_id], ['创建时间', dateTime(row.created_at)]] : [['订单编号', row.out_trade_no], ['商品', row.subject], ['用户编号', row.user_id], ['金额', `¥${(Number(row.amount_cents) / 100).toFixed(2)}`], ['状态', LABELS[String(row.status)]], ['支付时间', dateTime(row.paid_at)], ['入账时间', dateTime(row.credited_at)]]).map(([label, value]) => <div key={String(label)}><dt>{label}</dt><dd>{str(value)}</dd></div>)}</dl>
       : view === 'insights' ? <div className={styles.fields}><p className={styles.quiet}>所属日期：{str(row.insight_date)}</p>{[['title', '标题'], ['source_label', '简短出处'], ['original_language', '原文语种'], ['original_text', '原文'], ['body', '译文 / 正文'], ['sources', '完整来源留档']].map(([key, label]) => <label key={key}>{label}{['original_text', 'body', 'sources'].includes(key) ? <textarea rows={key === 'sources' ? 3 : 7} value={String(draft[key] || '')} onChange={e => setDraft({ ...draft, [key]: e.target.value })} disabled={working} /> : <input value={String(draft[key] || '')} onChange={e => setDraft({ ...draft, [key]: e.target.value })} disabled={working} />}</label>)}</div>
       : <><div className={styles.fullText}>{str(row.body || row.snapshot_body)}</div><dl className={styles.inventory}><div><dt>作者</dt><dd>{str(row.display_id || row.snapshot_display_id)}</dd></div><div><dt>状态</dt><dd><Badge value={row.status || row.moderation_status} /></dd></div><div><dt>提交时间</dt><dd>{dateTime(row.created_at)}</dd></div>{view === 'reports' ? <><div><dt>举报原因</dt><dd>{LABELS[String(row.reason)] || str(row.reason)}</dd></div><div><dt>补充说明</dt><dd>{str(row.details)}</dd></div><div><dt>处理结果</dt><dd>{str(row.resolution)}</dd></div></> : <><div><dt>关联条目</dt><dd>{str(row.question_id || row.entry_id)}</dd></div><div><dt>处理原因</dt><dd>{str(row.moderation_reason)}</dd></div><div><dt>处理时间</dt><dd>{dateTime(row.moderated_at)}</dd></div></>}</dl></>}

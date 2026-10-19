@@ -18,4 +18,4 @@ export type AdminData = {
   warnings?: string[]; updatedAt: string;
   usersAnalytics?: UserAnalytics;
 };
-export type AdminQuery = { view: AdminModule; page: number; q: string; status: string; channel: string; days: number; cohort: string; source: string; start?: string | null; end?: string | null };
+export type AdminQuery = { view: AdminModule; page: number; q: string; status: string; channel: string; days: number; cohort: string; source: string; start?: string | null; end?: string | null; userId?: string };

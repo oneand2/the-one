@@ -1,3 +1,4 @@
+import { readUserRecharges } from './recharges';
 import { selectScoped } from '@/lib/ambassadors/scope';
 import type { SupabaseClient, User } from '@supabase/supabase-js';
 import { isVip } from '@/utils/vip';
@@ -8,6 +9,8 @@ import { SIGNUP_SOURCES, PAGE_SIZE, MODULES, type AdminModule, type AdminRow, ty
 export function parseAdminQuery(params: URLSearchParams): AdminQuery {
   const view = params.get('view') || 'overview';
   if (!MODULES.includes(view as AdminModule)) throw new Error('未知后台页面');
+  const userId = params.get('user') || undefined;
+  if (userId && (view !== 'orders' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId))) throw new Error('充值用户筛选无效');
   const rawPage = params.get('page') || '1';
   if (!/^\d+$/.test(rawPage) || Number(rawPage) < 1 || Number(rawPage) > 100000) throw new Error('页码无效');
   const q = (params.get('q') || '').trim();
@@ -16,7 +19,7 @@ export function parseAdminQuery(params: URLSearchParams): AdminQuery {
   const cohort = params.get('cohort') || 'all';
   const source = params.get('source') || 'all';
   if (![7, 30].includes(days) || !['all', 'new', 'active', 'login'].includes(cohort) || (source !== 'all' && !Object.hasOwn(SIGNUP_SOURCES, source))) throw new Error('用户统计筛选无效');
-  return { view: view as AdminModule, page: Number(rawPage), q, status: params.get('status') || 'all', channel: params.get('channel') || 'alipay', days, cohort, source };
+  return { userId: userId?.toLowerCase(), view: view as AdminModule, page: Number(rawPage), q, status: params.get('status') || 'all', channel: params.get('channel') || 'alipay', days, cohort, source };
 }
 
 export function chinaDay(offset = 0, now = new Date()) {
@@ -150,6 +153,12 @@ async function users(client: SupabaseClient, input: AdminQuery, scope?: string |
     id: u.id, email: u.email || null, created_at: u.created_at, last_sign_in_at: u.last_sign_in_at || null,
     nickname: '', coins_balance: null, vip_expires_at: null, community_suspended_until: null, ...byId.get(u.id),
   }));
+  try {
+    const recharges = await readUserRecharges(client, rows.map(row => row.id), scope);
+    for (const row of rows) Object.assign(row, recharges.get(row.id));
+  } catch {
+    warnings.push('用户充值统计暂时不可用，请刷新重试；未将缺失金额记作零。');
+  }
   return { usersAnalytics, warnings, rows, total: accounts.length, page: input.page, updatedAt: new Date().toISOString() };
 }
 
@@ -181,6 +190,7 @@ export async function loadAdminData(client: SupabaseClient, input: AdminQuery, s
   if (!allowed.includes(input.status)) throw new Error('筛选状态无效');
   let query = selectScoped(client, table, columns, { count: 'exact' }, scope);
   if (input.view === 'orders') {
+    if (input.userId) query = query.eq('user_id', input.userId);
     const dateColumn = input.channel === 'apple' ? 'created_at' : 'paid_at';
     if (input.start) query = query.gte(dateColumn, input.start);
     if (input.end) query = query.lt(dateColumn, input.end);

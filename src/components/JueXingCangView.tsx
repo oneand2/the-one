@@ -765,16 +765,9 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
     setLiuyaoQuestion(null);
 
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        // 未登录时还原 loading 状态并跳转登录
-        setIsLoading(false);
-        sendingRef.current = false;
-        goToLogin();
-        return;
-      }
+      // 聊天接口使用本站 Cookie 在服务端鉴权。浏览器直连认证服务失败时，
+      // getUser 也可能返回空用户；据此跳登录页会被有效的服务端会话重定向
+      // 回首页，清空当前问题，看起来像提交后闪退。
 
       // 如果没有当前会话，创建新会话
       let sessionId = currentSessionId;
@@ -813,6 +806,11 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          // 只有本站接口明确拒绝登录态才提示重新登录；保留现场，不自动跳页。
+          if (!overrideContent) setInput(content);
+          throw new Error('请先登录后再发送。问题已保留，请登录后重试。');
+        }
         if (response.status === 402) {
           const data = await response.json().catch(() => ({}));
           const need = (data?.need_coins ?? 5) as number;
@@ -2145,6 +2143,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
                 {/* 六爻模式切换 */}
                 <button
                   type="button"
+                  aria-pressed={liuyaoMode}
                   onClick={() => {
                     const newMode = !liuyaoMode;
                     setLiuyaoMode(newMode);

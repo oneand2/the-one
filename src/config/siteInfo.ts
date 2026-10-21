@@ -3,7 +3,7 @@ export const SITE_INFO = {
   operatorName: process.env.NEXT_PUBLIC_OPERATOR_NAME?.trim() || '二网站运营者',
   customerServiceEmail:
     process.env.NEXT_PUBLIC_CUSTOMER_SERVICE_EMAIL?.trim() || '892777353@qq.com',
-  icpNumber: process.env.NEXT_PUBLIC_ICP_NUMBER?.trim() || '',
+  icpNumber: process.env.NEXT_PUBLIC_ICP_NUMBER?.trim() || '沪ICP备2026036387号-1',
   publicSecurityNumber: process.env.NEXT_PUBLIC_PUBLIC_SECURITY_NUMBER?.trim() || '',
   domain: 'www.the-one-and-the-two.com',
 } as const;

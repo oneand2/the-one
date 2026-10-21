@@ -1981,7 +1981,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
           initial={hideHeader ? false : { opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-          className="pt-6 border-t border-stone-200 juexingcang-input-bottom md:!pb-8"
+          className={`pt-6 border-t border-stone-200 ${hideHeader ? 'pb-0' : 'juexingcang-input-bottom md:!pb-8'}`}
         >
           <AnimatePresence>
             {showBaziImportedNotice && (

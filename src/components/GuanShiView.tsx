@@ -131,7 +131,7 @@ export const GuanShiView: React.FC = () => {
         initial={false}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="mt-8 mb-2"
+        className="mt-8"
       >
         <div className="flex items-start gap-2 text-[11px] leading-relaxed">
           <span className="text-stone-400/50 flex-shrink-0">|</span>
@@ -143,7 +143,6 @@ export const GuanShiView: React.FC = () => {
         </div>
       </motion.div>
 
-      <div className="pb-20 md:pb-10" />
     </motion.div>
   );
 };

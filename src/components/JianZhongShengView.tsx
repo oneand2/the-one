@@ -419,7 +419,7 @@ export const JianZhongShengView: React.FC = () => {
   };
 
   return (
-    <section ref={sectionRef} className="w-full scroll-mt-5 pb-10">
+    <section ref={sectionRef} className="w-full scroll-mt-5">
       <AnimatePresence initial={false} mode="wait">
         {selectedEntry ? (
           <motion.div

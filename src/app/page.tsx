@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { MobileNav } from '@/components/MobileNav';
+import { SiteRegistration } from '@/components/SiteRegistration';
 import { TabContentErrorBoundary } from '@/components/TabContentErrorBoundary';
 import { GuanShiView } from '@/components/GuanShiView';
 import { GuanXinView } from '@/components/GuanXinView';
@@ -319,6 +320,7 @@ const HomeContent: React.FC = () => {
                   <JueXingCangView hideHeader isActive={activeTab === 'juexingcang'} />
                 </div>
               )}
+              {!isIOSEmbed && <SiteRegistration inContent />}
               </div>
             </TabContentErrorBoundary>
           </div>

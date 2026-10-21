@@ -383,7 +383,6 @@ export const GuanXinView: React.FC<GuanXinViewProps> = ({ onNavigate }) => {
         </button>
       </motion.section>
 
-      <div className="pb-20" />
     </motion.div>
   );
 };

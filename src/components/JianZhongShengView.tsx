@@ -3,6 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { jianZhongShengSpace, type JianZhongShengEntry } from '@/content/jianzhongsheng';
+import { readJianZhongShengDraft, writeJianZhongShengDraft } from '@/lib/jianzhongshengDraft';
+import { JIANZHONGSHENG_TITLE_MAX_LENGTH } from '@/lib/jianzhongshengTitle';
 
 const MIN_NOTE_LENGTH = 15;
 const MAX_NOTE_LENGTH = 3000;
@@ -10,6 +12,7 @@ const MAX_NOTE_LENGTH = 3000;
 type CommunityResponse = {
   id: string;
   authorId: string;
+  title?: string;
   body: string;
   createdAt: string;
   mine: boolean;
@@ -38,6 +41,40 @@ type SafetyTarget = {
 };
 
 type SaveState = 'idle' | 'saving' | 'shared' | 'local';
+
+function NoteTitleOrnament() {
+  return (
+    <span aria-hidden="true" className="mt-3 flex h-2.5 items-center gap-3">
+      <svg
+        viewBox="0 0 16 10"
+        className="h-2.5 w-4 shrink-0 text-stone-400/80"
+        fill="currentColor"
+        focusable="false"
+      >
+        <rect x="0" y="1.5" width="6.5" height="1.5" />
+        <rect x="9.5" y="1.5" width="6.5" height="1.5" />
+        <rect x="0" y="7" width="16" height="1.5" />
+      </svg>
+      <span className="h-px w-14 bg-stone-300/65" />
+    </span>
+  );
+}
+
+function NoteCardTitle({ title }: { title: string }) {
+  return (
+    <span className="mb-3 block">
+      <span
+        className="line-clamp-2 break-words text-pretty text-[15px] leading-6 tracking-normal text-[var(--ui-color-ink)] min-[400px]:text-[16px]"
+        style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, overflowWrap: 'anywhere' }}
+      >
+        {title}
+      </span>
+      <span aria-hidden="true" className="mt-2.5 flex h-px w-full bg-stone-200/70">
+        <span className="h-px w-6 bg-stone-400/70" />
+      </span>
+    </span>
+  );
+}
 
 function PaperGlyph({ className }: { className?: string }) {
   return (
@@ -83,8 +120,11 @@ export const JianZhongShengView: React.FC = () => {
   const reduceMotion = useReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const feedScrollPosition = useRef(0);
+  const cloudNoteRestored = useRef(false);
   const storageKey = `jianzhongsheng:${space.id}:note`;
+  const [draftTitle, setDraftTitle] = useState('');
   const [draft, setDraft] = useState('');
+  const [myTitle, setMyTitle] = useState('');
   const [myNote, setMyNote] = useState('');
   const [validationMessage, setValidationMessage] = useState('');
   const [composerOpen, setComposerOpen] = useState(false);
@@ -107,10 +147,12 @@ export const JianZhongShengView: React.FC = () => {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        const stored = window.localStorage.getItem(storageKey)?.trim() ?? '';
-        if (stored) {
-          setDraft(stored);
-          setMyNote(stored);
+        const stored = readJianZhongShengDraft(window.localStorage.getItem(storageKey));
+        if (stored.body && !cloudNoteRestored.current) {
+          setDraftTitle(stored.title);
+          setMyTitle(stored.title);
+          setDraft(stored.body);
+          setMyNote(stored.body);
           setSaveState('local');
         }
       } catch {
@@ -133,6 +175,21 @@ export const JianZhongShengView: React.FC = () => {
         setCommunityResponses(answers);
         const mine = answers.find((answer) => answer.mine);
         if (mine) {
+          // An unsuccessful edit must survive refresh even if an older copy is public.
+          try {
+            const local = readJianZhongShengDraft(window.localStorage.getItem(storageKey));
+            if (local.body && local.pending !== false && (local.body !== mine.body || local.title !== (mine.title ?? ''))) {
+              setDraftTitle(local.title);
+              setMyTitle(local.title);
+              setDraft(local.body);
+              setMyNote(local.body);
+              setSaveState('local');
+              return;
+            }
+          } catch {}
+          cloudNoteRestored.current = true;
+          setDraftTitle(mine.title ?? '');
+          setMyTitle(mine.title ?? '');
           setDraft(mine.body);
           setMyNote(mine.body);
           setSaveState('shared');
@@ -140,7 +197,7 @@ export const JianZhongShengView: React.FC = () => {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [space.id]);
+  }, [space.id, storageKey]);
 
   useEffect(() => {
     if (!selectedEntry) return;
@@ -185,6 +242,7 @@ export const JianZhongShengView: React.FC = () => {
       ? [{
           id: 'my-local-note',
           authorId: '我',
+          title: myTitle,
           excerpt: excerptFromBody(myNote),
           body: myNote,
           mine: true,
@@ -193,13 +251,14 @@ export const JianZhongShengView: React.FC = () => {
     const sharedEntries = communityResponses.map((response) => ({
       id: response.id,
       authorId: response.mine ? '我' : response.authorId,
-      excerpt: excerptFromBody(response.body),
-      body: response.body,
+      title: response.mine && saveState !== 'shared' && myNote ? myTitle : response.title,
+      excerpt: excerptFromBody(response.mine && saveState !== 'shared' && myNote ? myNote : response.body),
+      body: response.mine && saveState !== 'shared' && myNote ? myNote : response.body,
       mine: response.mine,
       reportable: response.reportable,
     }));
     return [...localEntry, ...sharedEntries, ...space.entries];
-  }, [communityResponses, myNote, space.entries]);
+  }, [communityResponses, myNote, myTitle, saveState, space.entries]);
 
   const displayedComments = useMemo<CommunityComment[]>(() => {
     const sampleComments = (selectedEntry?.sampleComments ?? []).map((comment) => ({
@@ -252,16 +311,22 @@ export const JianZhongShengView: React.FC = () => {
 
   const submitNote = async () => {
     const note = draft.trim();
+    const title = draftTitle.trim();
+    if (Array.from(title).length > JIANZHONGSHENG_TITLE_MAX_LENGTH) {
+      setValidationMessage(`标题请写在 ${JIANZHONGSHENG_TITLE_MAX_LENGTH} 个字以内。`);
+      return;
+    }
     if (note.length < MIN_NOTE_LENGTH) {
       setValidationMessage(`再写一点吧，至少留下 ${MIN_NOTE_LENGTH} 个字。`);
       return;
     }
     setValidationMessage('');
+    setMyTitle(title);
     setMyNote(note);
     setComposerOpen(false);
     setSaveState('saving');
     try {
-      window.localStorage.setItem(storageKey, note);
+      window.localStorage.setItem(storageKey, writeJianZhongShengDraft({ title, body: note, pending: true }));
     } catch {
       // 本次仍可展示；只是不跨刷新保存。
     }
@@ -270,7 +335,7 @@ export const JianZhongShengView: React.FC = () => {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questionId: space.id, body: note }),
+        body: JSON.stringify({ questionId: space.id, title, body: note }),
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({})) as { error?: string };
@@ -285,6 +350,9 @@ export const JianZhongShengView: React.FC = () => {
             payload.answer as CommunityResponse,
           ]);
         }
+        try {
+          window.localStorage.setItem(storageKey, writeJianZhongShengDraft({ title, body: note, pending: false }));
+        } catch {}
         setSaveState('shared');
       }
     } catch {
@@ -335,6 +403,8 @@ export const JianZhongShengView: React.FC = () => {
     try {
       if (target.contentType === 'answer' && target.id === 'my-local-note') {
         try { window.localStorage.removeItem(storageKey); } catch {}
+        setMyTitle('');
+        setDraftTitle('');
         setMyNote('');
         setDraft('');
         setSaveState('idle');
@@ -350,6 +420,8 @@ export const JianZhongShengView: React.FC = () => {
       if (!response.ok) throw new Error(payload.error || '暂时无法删除');
       if (target.contentType === 'answer') {
         setCommunityResponses((current) => current.filter((item) => item.id !== target.id));
+        setMyTitle('');
+        setDraftTitle('');
         setMyNote('');
         setDraft('');
         setSaveState('idle');
@@ -444,16 +516,20 @@ export const JianZhongShengView: React.FC = () => {
               <PaperGlyph className="h-5 w-5 text-stone-300" />
             </div>
 
-            <article className="rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]" aria-labelledby="jianzhongsheng-entry-author">
-              <div className="relative overflow-hidden rounded-[17px] bg-[#fdfcf9] px-6 pb-8 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8">
-                <span aria-hidden="true" className="absolute right-4 top-4 h-7 w-7 rounded-tr-lg border-r border-t border-stone-300/60" />
-                <h2
-                  id="jianzhongsheng-entry-author"
-                  className="mb-8 text-[13px] tracking-[0.18em] text-stone-500"
-                  style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
-                >
-                  {selectedEntry.authorId}
-                </h2>
+            <article className="rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]" aria-labelledby={selectedEntry.title ? 'jianzhongsheng-entry-title' : 'jianzhongsheng-entry-author'}>
+              <div className="relative overflow-hidden rounded-[17px] bg-[var(--ui-color-warm-white)] px-6 pb-8 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8">
+                {selectedEntry.title && (
+                  <header className="mb-5">
+                    <h2
+                      id="jianzhongsheng-entry-title"
+                      className="break-words text-[21px] leading-[1.5] tracking-normal text-stone-700 sm:text-[22px]"
+                      style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, overflowWrap: 'anywhere' }}
+                    >
+                      {selectedEntry.title}
+                    </h2>
+                    <NoteTitleOrnament />
+                  </header>
+                )}
                 <div
                   lang="zh-Hans"
                   className="jianzhongsheng-reading-text space-y-5 text-[15px] leading-[2] tracking-normal text-stone-700"
@@ -465,8 +541,8 @@ export const JianZhongShengView: React.FC = () => {
                 <div className="mt-9 flex items-center gap-3">
                   <span className="h-px flex-1 bg-stone-200/70" />
                   <span
-                    className="text-[12px] tracking-[0.16em] text-stone-500"
-                    style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                    id="jianzhongsheng-entry-author"
+                    className="font-sans text-[11px] tracking-normal text-stone-500"
                   >
                     — {selectedEntry.authorId}
                   </span>
@@ -547,8 +623,7 @@ export const JianZhongShengView: React.FC = () => {
                     <article key={comment.id} className="border-t border-stone-200/70 py-4">
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <span
-                          className="min-w-0 truncate text-[11px] tracking-[0.12em] text-stone-500"
-                          style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
+                          className="min-w-0 truncate font-sans text-[11px] tracking-normal text-stone-500"
                         >
                           {comment.mine ? '我' : comment.authorId}
                         </span>
@@ -685,7 +760,27 @@ export const JianZhongShengView: React.FC = () => {
                     <label htmlFor="jianzhongsheng-note" className="mb-3 block font-sans text-[11px] tracking-[0.2em] text-stone-500">
                       此刻，你想留下些什么？
                     </label>
-                    <div className="rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-4 pb-3 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors focus-within:border-stone-400/50">
+                    <div className="rounded-2xl border border-black/[0.07] bg-[var(--ui-color-warm-white)] px-4 pb-3 pt-4 shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors focus-within:border-stone-400/50">
+                      <div className="mb-4 border-b border-stone-200/70 pb-3">
+                        <div className="mb-2 flex items-center justify-between gap-3 font-sans text-[10px] text-stone-400">
+                          <label htmlFor="jianzhongsheng-title" className="tracking-[0.12em]">标题（选填）</label>
+                          <span id="jianzhongsheng-title-count" className="tabular-nums">{Array.from(draftTitle.trim()).length} / {JIANZHONGSHENG_TITLE_MAX_LENGTH}</span>
+                        </div>
+                        <input
+                          id="jianzhongsheng-title"
+                          type="text"
+                          value={draftTitle}
+                          aria-describedby="jianzhongsheng-title-count"
+                          aria-invalid={Array.from(draftTitle.trim()).length > JIANZHONGSHENG_TITLE_MAX_LENGTH}
+                          onChange={(event) => {
+                            setDraftTitle(event.target.value);
+                            if (validationMessage) setValidationMessage('');
+                          }}
+                          placeholder="给这则手记起个名字"
+                          className="min-h-10 w-full bg-transparent text-[16px] leading-7 tracking-normal text-stone-700 outline-none placeholder:text-stone-300 focus-visible:ring-1 focus-visible:ring-stone-400/30"
+                          style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                        />
+                      </div>
                       <textarea
                         id="jianzhongsheng-note"
                         value={draft}
@@ -701,7 +796,10 @@ export const JianZhongShengView: React.FC = () => {
                       <p className="border-t border-stone-200/70 pt-3 font-sans text-[9px] leading-5 tracking-[0.03em] text-stone-400">
                         公开内容会经过安全检查；请勿发布联系方式、骚扰或违法内容。
                       </p>
-                      <div className="flex items-center justify-between gap-4 border-t border-stone-200/70 pt-3">
+                      {validationMessage && (
+                        <p className="pt-2 font-sans text-[11px] leading-5 text-stone-600" role="status">{validationMessage}</p>
+                      )}
+                      <div className="flex items-center justify-between gap-2 border-t border-stone-200/70 pt-3">
                         <button
                           type="button"
                           onClick={() => {
@@ -713,14 +811,15 @@ export const JianZhongShengView: React.FC = () => {
                           收起
                         </button>
                         <span className="font-sans text-[10px] text-stone-400" aria-live="polite">
-                          {validationMessage || `至少 ${MIN_NOTE_LENGTH} 字 · ${draft.trim().length} / ${MAX_NOTE_LENGTH}`}
+                          {`至少 ${MIN_NOTE_LENGTH} 字 · ${draft.trim().length} / ${MAX_NOTE_LENGTH}`}
                         </span>
                         <button
                           type="button"
                           onClick={() => void submitNote()}
-                          className="min-h-10 rounded-full bg-stone-800 px-5 font-sans text-[11px] tracking-[0.16em] text-[#fbf9f4] transition-colors duration-200 hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4] active:bg-stone-900"
+                          disabled={saveState === 'saving'}
+                          className="min-h-10 shrink-0 rounded-full bg-stone-800 px-4 font-sans text-[11px] tracking-[0.16em] text-[#fbf9f4] transition-colors duration-200 hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#fbf9f4] active:bg-stone-900 disabled:opacity-40"
                         >
-                          发布手记
+                          {saveState === 'saving' ? '正在发布' : '发布手记'}
                         </button>
                       </div>
                     </div>
@@ -761,27 +860,30 @@ export const JianZhongShengView: React.FC = () => {
                 <motion.button
                   key={entry.id}
                   type="button"
-                  aria-label={`阅读${entry.authorId}的手记`}
+                  aria-label={entry.title ? `阅读《${entry.title}》，${entry.authorId}的手记` : `阅读${entry.authorId}的手记`}
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: reduceMotion ? 0 : Math.min(index * 0.025, 0.16) }}
                   onClick={() => openEntry(entry)}
-                  className="group relative mb-3 inline-block w-full break-inside-avoid rounded-2xl border border-black/[0.07] bg-[#fdfcf9] px-4 pb-4 pt-4 text-left shadow-[0_1px_3px_rgba(0,0,0,0.035)] transition-colors hover:bg-stone-900/[0.012] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
+                  className="group mb-3 inline-block w-full min-w-0 break-inside-avoid overflow-hidden rounded-[13px] border border-black/[0.07] bg-[var(--ui-color-warm-white)] px-3.5 py-4 align-top text-left transition-colors duration-200 hover:border-stone-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
                 >
-                  <span aria-hidden="true" className="absolute right-3 top-3 h-4 w-4 rounded-tr-md border-r border-t border-stone-300/50" />
+                  {entry.title && <NoteCardTitle title={entry.title} />}
                   <span
-                    className="jianzhongsheng-reading-text block pr-2 text-[13px] leading-[1.95] tracking-[0.015em] text-stone-700"
+                    className="line-clamp-6 break-words text-[13px] leading-6 tracking-normal text-stone-500"
+                    style={{ fontFamily: 'var(--ui-font-sans)', fontWeight: 400, overflowWrap: 'anywhere' }}
                   >
                     {entry.excerpt}
                   </span>
-                  <span className="mt-4 flex items-end justify-between gap-2 border-t border-stone-900/[0.055] pt-3">
-                    <span
-                      className="min-w-0 truncate text-[11px] tracking-[0.12em] text-stone-500"
-                      style={{ fontFamily: 'var(--ui-font-kaiti)', fontWeight: 400 }}
-                    >
+                  <span className="mt-4 flex items-center justify-between gap-2">
+                    <span className="min-w-0 truncate font-sans text-[10px] leading-4 tracking-[0.02em] text-stone-500">
                       {entry.authorId}
                     </span>
-                    <span className="shrink-0 font-sans text-[8px] tracking-[0.12em] text-stone-300 transition-colors group-hover:text-stone-500">展开</span>
+                    <span className="flex shrink-0 items-center gap-1.5 font-sans text-[10px] tracking-[0.08em] text-stone-400 transition-colors group-hover:text-stone-500">
+                      展开
+                      <svg viewBox="0 0 16 16" aria-hidden="true" className="h-3 w-3" fill="none">
+                        <path d="M3 8h9M9 4.5 12.5 8 9 11.5" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
                   </span>
                 </motion.button>
               ))}

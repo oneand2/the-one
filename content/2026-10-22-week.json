@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-10-22",
+  "stories": [
+    {
+      "title": "古痕方珍",
+      "origin": "china",
+      "sourceLabel": "《郁离子·良桐》",
+      "originalLanguage": "文言",
+      "originalText": "工之侨得良桐焉，斲而为琴，弦而鼓之，金声而玉应，自以为天下之美也，献之太常。使国工视之，曰：『弗古。』还之。工之侨以归，谋诸漆工，作断纹焉；又谋诸篆工，作古窾焉；匣而埋诸土，期年出之，抱以适市。贵人过而见之，易之以百金。献诸朝，乐官传视，皆曰：『希世之珍也。』工之侨闻之叹曰：『悲哉世也！岂独一琴哉，莫不然矣。而不早图之。其与亡矣！』遂去，入于宕冥之山，不知其所终。",
+      "body": "刘基《郁离子》写，工之侨得到一段好桐木，斫成琴，张弦弹奏，声音如金玉相应。他自认这是天下好琴，便献给掌管礼乐的太常。\n\n太常让宫中乐师检看。乐师只说“不是古物”，便把琴退还了。\n\n工之侨请漆工做出断纹，又请篆工刻上古款，把琴装匣埋入土中。一年后取出拿到市上，一名贵人用百金买下，再献进朝廷。\n\n乐官们传看，都称它是稀世珍宝。工之侨听说后叹道，世道可悲，哪里只是琴如此；随后离去，进了宕冥山，再没有人知道他的下落。",
+      "sources": "维基文库刘基《郁离子·良桐》明成化六年《诚意伯文集》石刻本录文，https://zh.wikisource.org/zh-hans/郁離子/良桐"
+    },
+    {
+      "title": "远水太迟",
+      "origin": "china",
+      "sourceLabel": "《庄子·外物》",
+      "originalLanguage": "文言",
+      "originalText": "莊周家貧，故往貸粟於監河侯。監河侯曰：『諾。我將得邑金，將貸子三百金，可乎？』莊周忿然作色曰：『周昨來，有中道而呼者。周顧視車轍，中有鮒魚焉。周問之曰：「鮒魚來，子何為者耶？」對曰：「我，東海之波臣也。君豈有斗升之水而活我哉？」周曰：「諾，我且南遊吳越之王，激西江之水而迎子，可乎？」鮒魚忿然作色曰：「吾失我常與，我無所處。吾得斗升之水然活耳，君乃言此，曾不如早索我於枯魚之肆！」』",
+      "body": "《庄子·外物》写，庄周家贫，去向监河侯借粮。监河侯答应，等收到封地的钱，便借给他三百金。\n\n庄周变了脸色，说自己昨天在路上听见呼喊，回头看见车辙积水里困着一条鲫鱼。鱼只求一斗一升的水来活命。\n\n庄周答应南游吴越，请当地君王引来西江之水迎接它。\n\n鲫鱼也变了脸色：它失去平日所居的水，只须眼前一点水便能活；等浩大的江水来到，不如早些去干鱼铺里找它。",
+      "sources": "维基文库《庄子·外物》通行本原文，https://zh.wikisource.org/zh-hant/莊子/外物"
+    },
+    {
+      "title": "钉成一体",
+      "origin": "china",
+      "sourceLabel": "《梦溪笔谈·技艺》",
+      "originalLanguage": "文言",
+      "originalText": "錢氏據兩浙時，於杭州梵天寺建一木塔，方兩三級，錢帥登之，患其塔動。匠師云：『未布瓦，上輕，故如此。』方以瓦布之，而動如初。無可奈何，密使其妻見喻皓之妻，賂以金釵，問塔動之因。皓笑曰：『此易耳。但逐層布板訖，便實釘之，則不動矣。』匠師如其言，塔遂定。蓋釘板上下彌束，六幕相聯如胠篋。人履其板，六幕相持，自不能動。人皆伏其精練。",
+      "body": "沈括《梦溪笔谈》记，吴越钱氏在杭州梵天寺建木塔，才修到两三层，钱帅登上去，觉得塔在晃动。\n\n匠师以为是尚未铺瓦、上部太轻。瓦铺好后，塔仍像原先一样晃，他已无计可施，只得托妻子送金钗给木匠喻皓的妻子，询问缘故。\n\n喻皓笑说，这很容易：逐层铺完木板，再用钉子钉牢，塔便不会动。匠师照做，木塔果然稳定。\n\n沈括解释，钉牢的楼板上下约束，使六个面像封闭的箱子彼此连结；人踩一面，其余各面共同支撑。",
+      "sources": "维基文库沈括《梦溪笔谈》卷十八《技艺》梵天寺木塔条，https://zh.wikisource.org/zh-hant/夢溪筆談/卷18"
+    },
+    {
+      "title": "祸福未定",
+      "origin": "china",
+      "sourceLabel": "《淮南子·人间训》",
+      "originalLanguage": "文言",
+      "originalText": "近塞上之人有善術者，馬無故亡而入胡，人皆吊之。其父曰：『此何遽不為福乎！』居數月，其馬將胡駿馬而歸，人皆賀之。其父曰：『此何遽不能為禍乎！』家富良馬，其子好騎，墮而折其髀，人皆吊之。其父曰：『此何遽不為福乎！』居一年，胡人大入塞，丁壯者引弦而戰，近塞之人，死者十九，此獨以跛之故，父子相保。故福之為禍，禍之為福，化不可極，深不可測也。",
+      "body": "《淮南子·人间训》写，边塞附近一户人家的马忽然逃入胡地。邻人都来安慰，家中老人却问：这怎么就不能成为福呢？\n\n几个月后，那匹马带着胡地骏马回来。众人前来道贺，老人又问：这怎么就不能成为祸呢？\n\n家里有了许多良马，儿子喜欢骑乘，从马上跌下，摔断大腿。众人再次安慰，老人仍问：这怎么就不能成为福呢？\n\n一年后胡人大举入塞，壮年男子持弓作战，边塞居民十人中死了九人。儿子因腿伤免于出战，父子得以保全。原文说，祸福相互转化，变化没有穷尽。",
+      "sources": "维基文库《淮南子·人间训》卷十八塞上之人段，https://zh.wikisource.org/zh-hans/淮南子/人間訓"
+    },
+    {
+      "title": "只为负柴",
+      "origin": "world",
+      "sourceLabel": "《伊索寓言》",
+      "originalLanguage": "古希腊语",
+      "originalText": "Γέρων ποτὲ ξύλα κόψας καὶ ταῦτα φέρων πολλὴν ὁδὸν ἐβάδιζε, καὶ διὰ τὸν πολὺν κόπον ἀποθέμενος ἐν τόπῳ τινὶ τὸν φόρτον, τὸν Θάνατον ἐπεκαλεῖτο. Τοῦ δὲ Θανάτου φανέντος καὶ πυθομένου, δι᾿ ἣν αἰτίαν παρακαλεῖται, ὁ γέρων ἔφη· «ἵνα τὸ φορτίον ἄρῃς.» Ὁ λόγος δηλοῖ, ὅτι πᾶς ἄνθρωπος φιλόζωος ἐν τῷ βίῳ, κἂν δυστυχῇ.",
+      "body": "《伊索寓言》有一则：一个老人砍好木柴，背着走了很远。路途劳顿，他在一处卸下重担，开口呼唤死神。\n\n死神随即现身，问老人为什么叫自己来。面对真正出现的死神，老人没有请他结束劳苦。\n\n他说，请帮我把这捆柴重新背起来。\n\n寓言原文随后收束：人在一生中总会眷恋生命，即便正身处不幸。",
+      "sources": "Bibliotheca Augustana《Aesopica·Γέρων καὶ Θάνατος》希腊文原文，https://www.tha.de/homes/harsch/graeca/Chronologia/S_ante06/Aesop/aes_m090.html；Aesopica Perry Index 60 版本索引与书目信息，https://www.mythfolklore.net/aesopica/perry/60.htm"
+    },
+    {
+      "title": "为后来种",
+      "origin": "world",
+      "sourceLabel": "《塔安尼特》23a",
+      "originalLanguage": "阿拉姆语",
+      "originalText": "יומא חד הוה אזל באורחא חזייה לההוא גברא דהוה נטע חרובא אמר ליה האי עד כמה שנין טעין אמר ליה עד שבעין שנין אמר ליה פשיטא לך דחיית שבעין שנין אמר ליה האי [גברא] עלמא בחרובא אשכחתיה כי היכי דשתלי לי אבהתי שתלי נמי לבראי",
+      "body": "《巴比伦塔木德·塔安尼特》记，霍尼有一天走在路上，看见一个人正在栽角豆树。他停下来问，这种树要多少年才会结果。\n\n那人回答，要到七十年后。霍尼又问：你确定自己还能活七十年，等到吃它的果实吗？\n\n栽树人回答，他来到世上时，已经看见了角豆树。正如祖辈曾为他种树，他现在也为自己的后代种下这棵。",
+      "sources": "Sefaria Library《Taanit 23a:15》阿拉姆语底本与英译对照，https://www.sefaria.org/Taanit.23a.15?lang=bi"
+    },
+    {
+      "title": "鞋外之评",
+      "origin": "world",
+      "sourceLabel": "普林尼《博物志》",
+      "originalLanguage": "拉丁语",
+      "originalText": "Apelli fuit alioqui perpetua consuetudo numquam tam occupatum diem agendi, ut non lineam ducendo exerceret artem, quod ab eo in proverbium venit. idem perfecta opera proponebat in pergula transeuntibus atque, ipse post tabulam latens, vitia quae notarentur auscultabat, vulgum diligentiorem iudicem quam se praeferens; feruntque reprehensum a sutore, quod in crepidis una pauciores intus fecisset ansas, eodem postero die superbo emendatione pristinae admonitionis cavillante circa crus, indignatum prospexisse denuntiantem, ne supra crepidam sutor iudicaret, quod et ipsum in proverbium abiit.",
+      "body": "普林尼《博物志》记，画家阿佩莱斯常把完成的作品陈列在走廊，自己藏到画后，听路人指出缺点；他认为普通观看者往往比自己看得细。\n\n一名鞋匠发现，画中凉鞋内侧少画了一个带环。阿佩莱斯听见后，第二天便改正了。\n\n鞋匠看见意见被采纳，十分得意，接着批评画中人的小腿。\n\n阿佩莱斯从画后探出身来，告诫他：鞋匠作判断，不应越过鞋子。这句话后来成了谚语。",
+      "sources": "LacusCurtius，Pliny the Elder, Naturalis Historia 35.84–85 拉丁文底本与 Loeb 英译，https://penelope.uchicago.edu/Thayer/L/Roman/Texts/Pliny_the_Elder/35*.html；Attalus《Pliny, Natural History, Book 35》85 节英译，https://www.attalus.org/pliny/hn35a.html"
+    }
+  ]
+}

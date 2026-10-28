@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="初学射手只持一支箭对准箭靶的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F2F0E8"/>
+  <path d="M42 111c39-5 77-5 114 0" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".65"/>
+  <path d="M104 24c-34 23-34 67 0 89" fill="none" stroke="#526254" stroke-width="2" stroke-linecap="round" opacity=".82"/>
+  <path d="M104 24c21 28 21 61 0 89" fill="none" stroke="#B79D80" stroke-width="1.2" stroke-linecap="round" opacity=".82"/>
+  <path d="M104 69h151" fill="none" stroke="#526254" stroke-width="1.5" stroke-linecap="round" opacity=".86"/>
+  <path d="M254 69l-12-6v12z" fill="#B66D5C" opacity=".85"/>
+  <path d="M117 65l-12 4 12 4" fill="none" stroke="#71857E" stroke-width="1.05" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="291" cy="69" r="25" fill="none" stroke="#9AAB9B" stroke-width="1.2" opacity=".7"/>
+  <circle cx="291" cy="69" r="12" fill="#CDD6CC" opacity=".42"/>
+  <circle cx="291" cy="69" r="3.5" fill="#A86456" opacity=".75"/>
+  <path d="M65 106l43-8" fill="none" stroke="#9AAB9B" stroke-width="1.25" stroke-linecap="round" opacity=".35"/>
+  <path d="M65 106l8-6m-8 6 9 3" fill="none" stroke="#9AAB9B" stroke-width="1" stroke-linecap="round" opacity=".3"/>
+</svg>

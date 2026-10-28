@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-10-29",
+  "stories": [
+    {
+      "title": "无垩可斫",
+      "origin": "china",
+      "sourceLabel": "《庄子·徐无鬼》",
+      "originalLanguage": "文言",
+      "originalText": "莊子送葬，過惠子之墓，顧謂從者曰：『郢人堊漫其鼻端若蠅翼，使匠石斲之。匠石運斤成風，聽而斲之，盡堊而鼻不傷，郢人立不失容。宋元君聞之，召匠石曰：「嘗試為寡人為之。」匠石曰：「臣則嘗能斲之。雖然，臣之質死久矣。」』自夫子之死也，吾無以為質矣！吾無與言之矣！",
+      "body": "《庄子·徐无鬼》写，庄子送葬经过惠子的墓，回头给随从讲起郢人与匠石。郢人鼻尖沾着一层薄如蝉翼的白土，请匠石用斧削去。\n\n匠石挥斧有风声，听准位置落下。白土被削尽，鼻子没有受伤，郢人站着，神色也没有改变。\n\n宋元君听说后，召匠石来，要他照样试一次。匠石承认自己曾经能做到，却说那个可供他施展技艺的人已经死去很久。\n\n庄子讲完，转回惠子：自从先生去世，自己再没有可以承受这些话的人，也没有可以交谈的人了。",
+      "sources": "维基文库《庄子·徐无鬼》通行本原文，https://zh.wikisource.org/zh-hant/莊子/徐無鬼"
+    },
+    {
+      "title": "所长无用",
+      "origin": "china",
+      "sourceLabel": "《韩非子·说林上》",
+      "originalLanguage": "文言",
+      "originalText": "魯人身善織屨，妻善織縞，而欲徙於越。或謂之曰：『子必窮矣。』魯人曰：『何也？』曰：『屨為履之也，而越人跣行；縞為冠之也，而越人被髮。以子之所長，游於不用之國，欲使無窮，其可得乎？』",
+      "body": "《韩非子·说林上》写，鲁国有个人擅长编织鞋子，他的妻子擅长织白绢。两人准备带着这些手艺迁往越国。\n\n有人断言，他们到了那里一定会穷困。鲁人不明白，便问缘故。\n\n对方说，鞋是给脚穿的，越人却习惯赤足而行；白绢是用来做帽子的，越人却披散着头发。\n\n夫妻各有所长，去的地方却不使用他们做出的东西。原文把问题停在这里：想凭这些手艺免于穷困，怎么能够做到？",
+      "sources": "维基文库《韩非子·说林上》通行本原文，https://zh.wikisource.org/zh-hant/韓非子/說林上"
+    },
+    {
+      "title": "满则覆",
+      "origin": "china",
+      "sourceLabel": "《荀子·宥坐》",
+      "originalLanguage": "文言",
+      "originalText": "孔子觀於魯桓公之廟，有欹器焉。孔子問於守廟者曰：『此為何器？』守廟者曰：『此蓋為宥坐之器。』孔子曰：『吾聞宥坐之器者，虛則欹，中則正，滿則覆。』孔子顧謂弟子曰：『注水焉。』弟子挹水而注之，中而正，滿而覆，虛而欹。孔子喟然而歎曰：『吁！惡有滿而不覆者哉！』子路曰：『敢問持滿有道乎？』孔子曰：『聰明聖知，守之以愚；功被天下，守之以讓；勇力撫世，守之以怯；富有四海，守之以謙；此所謂挹而損之之道也。』",
+      "body": "《荀子·宥坐》记，孔子参观鲁桓公庙，看见一只倾斜的器皿。守庙人说，这是放在座位旁用来警戒自己的欹器。\n\n孔子听说过它的特性：空着便倾斜，水量适中就端正，盛满则翻覆。他让弟子取水注入，器皿果然依次呈现三种状态。\n\n看到水满而覆，孔子感叹，哪里有盛满而不倾覆的事。子路随即问，是否有办法保持满盈。\n\n孔子回答，聪明以愚守持，功业以退让守持，勇力以怯守持，富有以谦守持；这就是舀出一些、使它有所减损的方法。",
+      "sources": "维基文库《荀子·宥坐篇》原文及杨倞注本信息，https://zh.wikisource.org/wiki/荀子/宥坐篇"
+    },
+    {
+      "title": "火中良桐",
+      "origin": "china",
+      "sourceLabel": "《后汉书·蔡邕列传》",
+      "originalLanguage": "文言",
+      "originalText": "吳人有燒桐以爨者，邕聞火烈之聲，知其良木，因請而裁為琴，果有美音，而其尾猶焦，故時人名曰『焦尾琴』焉。",
+      "body": "《后汉书·蔡邕列传》记，蔡邕避居吴地时，听见有人把桐木投入灶中烧火。\n\n木头在烈火里爆裂作响。蔡邕只凭声音判断，这是一段良材，便向主人讨来，把尚未烧尽的桐木截下。\n\n他用这段木料制成一张琴。琴做好后果然声音优美，只有尾部仍保留着被火烧焦的痕迹。\n\n那片焦痕没有被遮去；当时的人据此称它为“焦尾琴”。一段原本正要化作炊烟的木头，以烧痕留在琴名里。",
+      "sources": "维基文库范晔《后汉书》卷六十下《蔡邕列传》焦尾琴条，https://zh.wikisource.org/zh-hant/後漢書/卷60下"
+    },
+    {
+      "title": "只持一矢",
+      "origin": "world",
+      "sourceLabel": "《徒然草·第九十二段》",
+      "originalLanguage": "日语",
+      "originalText": "或人、弓射る事を習ふに、諸矢をたばさみて的に向ふ。師の云はく、『初心の人、二つの矢を持つ事なかれ。後の矢を頼みて、始めの矢に等閑の心あり。毎度、たゞ、得失なく、この一矢に定むべしと思へ』と云ふ。わづかに二つの矢、師の前にて一つをおろかにせんと思はんや。懈怠の心、みづから知らずといへども、師これを知る。この戒め、万事にわたるべし。",
+      "body": "吉田兼好《徒然草》写，一个初学射箭的人把两支箭夹在腋下，走向箭靶。老师叫住他：初学者不要同时拿两支箭。\n\n老师说，手里还有后一支，心里便会倚仗它，对第一支生出不经意的轻慢。每一次都应当不计中与不中，只认定眼前这一箭。\n\n兼好问，不过两支箭，又在老师面前，谁会故意敷衍第一支？\n\n弟子自己没有察觉的懈怠，老师已经看见。原文随后把这句警告从箭靶旁移开，说它通向所有事情。",
+      "sources": "山梨县立大学石井洋二郎《徒然草》第九十二段校订原文与语释，https://www2.yamanashi-ken.ac.jp/~itoyo/tsuredure/turedure050_099/turedure092.htm"
+    },
+    {
+      "title": "自认推车",
+      "origin": "world",
+      "sourceLabel": "拉封丹《马车与苍蝇》",
+      "originalLanguage": "法语",
+      "originalText": "Dans un chemin montant, ſablonneux, mal-aisé,\nEt de tous les cotez au Soleil expoſé,\nSix forts chevaux tiroient un Coche.\nFemmes, Moine, vieillards, tout eſtoit deſcendu.\nL’attelage ſuoit, ſouffloit, eſtoit rendu.\nUne Mouche ſurvient, & des chevaux s’approche ;\nPrétend les animer par ſon bourdonnement ;\nPique l’un, pique l’autre, & penſe à tout moment\nQu’elle fait aller la machine,\nS’aſſied ſur le timon, ſur le nez du Cocher ;\nAuſſi-toſt que le char chemine,\nEt qu’elle voit les gens marcher,\nElle s’en attribuë uniquement la gloire ;\nVa, vient, fait l’empreſſée ; il ſemble que ce ſoit\nUn Sergent de bataille allant en chaque endroit\nFaire avancer ſes gens, & hâter la victoire.\nLa Mouche en ce commun beſoin\nSe plaint qu’elle agit ſeule, & qu’elle a tout le ſoin ;\nQu’aucun n’aide aux chevaux à ſe tirer d’affaire.\nLe Moine diſoit ſon Bréviaire ;\nIl prenoit bien ſon temps ! une femme chantoit ;\nC’eſtoit bien de chanſons qu’alors il s’agiſſoit !\nDame Mouche s’en va chanter à leurs oreilles,\nEt fait cent ſottiſes pareilles.\nAprés bien du travail le Coche arrive au haut.\nReſpirons maintenant, dit la Mouche auſſi-toſt :\nJ’ay tant fait que nos gens ſont enfin dans la plaine.\nCà, Meſſieurs les Chevaux, payez-moy de ma peine.\nAinſi certaines gens, faiſant les empreſſez,\nS’introduiſent dans les affaires.\nIls font par tout les néceſſaires ;\nEt, par tout importuns devroient être chaſſez.",
+      "body": "拉封丹写，一辆马车在曝晒的沙质坡道上艰难上行。六匹马汗流气喘，车上的妇人、修士和老人都已下来步行。\n\n一只苍蝇飞来，在马匹之间嗡鸣叮咬，又停到车辕和车夫鼻尖上。车轮稍一向前，它便以为整辆车是被自己催动的。\n\n苍蝇来回奔忙，抱怨只有自己操心；看见修士读祈祷书、妇人唱歌，还飞到他们耳边催促。\n\n众人和马匹终于把车拉上坡顶。苍蝇立刻让大家歇息，声称自己费尽力气才使他们到达平地，又向马匹索取报酬。\n\n拉封丹在末尾说，有些人也这样忙着插手，到处自称不可缺少，所到之处都成了该被赶走的麻烦。",
+      "sources": "法语维基文库拉封丹《Le Coche et la Mouche》，1678年 Denys Thierry 与 Claude Barbin 初版转录，https://fr.wikisource.org/wiki/Le_Coche_et_la_Mouche"
+    },
+    {
+      "title": "一室之试",
+      "origin": "world",
+      "sourceLabel": "华盛顿《从奴隶制中奋起》",
+      "originalLanguage": "英语",
+      "originalText": "After some hours had passed, the head teacher said to me: \"The adjoining recitation-room needs sweeping. Take the broom and sweep it.\"\n\nIt occurred to me at once that here was my chance. Never did I receive an order with more delight.\n\nI swept the recitation-room three times. Then I got a dusting-cloth and dusted it four times. All the woodwork around the walls, every bench, table, and desk, I went over four times with my dusting-cloth. Besides, every piece of furniture had been moved and every closet and corner in the room had been thoroughly cleaned.\n\nShe went into the room and inspected the floor and closets; then she took her handkerchief and rubbed it on the woodwork about the walls, and over the table and benches. When she was unable to find one bit of dirt on the floor, or a particle of dust on any of the furniture, she quietly remarked, \"I guess you will do to enter this institution.\"\n\nThe sweeping of that room was my college examination.",
+      "body": "布克·华盛顿回忆，自己长途跋涉抵达美国弗吉尼亚州的汉普顿学院时，衣着和状态没有给教务负责人留下好印象。她没有拒绝，也迟迟没有录取他。\n\n等了几个小时，负责人指着旁边的教室，让他拿扫帚去打扫。华盛顿立刻意识到，这就是展示自己的机会。\n\n他把地扫了三遍，又用布除尘四遍；墙边木作、长凳、桌子和每个角落都逐一擦净，家具也全部挪开清理。\n\n负责人检查地板和壁橱，又用手帕擦过木作与桌凳，没有找到一点灰尘。她只说了一句：我想你可以进这所学校。华盛顿后来称，那间教室的清扫就是自己的大学入学考试。",
+      "sources": "University of South Florida Lit2Go，Booker T. Washington, Up from Slavery, Chapter III: The Struggle for an Education 原文，https://etc.usf.edu/lit2go/92/up-from-slavery/1575/chapter-3-the-struggle-for-an-education/"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="扫净教室后等待检验的扫帚与长凳极简插画">
+  <rect width="360" height="136" rx="15" fill="#F4F1E8"/>
+  <path d="M42 108h276" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".72"/>
+  <path d="M128 72h128v15H128z" fill="#CDD6CC" opacity=".6"/>
+  <path d="M128 72h128v15H128zM141 87v24M242 87v24" fill="none" stroke="#526254" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>
+  <path d="M78 28l27 79" fill="none" stroke="#9C866B" stroke-width="3.2" stroke-linecap="round" opacity=".78"/>
+  <path d="M93 99c17-8 31-8 45 0l-7 16H99z" fill="#B79D80" opacity=".7"/>
+  <path d="M93 99c17-8 31-8 45 0l-7 16H99zM105 99l2 15M117 97v17M128 99l-2 15" fill="none" stroke="#526254" stroke-width="1" stroke-linecap="round" opacity=".65"/>
+  <path d="M248 34c14 6 24 15 31 28-13 4-26 2-38-6 1-8 3-15 7-22z" fill="#F2F0E8" stroke="#71857E" stroke-width="1.1" stroke-linejoin="round" opacity=".88"/>
+  <path d="M252 40c7 8 12 14 16 21" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".9"/>
+  <circle cx="288" cy="93" r="2" fill="#B66D5C" opacity=".68"/>
+  <path d="M288 82v4m-6-1 3 3m9-3-3 3" fill="none" stroke="#B66D5C" stroke-width=".9" stroke-linecap="round" opacity=".5"/>
+</svg>

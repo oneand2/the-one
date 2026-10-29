@@ -2,6 +2,10 @@ import { moderateCommunityText } from './communityModeration';
 
 export const JIANZHONGSHENG_TITLE_MAX_LENGTH = 24;
 
+export function getJianzhongshengDisplayTitle(title: string | null | undefined): string {
+  return title?.trim() || '无题';
+}
+
 export function normalizeJianzhongshengTitle(input: unknown):
   | { ok: true; text: string }
   | { ok: false; message: string } {

@@ -31,6 +31,13 @@ body {
   font-family: var(--ui-font-sans);
 }
 
+/* 自托管简中宋体覆盖整段标题，避免日文明朝缺字后逐字回退到黑体。 */
+.jianzhongsheng-note-title {
+  font-family: var(--font-jianzhongsheng-title), "Songti SC", "STSong", Georgia, serif;
+  font-weight: 400;
+  font-synthesis: none;
+}
+
 /* 见众生导语、卡片摘要和展开正文共用阅读字体，避免列表遗漏移动端修正。
    桌面保留宋体；手机优先使用苹方，减少小字号宋体笔画粗细带来的视觉跳动。 */
 .jianzhongsheng-reading-text {

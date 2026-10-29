@@ -102,6 +102,15 @@ function post(payload: unknown) {
   });
 }
 
+test('missing, blank and legacy titles display as 无题 while named notes retain their title', () => {
+  for (const title of [undefined, null, '', ' \n\t ', '\u3000']) {
+    assert.equal(titles.getJianzhongshengDisplayTitle(title), '无题');
+  }
+  assert.equal(titles.getJianzhongshengDisplayTitle('  带回家的热汤  '), '带回家的热汤');
+  // The display fallback must not turn an empty optional title into persisted text.
+  assert.deepEqual(titles.normalizeJianzhongshengTitle(' \n\t '), { ok: true, text: '' });
+});
+
 test('optional titles trim whitespace, reject invalid types and count Unicode code points', () => {
   assert.deepEqual(titles.normalizeJianzhongshengTitle(undefined), { ok: true, text: '' });
   assert.deepEqual(titles.normalizeJianzhongshengTitle(' \n\t '), { ok: true, text: '' });

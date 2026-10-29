@@ -1,10 +1,20 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Noto_Serif_SC } from 'next/font/google';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { jianZhongShengSpace, type JianZhongShengEntry } from '@/content/jianzhongsheng';
 import { readJianZhongShengDraft, writeJianZhongShengDraft } from '@/lib/jianzhongshengDraft';
-import { JIANZHONGSHENG_TITLE_MAX_LENGTH } from '@/lib/jianzhongshengTitle';
+import { getJianzhongshengDisplayTitle, JIANZHONGSHENG_TITLE_MAX_LENGTH } from '@/lib/jianzhongshengTitle';
+
+const noteTitleSerif = Noto_Serif_SC({
+  variable: '--font-jianzhongsheng-title',
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
+});
 
 const MIN_NOTE_LENGTH = 15;
 const MAX_NOTE_LENGTH = 3000;
@@ -64,8 +74,8 @@ function NoteCardTitle({ title }: { title: string }) {
   return (
     <span className="mb-3 block">
       <span
-        className="line-clamp-2 break-words text-pretty text-[15px] leading-6 tracking-normal text-[var(--ui-color-ink)] min-[400px]:text-[16px]"
-        style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, overflowWrap: 'anywhere' }}
+        className="jianzhongsheng-note-title line-clamp-2 break-words text-pretty text-[15px] leading-6 tracking-normal text-[var(--ui-color-ink)] min-[400px]:text-[16px]"
+        style={{ overflowWrap: 'anywhere' }}
       >
         {title}
       </span>
@@ -491,7 +501,7 @@ export const JianZhongShengView: React.FC = () => {
   };
 
   return (
-    <section ref={sectionRef} className="w-full scroll-mt-5">
+    <section ref={sectionRef} className={`${noteTitleSerif.variable} w-full scroll-mt-5`}>
       <AnimatePresence initial={false} mode="wait">
         {selectedEntry ? (
           <motion.div
@@ -516,20 +526,18 @@ export const JianZhongShengView: React.FC = () => {
               <PaperGlyph className="h-5 w-5 text-stone-300" />
             </div>
 
-            <article className="rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]" aria-labelledby={selectedEntry.title ? 'jianzhongsheng-entry-title' : 'jianzhongsheng-entry-author'}>
+            <article className="rounded-[18px] bg-stone-900/[0.025] p-px ring-1 ring-stone-900/[0.055]" aria-labelledby="jianzhongsheng-entry-title">
               <div className="relative overflow-hidden rounded-[17px] bg-[var(--ui-color-warm-white)] px-6 pb-8 pt-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] sm:px-8">
-                {selectedEntry.title && (
-                  <header className="mb-5">
-                    <h2
-                      id="jianzhongsheng-entry-title"
-                      className="break-words text-[21px] leading-[1.5] tracking-normal text-stone-700 sm:text-[22px]"
-                      style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400, overflowWrap: 'anywhere' }}
-                    >
-                      {selectedEntry.title}
-                    </h2>
-                    <NoteTitleOrnament />
-                  </header>
-                )}
+                <header className="mb-5">
+                  <h2
+                    id="jianzhongsheng-entry-title"
+                    className="jianzhongsheng-note-title break-words text-[21px] leading-[1.5] tracking-normal text-stone-700 sm:text-[22px]"
+                    style={{ overflowWrap: 'anywhere' }}
+                  >
+                    {getJianzhongshengDisplayTitle(selectedEntry.title)}
+                  </h2>
+                  <NoteTitleOrnament />
+                </header>
                 <div
                   lang="zh-Hans"
                   className="jianzhongsheng-reading-text space-y-5 text-[15px] leading-[2] tracking-normal text-stone-700"
@@ -776,9 +784,8 @@ export const JianZhongShengView: React.FC = () => {
                             setDraftTitle(event.target.value);
                             if (validationMessage) setValidationMessage('');
                           }}
-                          placeholder="给这则手记起个名字"
-                          className="min-h-10 w-full bg-transparent text-[16px] leading-7 tracking-normal text-stone-700 outline-none placeholder:text-stone-300 focus-visible:ring-1 focus-visible:ring-stone-400/30"
-                          style={{ fontFamily: 'var(--ui-font-serif)', fontWeight: 400 }}
+                          placeholder="不填则显示「无题」"
+                          className="jianzhongsheng-note-title min-h-10 w-full bg-transparent text-[16px] leading-7 tracking-normal text-stone-700 outline-none placeholder:text-stone-300 focus-visible:ring-1 focus-visible:ring-stone-400/30"
                         />
                       </div>
                       <textarea
@@ -860,14 +867,14 @@ export const JianZhongShengView: React.FC = () => {
                 <motion.button
                   key={entry.id}
                   type="button"
-                  aria-label={entry.title ? `阅读《${entry.title}》，${entry.authorId}的手记` : `阅读${entry.authorId}的手记`}
+                  aria-label={`阅读《${getJianzhongshengDisplayTitle(entry.title)}》，${entry.authorId}的手记`}
                   initial={reduceMotion ? false : { opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: reduceMotion ? 0 : Math.min(index * 0.025, 0.16) }}
                   onClick={() => openEntry(entry)}
                   className="group mb-3 inline-block w-full min-w-0 break-inside-avoid overflow-hidden rounded-[13px] border border-black/[0.07] bg-[var(--ui-color-warm-white)] px-3.5 py-4 align-top text-left transition-colors duration-200 hover:border-stone-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/30"
                 >
-                  {entry.title && <NoteCardTitle title={entry.title} />}
+                  <NoteCardTitle title={getJianzhongshengDisplayTitle(entry.title)} />
                   <span
                     className="line-clamp-6 break-words text-[13px] leading-6 tracking-normal text-stone-500"
                     style={{ fontFamily: 'var(--ui-font-sans)', fontWeight: 400, overflowWrap: 'anywhere' }}

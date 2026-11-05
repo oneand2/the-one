@@ -370,15 +370,18 @@ export async function POST(req: Request) {
     const createParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming & {
       // 宗师线路的兼容代理接受顶级 system 字段，OpenAI 官方类型未声明它。
       system?: string;
-      thinking?: { type: 'disabled' };
+      thinking?: { type: 'disabled' | 'between_tools' };
+      output_config?: { effort: 'high' };
     } = {
       model: modelName,
       messages: fullMessages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
-      temperature: (useReasoning || useMeditation) ? 1.0 : 0.8,
+      // Sonnet 5.5 rejects sampling parameters; older master models also
+      // accept their default temperature. Preserve the DeepSeek settings.
+      ...(!useMeditation && { temperature: useReasoning ? 1.0 : 0.8 }),
       max_tokens: maxTokens,
       stream: true,
       ...(useMeditation && { system: systemPrompt }),
-      ...chatReasoningParams(Boolean(useMeditation), Boolean(useReasoning), isDeepSeekRequest(modelName, process.env.AI_BASE_URL)),
+      ...chatReasoningParams(Boolean(useMeditation), Boolean(useReasoning), isDeepSeekRequest(modelName, process.env.AI_BASE_URL), modelName),
     };
 
     // Finish or cancel the upstream before the browser's 60s / 90s deadline.

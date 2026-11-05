@@ -12,7 +12,7 @@ export function resolveMeditationModel(configured?: string): string {
   // Existing installations still configure the deprecated 4.5 thinking alias.
   // Migrate it instead of allowing the old environment to override the default.
   return !model || /claude-sonnet-4[-.]5(?:-|$)/i.test(model) || /(?:^|[-/])thinking(?:-|$)/i.test(model)
-    ? 'claude-sonnet-4-6'
+    ? 'claude-sonnet-5-5'
     : model;
 }
 
@@ -32,8 +32,14 @@ export function isDeepSeekRequest(model: string, baseURL?: string): boolean {
   }
 }
 
-export function chatReasoningParams(useMeditation: boolean, useReasoning: boolean, isDeepSeek = true) {
-  if (useMeditation) return { thinking: { type: 'disabled' as const } };
+export function chatReasoningParams(useMeditation: boolean, useReasoning: boolean, isDeepSeek = true, model = 'claude-sonnet-5-5') {
+  if (useMeditation) {
+    // Sonnet 5.5 rejects `disabled`; without tools, `between_tools` produces
+    // only the answer. Keep older explicit models available for rollback.
+    return /claude-sonnet-5[-.]5(?:[-:]|$)/i.test(model)
+      ? { thinking: { type: 'between_tools' as const }, output_config: { effort: 'high' as const } }
+      : { thinking: { type: 'disabled' as const } };
+  }
   return isDeepSeek
     ? { reasoning_effort: useReasoning ? 'high' as const : 'none' as const }
     : {};

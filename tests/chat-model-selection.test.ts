@@ -9,7 +9,9 @@ type CreateParams = {
   messages: Array<{ role: string; content: string }>;
   stream: boolean;
   thinking?: { type: string };
+  output_config?: { effort: string };
   reasoning_effort?: string;
+  temperature?: number;
 };
 
 type ClientOptions = { apiKey?: string; baseURL?: string };
@@ -23,7 +25,7 @@ const question = '最近工作压力很大，该怎样梳理？';
 const answer = '先分清眼前必须完成的事，再给自己留出休息的时间。';
 const userId = 'model-selection-test-admin';
 
-function loadRoute(context: TestContext) {
+function loadRoute(context: TestContext, meditationModel = 'claude-sonnet-4-5-20250929-thinking') {
   const environment = {
     AI_API_KEY: 'test-deepseek-key',
     AI_BASE_URL: 'https://api.deepseek.com',
@@ -31,7 +33,7 @@ function loadRoute(context: TestContext) {
     AI_REASONER_MODEL_NAME: 'deepseek-v4-pro',
     AI_MEDITATION_FALLBACK_API_KEY: 'test-meditation-key',
     AI_MEDITATION_FALLBACK_BASE_URL: 'https://meditation.example.test/v1',
-    AI_MEDITATION_FALLBACK_MODEL_NAME: 'claude-sonnet-4-5-20250929-thinking',
+    AI_MEDITATION_FALLBACK_MODEL_NAME: meditationModel,
     AI_MAX_TOKENS: '256',
   };
   const previous = new Map(Object.keys(environment).map(key => [key, process.env[key]]));
@@ -118,7 +120,7 @@ function loadRoute(context: TestContext) {
 }
 
 for (const useReasoning of [false, true]) {
-  test(`master route migrates the production 4.5 thinking alias and disables thinking with useReasoning=${useReasoning}`, async context => {
+  test(`master route migrates the production 4.5 thinking alias to Sonnet 5.5 without up-front thinking with useReasoning=${useReasoning}`, async context => {
     const route = loadRoute(context);
     const response = await route.send(true, useReasoning);
     assert.equal(response.status, 200);
@@ -128,14 +130,45 @@ for (const useReasoning of [false, true]) {
     const { client, params, options } = route.calls[0];
     assert.equal(client.baseURL, 'https://meditation.example.test/v1');
     assert.equal(client.apiKey, 'test-meditation-key');
-    assert.equal(params.model, 'claude-sonnet-4-6');
-    assert.deepEqual(params.thinking, { type: 'disabled' });
+    assert.equal(params.model, 'claude-sonnet-5-5');
+    assert.deepEqual(params.thinking, { type: 'between_tools' });
+    assert.deepEqual(params.output_config, { effort: 'high' });
     assert.equal(Object.hasOwn(params, 'reasoning_effort'), false);
+    for (const field of ['temperature', 'top_p', 'top_k', 'tools']) {
+      assert.equal(Object.hasOwn(params, field), false, `Sonnet 5.5 must omit ${field}`);
+    }
     assert.equal(params.stream, true);
     assert.deepEqual(params.messages.at(-1), { role: 'user', content: question });
     assert.equal(options.maxRetries, 0);
   });
 }
+
+test('master route defaults blank model configuration to Sonnet 5.5 with compatible thinking controls', async context => {
+  const route = loadRoute(context, '');
+  const response = await route.send(true, false);
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), answer);
+  assert.equal(route.calls.length, 1);
+  const { params } = route.calls[0];
+  assert.equal(params.model, 'claude-sonnet-5-5');
+  assert.deepEqual(params.thinking, { type: 'between_tools' });
+  assert.deepEqual(params.output_config, { effort: 'high' });
+  assert.equal(Object.hasOwn(params, 'temperature'), false);
+});
+
+test('an explicitly configured Sonnet 4.6 remains a compatible non-thinking fallback', async context => {
+  const route = loadRoute(context, 'claude-sonnet-4-6');
+  const response = await route.send(true, true);
+  assert.equal(response.status, 200);
+  assert.equal(await response.text(), answer);
+  assert.equal(route.calls.length, 1);
+  const { params } = route.calls[0];
+  assert.equal(params.model, 'claude-sonnet-4-6');
+  assert.deepEqual(params.thinking, { type: 'disabled' });
+  for (const field of ['output_config', 'reasoning_effort', 'temperature', 'top_p', 'top_k', 'tools']) {
+    assert.equal(Object.hasOwn(params, field), false, `Sonnet 4.6 fallback must omit ${field}`);
+  }
+});
 
 for (const useReasoning of [false, true]) {
   test(`${useReasoning ? 'deep' : 'ordinary'} route retains its configured DeepSeek model and reasoning setting`, async context => {
@@ -149,6 +182,8 @@ for (const useReasoning of [false, true]) {
     assert.equal(client.apiKey, 'test-deepseek-key');
     assert.equal(params.model, useReasoning ? 'deepseek-v4-pro' : 'deepseek-v4-flash');
     assert.equal(params.reasoning_effort, useReasoning ? 'high' : 'none');
+    assert.equal(params.temperature, useReasoning ? 1 : 0.8);
     assert.equal(Object.hasOwn(params, 'thinking'), false);
+    assert.equal(Object.hasOwn(params, 'output_config'), false);
   });
 }

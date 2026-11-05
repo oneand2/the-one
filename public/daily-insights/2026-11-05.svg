@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="木匠从树木形态中看见钟架后落下第一刀的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F3F1E9"/>
+  <path d="M42 108c60-5 120-4 181 2" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".65"/>
+  <path d="M73 106c6-25 7-50 3-76 19 7 32 19 39 36 5 12 4 26-4 40z" fill="#CDD6CC" opacity=".62"/>
+  <path d="M73 106c6-25 7-50 3-76 19 7 32 19 39 36 5 12 4 26-4 40z" fill="none" stroke="#526254" stroke-width="1.25" stroke-linejoin="round" opacity=".76"/>
+  <path d="M78 48c10 13 16 31 18 54M83 60c8-4 16-6 25-6" fill="none" stroke="#71857E" stroke-width=".95" stroke-linecap="round" opacity=".58"/>
+  <path d="M177 101V69c0-15 10-26 25-26h44c14 0 24 11 24 25v33" fill="none" stroke="#526254" stroke-width="2" stroke-linecap="round" opacity=".78"/>
+  <path d="M192 100V76c0-10 7-18 17-18h30c10 0 17 8 17 18v24" fill="none" stroke="#B79D80" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+  <path d="M207 57c7 13 12 27 14 42M241 57c-7 13-12 27-14 42" fill="none" stroke="#526254" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+  <path d="M144 88l26-18" fill="none" stroke="#9C866B" stroke-width="3.4" stroke-linecap="round" opacity=".78"/>
+  <path d="M168 69l8-5 4 6-8 6z" fill="#71857E" opacity=".76"/>
+  <circle cx="286" cy="47" r="2.2" fill="#B66D5C" opacity=".68"/>
+</svg>

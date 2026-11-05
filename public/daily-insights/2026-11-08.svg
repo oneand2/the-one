@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="夜色里一束火光陪伴陌生人走完归途的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F3F1E9"/>
+  <path d="M45 111c63-14 128-18 195-12" fill="none" stroke="#CDD6CC" stroke-width="1.1" opacity=".7"/>
+  <path d="M70 32c23 5 42 16 57 34" fill="none" stroke="#9AAB9B" stroke-width="1" opacity=".42"/>
+  <path d="M114 98c5-21 4-39-3-55" fill="none" stroke="#9C866B" stroke-width="3.6" stroke-linecap="round" opacity=".78"/>
+  <path d="M106 45c-2-10 2-18 11-24 0 8 4 13 9 18 6 6 6 14 0 20-8 8-20 3-20-14z" fill="#B66D5C" opacity=".72"/>
+  <path d="M112 44c4-6 7-10 7-15 6 7 8 14 5 21" fill="none" stroke="#F2F0E8" stroke-width="1.1" stroke-linecap="round" opacity=".7"/>
+  <circle cx="169" cy="58" r="8" fill="#71857E" opacity=".6"/>
+  <path d="M169 67v29M157 77l12 9 13-8M169 96l-9 16M169 96l10 15" fill="none" stroke="#526254" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" opacity=".72"/>
+  <circle cx="232" cy="61" r="7.5" fill="#CDD6CC" opacity=".86"/>
+  <path d="M232 69v27M220 80l12 6 12-7M232 96l-10 14M232 96l11 13" fill="none" stroke="#526254" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".66"/>
+  <path d="M274 45v63h39" fill="none" stroke="#71857E" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".48"/>
+  <circle cx="103" cy="65" r="2" fill="#B66D5C" opacity=".58"/>
+</svg>

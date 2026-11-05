@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="礼篮留在岸上而鱼仍在清水中游动的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F3F1E9"/>
+  <path d="M37 99c48-12 97-11 147 1s99 11 143-3" fill="none" stroke="#9AAB9B" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>
+  <path d="M39 108c51-9 100-6 147 7 43 12 91 10 139-6" fill="none" stroke="#CDD6CC" stroke-width="1" stroke-linecap="round" opacity=".72"/>
+  <path d="M187 82c23-17 47-18 72-3l21-13-3 22 4 21-21-12c-27 15-52 13-73-5z" fill="#71857E" opacity=".56"/>
+  <path d="M187 82c23-17 47-18 72-3l21-13-3 22 4 21-21-12c-27 15-52 13-73-5z" fill="none" stroke="#526254" stroke-width="1.25" stroke-linejoin="round" opacity=".76"/>
+  <circle cx="207" cy="84" r="2" fill="#F2F0E8"/>
+  <path d="M112 54h51l12 44H99z" fill="#B79D80" opacity=".55"/>
+  <path d="M112 54h51l12 44H99zM108 69h59M104 84h67M120 55l-8 42M136 55v43M153 55l9 42" fill="none" stroke="#526254" stroke-width="1" stroke-linejoin="round" opacity=".65"/>
+  <path d="M117 54c4-14 13-21 23-21 11 0 20 7 23 21" fill="none" stroke="#9C866B" stroke-width="2.2" stroke-linecap="round" opacity=".72"/>
+  <path d="M82 38c9 5 16 12 20 21" fill="none" stroke="#B66D5C" stroke-width="1" stroke-linecap="round" opacity=".5"/>
+  <circle cx="294" cy="51" r="2.3" fill="#B66D5C" opacity=".66"/>
+</svg>

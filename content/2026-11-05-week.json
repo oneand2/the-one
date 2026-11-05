@@ -1,0 +1,68 @@
+{
+  "startDate": "2026-11-05",
+  "stories": [
+    {
+      "title": "木中成鐻",
+      "origin": "china",
+      "sourceLabel": "《庄子·达生》",
+      "originalLanguage": "文言",
+      "originalText": "梓慶削木為鐻，鐻成，見者驚猶鬼神。魯侯見而問焉，曰：『子何術以為焉？』對曰：『臣，工人，何術之有？雖然，有一焉。臣將為鐻，未嘗敢以耗氣也，必齊以靜心。齊三日，而不敢懷慶賞爵祿；齊五日，不敢懷非譽巧拙；齊七日，輒然忘吾有四枝形體也。當是時也，無公朝，其巧專而外滑消，然後入山林，觀天性，形軀至矣，然後成見鐻，然後加手焉，不然則已，則以天合天。器之所以疑神者，其是與？』",
+      "body": "《庄子·达生》写，木匠梓庆削木做成一件悬挂钟鼓的木架。成品仿佛出自鬼神之手，鲁侯问他用了什么技法。\n\n梓庆说，动手前先斋戒静心。三天后不再想着赏赐爵禄，五天后不再在意毁誉与巧拙，七天后连自己的四肢形体也忘了，朝廷和外界的纷扰都退去。\n\n这时他才进入山林，逐一察看树木的天性。只有当一株树的形态与心中完整的鐻相合，他才下手；若看不见那个成形的鐻，便停下。\n\n梓庆把自己的做法称为“以天合天”。旁人所惊叹的技艺，开始于尚未落下的第一刀。",
+      "sources": "维基文库《庄子·达生》通行本“梓庆削木为鐻”原文，https://zh.wikisource.org/zh-hant/莊子/達生"
+    },
+    {
+      "title": "羹可伤手",
+      "origin": "china",
+      "sourceLabel": "《后汉书·刘宽传》",
+      "originalLanguage": "文言",
+      "originalText": "夫人慾試寬令恚，伺當朝會，裝嚴已訖，使侍婢奉肉羹，翻汙朝衣。婢遽收之，寬神色不異，乃徐言曰：『羹爛汝手？』其性度如此。海內稱為長者。",
+      "body": "《后汉书·刘宽传》记，刘宽一向温和宽厚，很少疾言厉色。他的夫人想试试能否使他发怒。\n\n一次临近朝会，刘宽已经穿戴整齐。夫人让侍婢端来肉羹，故意翻倒在他的朝服上。侍婢慌忙收拾，朝会将至，衣服也已经污了。\n\n刘宽神色没有变化，只慢慢问侍婢一句：热羹烫伤你的手了吗？\n\n史书以这件小事写他的性情。当衣上的污渍最该被看见时，他先看见的是端碗人的手。",
+      "sources": "维基文库范晔《后汉书》卷二十五《刘宽传》原文，https://zh.wikisource.org/zh-hant/後漢書/卷25"
+    },
+    {
+      "title": "既已纳之",
+      "origin": "china",
+      "sourceLabel": "《世说新语·德行》",
+      "originalLanguage": "文言",
+      "originalText": "華歆、王朗倶乘船避難，有一人慾依附，歆輒難之。朗曰：『幸尚寬，何為不可？』後賊追至，王欲捨所攜人。歆曰：『本所以疑，正為此耳。既已納其自託，寧可以急相棄邪？』遂攜拯如初。世以此定華王之優劣。",
+      "body": "《世说新语·德行》写，华歆、王朗一同乘船避难。途中有人请求搭船，华歆迟疑，王朗见船上还有空处，便答应带上他。\n\n后来追兵赶来，船上的处境变得紧急。先前爽快收人的王朗想把那人丢下，以便脱身。\n\n华歆说，自己当初迟疑，顾虑的正是可能出现这样的局面；既然已经接受对方的托付，怎么能在危急时抛弃他？\n\n船没有因此少载一人，众人仍照原先那样带着他前行。原文以此比较华歆与王朗。",
+      "sources": "维基文库《世说新语·德行》全览第十三则原文及刘孝标注，https://zh.wikisource.org/zh-hant/世說新語/全覽"
+    },
+    {
+      "title": "因嗜拒鱼",
+      "origin": "china",
+      "sourceLabel": "《韩非子·外储说右下》",
+      "originalLanguage": "文言",
+      "originalText": "公儀休相魯而嗜魚，一國盡爭買魚而獻之，公儀子不受。其弟諫曰：『夫子嗜魚而不受者，何也？』對曰：『夫唯嗜魚，故不受也。夫即受魚，必有下人之色；有下人之色，將枉於法；枉於法，則免於相。雖嗜魚，此不必致我魚，我又不能自給魚。即無受魚而不免於相，雖嗜魚，我能長自給魚。』此明夫恃人不如自恃也，明於人之為己者不如己之自為也。",
+      "body": "《韩非子·外储说右下》写，公仪休做鲁国宰相，又很爱吃鱼。全国的人争着买鱼送来，他一条也不收。\n\n弟弟不解，问他既然喜欢鱼，为何拒绝别人所献。公仪休回答，正因为喜欢，才不能收。\n\n收下鱼，便会对送鱼者低声下气；有所迁就，就可能曲法，最终被免去相位。到了那时，送鱼的人未必还会来，自己也失去了买鱼的钱。\n\n不收这些鱼，便能继续任职，也能长久自己买鱼。韩非在故事末尾保留了判断：依靠别人替自己做，不如自己有所凭恃。",
+      "sources": "维基文库《韩非子·外储说右下》“公仪休相鲁而嗜鱼”原文，https://zh.wikisource.org/zh-hant/韓非子/外儲說"
+    },
+    {
+      "title": "水有名字",
+      "origin": "world",
+      "sourceLabel": "海伦·凯勒《我的一生》",
+      "originalLanguage": "英语",
+      "originalText": "We walked down the path to the well-house, attracted by the fragrance of the honeysuckle with which it was covered. Some one was drawing water and my teacher placed my hand under the spout. As the cool stream gushed over one hand she spelled into the other the word water, first slowly, then rapidly. I stood still, my whole attention fixed upon the motions of her fingers.\n\nSuddenly I felt a misty consciousness as of something forgotten—a thrill of returning thought; and somehow the mystery of language was revealed to me. I knew then that \"w-a-t-e-r\" meant the wonderful cool something that was flowing over my hand. That living word awakened my soul, gave it light, hope, joy, set it free! There were barriers still, it is true, but barriers that could in time be swept away.\n\nI left the well-house eager to learn. Everything had a name, and each name gave birth to a new thought. As we returned to the house every object which I touched seemed to quiver with life. That was because I saw everything with the strange, new sight that had come to me. On entering the door I remembered the doll I had broken. I felt my way to the hearth and picked up the pieces. I tried vainly to put them together.\n\nThen my eyes filled with tears; for I realized what I had done, and for the first time I felt repentance and sorrow.",
+      "body": "海伦·凯勒回忆，老师安妮·沙利文教她用手指拼写时，她只能模仿动作，还不知道手势对应着词，也不明白杯子与水为何不同。\n\n一天，两人走到水泵旁。老师把她的一只手放在出水口下，让清凉的水流过，又在另一只手的掌心先慢后快地拼出“w-a-t-e-r”。\n\n海伦忽然明白，那组动作指向正在手上流动的东西。回屋路上，她触到的每件东西都有了名字，每个名字又带出新的念头。\n\n进门后，她想起先前因烦躁摔碎的玩偶，摸到壁炉边捡起碎片，试着把它们拼回去。无法复原时，她第一次为自己做过的事感到悔恨。",
+      "sources": "Project Gutenberg，Helen Keller, The Story of My Life, Chapter IV，1903 年原文，https://www.gutenberg.org/cache/epub/2397/pg2397-images.html"
+    },
+    {
+      "title": "执炬相送",
+      "origin": "world",
+      "sourceLabel": "普鲁塔克《伯里克利传》",
+      "originalLanguage": "古希腊语",
+      "originalText": "λοιδορούμενος γοῦν ποτε καὶ κακῶς ἀκούων ὑπό τινος τῶν βδελυρῶν καὶ ἀκολάστων ὅλην ἡμέραν ὑπέμεινε σιωπῇ κατʼ ἀγοράν, ἅμα τι τῶν ἐπειγόντων καταπραττόμενος· ἑσπέρας δʼ ἀπῄει κοσμίως οἴκαδε παρακολουθοῦντος τοῦ ἀνθρώπου καὶ πάσῃ χρωμένου βλασφημίᾳ πρὸς αὐτόν. ὡς δʼ ἔμελλεν εἰσιέναι σκότους ὄντος ἤδη, προσέταξέ τινι τῶν οἰκετῶν φῶς λαβόντι παραπέμψαι καὶ καταστῆσαι πρὸς τὴν οἰκίαν τὸν ἄνθρωπον.",
+      "body": "普鲁塔克《伯里克利传》记，有个人在市集上辱骂伯里克利，从白天一直跟到傍晚。伯里克利还有急事要办，始终沉默，没有停下来与他争执。\n\n天黑后，伯里克利照常回家。那人一路跟着，仍用各种恶语辱骂他，直到走到他的家门前。\n\n伯里克利准备进门时，没有叫人驱赶对方。他吩咐一名仆人拿起火炬，把这个人安全送回自己的住处。\n\n普鲁塔克把这件事放在伯里克利的举止与克制之中。白日的辱骂到了夜里，得到的是一段照亮归途的火光。",
+      "sources": "Ancient Library，Plutarch, Pericles 5，Perseus Digital Library 古希腊文底本，https://ancientlibrary.net/plutarch-pericles/；Lexundria，Bernadotte Perrin 英译与章节定位，https://lexundria.com/plut_per/5/prr"
+    },
+    {
+      "title": "饭后重祷",
+      "origin": "world",
+      "sourceLabel": "萨迪《蔷薇园》",
+      "originalLanguage": "波斯语",
+      "originalText": "زاهدی مهمان پادشاهی بود. چون به طعام بنشستند، کمتر از آن خورد که ارادتِ او بود و چون به نماز برخاستند، بیش از آن کرد که عادت او، تا ظنِّ صَلاحیت در حق او زیادت کنند.\n\nترسم نرسی به کعبه، ای اعرابی\nکاین ره که تو می‌روی به ترکستان است\n\nچون به مُقام خویش آمد، سفره خواست تا تَناوُلی کند. پسری صاحبِ فراست داشت. گفت: ای پدر! باری به مجلس سلطان در، طعام نخوردی؟ گفت: در نظر ایشان چیزی نخوردم که به کار آید. گفت: نماز را هم قضا کن که چیزی نکردی که به کار آید.\n\nای هنرها گرفته بر کفِ دست\nعیبها بر گرفته زیرِ بغل\nتا چه خواهی خریدن ای مغرور\nروزِ درماندگی به سیمِ دغل",
+      "body": "萨迪《蔷薇园》写，一名修行者到国王家做客。开饭时，他吃得比自己想吃的少；祈祷时，却做得比平日更多，好让在场的人更加相信他的虔诚。\n\n回到家后，他仍然饥饿，便让人重新摆饭。他聪明的儿子问，父亲难道没有在国王席上吃东西吗？\n\n父亲说，自己当着他们的面没吃什么，是为了让这件事日后有所用处。儿子回答，那也该把祈祷重新做一遍，因为方才同样没有做成什么。\n\n萨迪随后写，手掌上摊着自己的本领，腋下却夹着缺点；到了无助之日，虚假的银钱买不到所需之物。",
+      "sources": "Ganjoor《蔷薇园》第二章第六则波斯文校录，https://ganjoor.net/saadi/golestan/gbab2/sh6/；Source Library，Select Fables from Gulistan，1785 年英文译本页，https://sourcelibrary.org/book/select-fables-from-gulistan-sullivan-english-trans-1785-sullivan/page/6a08a3f3fc6cdaefe240c614"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="空餐碗与尚待重新铺开的祈祷毯极简插画">
+  <rect width="360" height="136" rx="15" fill="#F4F1E8"/>
+  <path d="M44 108h272" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".7"/>
+  <path d="M63 88h112" fill="none" stroke="#526254" stroke-width="1.4" stroke-linecap="round" opacity=".68"/>
+  <path d="M78 89c5 17 17 25 40 25s36-8 42-25z" fill="#CDD6CC" opacity=".74"/>
+  <path d="M78 89c5 17 17 25 40 25s36-8 42-25" fill="none" stroke="#526254" stroke-width="1.2" stroke-linecap="round" opacity=".72"/>
+  <path d="M94 76c8-7 16-7 24 0M121 72c8-7 16-7 24 0" fill="none" stroke="#B79D80" stroke-width="1.1" stroke-linecap="round" opacity=".52"/>
+  <path d="M204 45h91l17 63H187z" fill="#B79D80" opacity=".38"/>
+  <path d="M204 45h91l17 63H187z" fill="none" stroke="#526254" stroke-width="1.2" stroke-linejoin="round" opacity=".68"/>
+  <path d="M214 58h72M207 73h84M201 88h95" fill="none" stroke="#71857E" stroke-width=".8" opacity=".44"/>
+  <path d="M236 45c5-10 10-16 15-20M264 45c-2-9-1-16 3-23" fill="none" stroke="#9AAB9B" stroke-width="1" stroke-linecap="round" opacity=".48"/>
+  <circle cx="185" cy="104" r="2.4" fill="#B66D5C" opacity=".68"/>
+</svg>

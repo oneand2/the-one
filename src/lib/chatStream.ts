@@ -7,6 +7,15 @@ type ChatChunk = {
 
 type ChatUpstream = AsyncIterable<ChatChunk> & { controller?: AbortController };
 
+export function resolveMeditationModel(configured?: string): string {
+  const model = configured?.trim();
+  // Existing installations still configure the deprecated 4.5 thinking alias.
+  // Migrate it instead of allowing the old environment to override the default.
+  return !model || /claude-sonnet-4[-.]5(?:-|$)/i.test(model) || /(?:^|[-/])thinking(?:-|$)/i.test(model)
+    ? 'claude-sonnet-4-6'
+    : model;
+}
+
 export function resolveDeepSeekModel(configured?: string): string {
   const model = configured?.trim();
   return !model || model === 'deepseek-chat' || model === 'deepseek-reasoner'
@@ -24,7 +33,8 @@ export function isDeepSeekRequest(model: string, baseURL?: string): boolean {
 }
 
 export function chatReasoningParams(useMeditation: boolean, useReasoning: boolean, isDeepSeek = true) {
-  return !useMeditation && isDeepSeek
+  if (useMeditation) return { thinking: { type: 'disabled' as const } };
+  return isDeepSeek
     ? { reasoning_effort: useReasoning ? 'high' as const : 'none' as const }
     : {};
 }

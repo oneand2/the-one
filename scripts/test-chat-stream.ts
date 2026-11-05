@@ -4,6 +4,7 @@ import {
   chatReasoningParams,
   isDeepSeekRequest,
   resolveDeepSeekModel,
+  resolveMeditationModel,
   streamChatResponse,
 } from '../src/lib/chatStream';
 
@@ -85,13 +86,22 @@ test('legacy model names and blank configuration resolve to the supported Flash 
   }
 });
 
-test('ordinary, deep, and master modes preserve their distinct reasoning settings', () => {
+test('existing master installations migrate away from Sonnet 4.5 and thinking aliases', () => {
+  for (const configured of [undefined, '', '   ', 'claude-sonnet-4-5', 'claude-sonnet-4-5-20250929', 'claude-sonnet-4-5-20250929-thinking', 'claude-sonnet-4-6-thinking', 'claude-sonnet-4-6-thinking-code', 'anthropic/claude-sonnet-4.5']) {
+    assert.equal(resolveMeditationModel(configured), 'claude-sonnet-4-6');
+  }
+  for (const configured of ['claude-sonnet-4-6', 'claude-sonnet-4-6-svip', 'custom-model', ' custom-model ']) {
+    assert.equal(resolveMeditationModel(configured), configured.trim());
+  }
+});
+
+test('master mode disables thinking even if a client also requests deep reasoning', () => {
   assert.deepEqual(chatReasoningParams(false, false), { reasoning_effort: 'none' });
   assert.deepEqual(chatReasoningParams(false, true), { reasoning_effort: 'high' });
   assert.deepEqual(chatReasoningParams(false, true, false), {});
   assert.deepEqual(chatReasoningParams(false, false, false), {});
-  assert.deepEqual(chatReasoningParams(true, false), {});
-  assert.deepEqual(chatReasoningParams(true, true), {});
+  assert.deepEqual(chatReasoningParams(true, false), { thinking: { type: 'disabled' } });
+  assert.deepEqual(chatReasoningParams(true, true), { thinking: { type: 'disabled' } });
 });
 
 test('DeepSeek-specific settings do not spill into unrelated custom providers or models', () => {

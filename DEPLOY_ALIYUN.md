@@ -87,6 +87,8 @@ cp .env.production.example .env.production
 - `AI_MEDITATION_FALLBACK_BASE_URL`
 - `AI_MEDITATION_FALLBACK_MODEL_NAME`
 
+宗师模式使用 Sonnet 4.6 通用版（`claude-sonnet-4-6`），请求显式设置 `thinking: { type: 'disabled' }`。原有 Sonnet 4.5 或带 `-thinking` 的旧型号配置会自动迁移到 4.6 通用版，避免旧环境变量继续启用思考模型；新部署应直接填写上述通用型号。
+
 ## 4. Supabase 设置
 
 生产域名确定后，在 Supabase Authentication URL Configuration 中更新：

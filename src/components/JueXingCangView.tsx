@@ -839,7 +839,7 @@ export const JueXingCangView: React.FC<JueXingCangViewProps> = ({ hideHeader = f
         id: nextId(),
         role: 'assistant',
         content: '',
-        isReasoning: mindMode !== 'none',
+        isReasoning: mindMode === 'deep',
         timestamp: new Date(),
       };
 

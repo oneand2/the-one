@@ -199,8 +199,10 @@ for (const browserUser of ['null', 'throw'] as const) {
     assert.ok(request);
     assert.equal(request.init?.method, 'POST');
     assert.deepEqual(JSON.parse(String(request.init?.body)).messages, [{ role: 'user', content: question }]);
+    assert.equal(JSON.parse(String(request.init?.body)).useMeditation, true);
     assert.ok(textContent(result).includes(question));
     assert.ok(textContent(result).includes(answer));
+    assert.equal(textContent(result).includes('深度推演'), false, 'non-thinking master replies must not be labelled as deep reasoning');
     assert.equal(elements(result).find(view => view.type === 'textarea')?.props.value, '');
     assert.equal(chat.toggle().props['aria-pressed'], false);
     assert.equal(chat.authCalls(), 0);

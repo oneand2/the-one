@@ -7,7 +7,7 @@ import { isVip } from '@/utils/vip';
 import type { BaziImportData, MbtiImportData, LiuyaoImportData, QianchengImportData } from '@/types/import-data';
 import { retrieveRelevantNews } from '@/utils/newsRetrieval';
 import { baguaDimensionLabel, personalityName } from '@/lib/baguaPersonality';
-import { chatReasoningParams, isDeepSeekRequest, resolveDeepSeekModel, streamChatResponse } from '@/lib/chatStream';
+import { chatReasoningParams, isDeepSeekRequest, resolveDeepSeekModel, resolveMeditationModel, streamChatResponse } from '@/lib/chatStream';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -137,7 +137,7 @@ export async function POST(req: Request) {
         timeout: 85000,
         maxRetries: 0,
       });
-      modelName = process.env.AI_MEDITATION_FALLBACK_MODEL_NAME || 'claude-sonnet-4-5-20250929-thinking';
+      modelName = resolveMeditationModel(process.env.AI_MEDITATION_FALLBACK_MODEL_NAME);
     } else {
       // 默认模式：使用 DeepSeek 模型
       client = new OpenAI({
@@ -370,6 +370,7 @@ export async function POST(req: Request) {
     const createParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming & {
       // 宗师线路的兼容代理接受顶级 system 字段，OpenAI 官方类型未声明它。
       system?: string;
+      thinking?: { type: 'disabled' };
     } = {
       model: modelName,
       messages: fullMessages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],

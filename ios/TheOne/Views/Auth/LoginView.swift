@@ -3,45 +3,18 @@ import SwiftUI
 import UIKit
 
 struct LoginView: View {
-    enum Mode: String, CaseIterable {
-        case login = "登录"
-        case signup = "注册"
-    }
-
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @EnvironmentObject private var auth: AuthStore
 
-    @State private var mode: Mode = .login
     @State private var email = ""
     @State private var password = ""
-    @State private var confirmPassword = ""
-    @State private var nickname = ""
-    @State private var inviteCode = ""
-    @State private var otp = ""
-    @State private var verificationEmail: String?
     @State private var isWorking = false
     @State private var appleNonce = ""
     @State private var hasAppeared = false
 
-    private let spring = Animation.interpolatingSpring(stiffness: 310, damping: 31)
-
-    private var title: String {
-        if verificationEmail != nil { return "验证" }
-        return mode == .login ? "归来" : "初见"
-    }
-
-    private var subtitle: String {
-        if verificationEmail != nil { return "一封信，确认此刻是你" }
-        return mode == .login ? "世间即道场，人生是修行" : "从此刻起，与自己同行"
-    }
-
     private var submitDisabled: Bool {
-        let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        if mode == .login {
-            return trimmed.isEmpty || password.count < 6
-        }
-        return !trimmed.contains("@") || password.count < 6 || confirmPassword.count < 6
+        email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.count < 6
     }
 
     var body: some View {
@@ -49,80 +22,48 @@ struct LoginView: View {
             ZStack(alignment: .topTrailing) {
                 UnifiedAuthBackground()
 
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: 0) {
-                            Color.clear
-                                .frame(height: 42)
-                                .id("auth-top")
+                ScrollView {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: 42)
 
-                            UnifiedAuthBrand(title: title, subtitle: subtitle)
-                                .padding(.bottom, 24)
+                        UnifiedAuthBrand(title: "归来", subtitle: "世间即道场，人生是修行")
+                            .padding(.bottom, 24)
 
-                            UnifiedAuthShell {
-                                VStack(spacing: 16) {
-                                    if verificationEmail == nil {
-                                        UnifiedModeSwitcher(mode: $mode, onSelect: selectMode)
-                                    }
-
-                                    if let error = auth.errorMessage {
-                                        Text(error)
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(AppTheme.cinnabar)
-                                            .multilineTextAlignment(.center)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.horizontal, 14)
-                                            .padding(.vertical, 10)
-                                            .background(AppTheme.cinnabar.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                            .overlay {
-                                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                                    .stroke(AppTheme.cinnabar.opacity(0.16), lineWidth: 1)
-                                            }
-                                            .transition(.opacity.combined(with: .move(edge: .top)))
-                                    }
-
-                                    Group {
-                                        if verificationEmail != nil {
-                                            verificationForm
-                                        } else {
-                                            credentialForm
+                        UnifiedAuthShell {
+                            VStack(spacing: 16) {
+                                if let error = auth.errorMessage {
+                                    Text(error)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(AppTheme.cinnabar)
+                                        .multilineTextAlignment(.center)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
+                                        .background(AppTheme.cinnabar.opacity(0.04), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                        .overlay {
+                                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .stroke(AppTheme.cinnabar.opacity(0.16), lineWidth: 1)
                                         }
-                                    }
-                                    .id(verificationEmail != nil ? "verify" : mode.rawValue)
-                                    .transition(
-                                        .asymmetric(
-                                            insertion: .opacity.combined(with: .offset(y: 10)),
-                                            removal: .opacity.combined(with: .offset(y: -7))
-                                        )
-                                    )
+                                        .transition(.opacity.combined(with: .move(edge: .top)))
                                 }
-                                .animation(spring, value: mode)
-                                .animation(spring, value: verificationEmail)
-                                .animation(.easeOut(duration: 0.28), value: auth.errorMessage)
-                            }
 
-                            UnifiedLegalText()
-                                .padding(.top, 18)
+                                credentialForm
+                            }
+                            .animation(.easeOut(duration: 0.28), value: auth.errorMessage)
                         }
-                        .padding(.horizontal, 18)
-                        .padding(.bottom, 36)
-                        .frame(maxWidth: 474)
-                        .frame(maxWidth: .infinity)
-                        .opacity(hasAppeared ? 1 : 0)
-                        .offset(y: hasAppeared ? 0 : 18)
+
+                        UnifiedLegalText()
+                            .padding(.top, 18)
                     }
-                    .scrollDismissesKeyboard(.interactively)
-                    .onChange(of: mode) { _, _ in
-                        withAnimation(spring) {
-                            proxy.scrollTo("auth-top", anchor: .top)
-                        }
-                    }
-                    .onChange(of: verificationEmail) { _, _ in
-                        withAnimation(spring) {
-                            proxy.scrollTo("auth-top", anchor: .top)
-                        }
-                    }
+                    .padding(.horizontal, 18)
+                    .padding(.bottom, 36)
+                    .frame(maxWidth: 474)
+                    .frame(maxWidth: .infinity)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared ? 0 : 18)
                 }
+                .scrollDismissesKeyboard(.interactively)
 
                 Button {
                     dismiss()
@@ -153,88 +94,40 @@ struct LoginView: View {
             credentialFields
 
             UnifiedPrimaryButton(
-                title: mode == .login ? "进入" : "发送验证码",
+                title: "进入",
                 workingTitle: "处理中…",
                 isWorking: isWorking,
                 disabled: isWorking || submitDisabled,
                 action: submit
             )
 
-            Button(mode == .login ? "还没有账号？从这里开始" : "已有账号，返回登录") {
-                selectMode(mode == .login ? .signup : .login)
-            }
-            .buttonStyle(UnifiedTextButtonStyle())
-
             credentialFooter
         }
     }
 
-    @ViewBuilder
     private var credentialFields: some View {
-        if mode == .login {
-            UnifiedFieldStack {
-                UnifiedAuthField(
-                    label: "账号",
-                    placeholder: "邮箱或用户名",
-                    text: $email,
-                    contentType: .username
-                )
-                UnifiedFieldDivider()
-                UnifiedAuthField(
-                    label: "密码",
-                    placeholder: "输入密码",
-                    text: $password,
-                    secure: true,
-                    contentType: .password,
-                    actionTitle: "忘记密码？",
-                    action: openForgotPassword
-                )
-            }
-        } else {
-            UnifiedFieldStack {
-                UnifiedAuthField(
-                    label: "称呼",
-                    placeholder: "选填，用于展示",
-                    text: $nickname,
-                    contentType: .nickname
-                )
-                UnifiedFieldDivider()
-                UnifiedAuthField(
-                    label: "邮箱",
-                    placeholder: "your@email.com",
-                    text: $email,
-                    contentType: .emailAddress,
-                    keyboardType: .emailAddress
-                )
-                UnifiedFieldDivider()
-                UnifiedAuthField(
-                    label: "设置密码",
-                    placeholder: "至少 6 位",
-                    text: $password,
-                    secure: true,
-                    contentType: .newPassword
-                )
-                UnifiedFieldDivider()
-                UnifiedAuthField(
-                    label: "确认密码",
-                    placeholder: "再次输入密码",
-                    text: $confirmPassword,
-                    secure: true,
-                    contentType: .newPassword
-                )
-                UnifiedFieldDivider()
-                UnifiedAuthField(
-                    label: "邀请码",
-                    placeholder: "选填",
-                    text: $inviteCode
-                )
-            }
+        UnifiedFieldStack {
+            UnifiedAuthField(
+                label: "账号",
+                placeholder: "邮箱或用户名",
+                text: $email,
+                contentType: .username
+            )
+            UnifiedFieldDivider()
+            UnifiedAuthField(
+                label: "密码",
+                placeholder: "输入密码",
+                text: $password,
+                secure: true,
+                contentType: .password,
+                actionTitle: "忘记密码？",
+                action: openForgotPassword
+            )
         }
     }
 
-    @ViewBuilder
     private var credentialFooter: some View {
-        if mode == .login {
+        VStack(spacing: 16) {
             UnifiedProviderDivider()
 
             NativeAppleSignInButton(
@@ -245,114 +138,19 @@ struct LoginView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .allowsHitTesting(!isWorking)
             .opacity(isWorking ? 0.45 : 1)
-        } else {
-            Text("已注册的邮箱请直接登录。验证码只会发给尚未注册的邮箱")
-                .font(.system(size: 10))
-                .foregroundStyle(AppTheme.authFaint)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-        }
-    }
 
-    private var verificationForm: some View {
-        VStack(spacing: 16) {
-            VStack(spacing: 5) {
-                Text("验证码已发送至")
-                    .font(.system(size: 11))
-                    .foregroundStyle(AppTheme.authMuted)
-                Text(verificationEmail ?? email)
-                    .font(.system(size: 13))
-                    .foregroundStyle(AppTheme.ink)
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 8)
-
-            UnifiedFieldStack {
-                UnifiedAuthField(
-                    label: "邮箱验证码",
-                    placeholder: "······",
-                    text: $otp,
-                    contentType: .oneTimeCode,
-                    keyboardType: .numberPad,
-                    centered: true
-                )
-            }
-
-            UnifiedPrimaryButton(
-                title: "完成验证",
-                workingTitle: "验证中…",
-                isWorking: isWorking,
-                disabled: otp.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isWorking
-            ) {
-                Task {
-                    isWorking = true
-                    defer { isWorking = false }
-                    if await auth.verify(
-                        email: verificationEmail ?? email,
-                        token: otp,
-                        nickname: nickname
-                    ) {
-                        dismiss()
-                    }
-                }
-            }
-
-            Button("返回重新注册") {
-                withAnimation(spring) {
-                    verificationEmail = nil
-                    otp = ""
-                    auth.errorMessage = nil
-                }
-            }
-            .buttonStyle(UnifiedTextButtonStyle())
-
-            Text("收不到验证码时，请检查垃圾邮件文件夹")
+            Text("首次使用 Apple 登录将自动创建账号")
                 .font(.system(size: 10))
                 .foregroundStyle(AppTheme.authFaint)
                 .multilineTextAlignment(.center)
         }
-    }
-
-    private func selectMode(_ nextMode: Mode) {
-        guard mode != nextMode || verificationEmail != nil else { return }
-        withAnimation(spring) {
-            mode = nextMode
-            verificationEmail = nil
-            otp = ""
-            confirmPassword = ""
-            auth.errorMessage = nil
-        }
-        UISelectionFeedbackGenerator().selectionChanged()
     }
 
     private func submit() {
         Task {
-            auth.errorMessage = nil
-            if mode == .signup && password != confirmPassword {
-                auth.errorMessage = "两次输入的密码不一致"
-                return
-            }
-
             isWorking = true
             defer { isWorking = false }
-            if mode == .login {
-                if await auth.login(email: email, password: password) { dismiss() }
-            } else {
-                do {
-                    if try await auth.signup(
-                        email: email,
-                        password: password,
-                        nickname: nickname,
-                        inviteCode: inviteCode
-                    ) {
-                        withAnimation(spring) { verificationEmail = email }
-                    } else if auth.isAuthenticated {
-                        dismiss()
-                    }
-                } catch {
-                    auth.errorMessage = AuthStore.friendlyMessage(error)
-                }
-            }
+            if await auth.login(email: email, password: password) { dismiss() }
         }
     }
 
@@ -537,44 +335,6 @@ private struct UnifiedAuthShell<Content: View>: View {
     }
 }
 
-private struct UnifiedModeSwitcher: View {
-    @Binding var mode: LoginView.Mode
-    let onSelect: (LoginView.Mode) -> Void
-
-    var body: some View {
-        GeometryReader { proxy in
-            let itemWidth = proxy.size.width / 2
-            ZStack(alignment: .bottomLeading) {
-                HStack(spacing: 0) {
-                    modeButton(.login)
-                    modeButton(.signup)
-                }
-
-                Rectangle()
-                    .fill(AppTheme.hairline)
-                    .frame(height: 1)
-
-                Rectangle()
-                    .fill(AppTheme.stone800)
-                    .frame(width: itemWidth, height: 1.5)
-                    .offset(x: mode == .login ? 0 : itemWidth)
-                    .animation(.interpolatingSpring(stiffness: 330, damping: 31), value: mode)
-            }
-        }
-        .frame(height: 44)
-    }
-
-    private func modeButton(_ item: LoginView.Mode) -> some View {
-        Button(item.rawValue) { onSelect(item) }
-            .buttonStyle(.plain)
-            .font(.kaiti(14))
-            .tracking(2.8)
-            .foregroundStyle(mode == item ? AppTheme.stone800 : AppTheme.authMuted)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .contentShape(Rectangle())
-    }
-}
-
 private struct UnifiedFieldStack<Content: View>: View {
     @ViewBuilder let content: Content
 
@@ -679,18 +439,6 @@ private struct UnifiedPrimaryButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.985 : 1)
             .animation(.interpolatingSpring(stiffness: 360, damping: 28), value: configuration.isPressed)
-    }
-}
-
-private struct UnifiedTextButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 12))
-            .tracking(0.7)
-            .foregroundStyle(AppTheme.authMuted)
-            .padding(.vertical, 2)
-            .opacity(configuration.isPressed ? 0.55 : 1)
-            .offset(y: configuration.isPressed ? 1 : 0)
     }
 }
 

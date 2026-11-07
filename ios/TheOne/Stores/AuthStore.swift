@@ -69,30 +69,6 @@ final class AuthStore: ObservableObject {
         }
     }
 
-    func signup(email: String, password: String, nickname: String, inviteCode: String) async throws -> Bool {
-        let response: AuthResponse = try await APIClient.shared.request(
-            "/api/mobile/auth",
-            method: .POST,
-            json: [
-                "action": "signup", "email": email, "password": password,
-                "nickname": nickname, "inviteCode": inviteCode
-            ]
-        )
-        setUser(response.user)
-        return response.needsVerification == true
-    }
-
-    func verify(email: String, token: String, nickname: String) async -> Bool {
-        await perform {
-            let response: AuthResponse = try await APIClient.shared.request(
-                "/api/mobile/auth",
-                method: .POST,
-                json: ["action": "verify-signup", "email": email, "token": token, "nickname": nickname]
-            )
-            self.setUser(response.user)
-        }
-    }
-
     func loginWithApple(identityToken: String, nonce: String, nickname: String) async -> Bool {
         await perform {
             let response: AuthResponse = try await APIClient.shared.request(
@@ -155,7 +131,7 @@ final class AuthStore: ObservableObject {
             || lower.contains("error sending recovery email")
             || lower.contains("unable to send email")
             || lower.contains("error sending email") {
-            return "验证邮件暂时发不出去。请改用微信注册，或稍后再试。"
+            return "邮件暂时发不出去，请稍后再试。"
         }
         if lower.contains("user already registered") || lower.contains("already been registered") {
             return "该邮箱已注册，请直接登录。若忘记密码，请使用「忘记密码」。"

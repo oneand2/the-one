@@ -81,7 +81,7 @@ struct ProfileView: View {
                 Button {
                     auth.showsLogin = true
                 } label: {
-                    Text("登录或注册")
+                    Text("登录")
                         .font(.system(size: 13))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)

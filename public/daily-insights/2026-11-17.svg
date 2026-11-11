@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="落日前绕出巨大土地的人只在终点留下一个容身之处的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F4F1E8"/>
+  <circle cx="299" cy="44" r="17" fill="#B66D5C" opacity=".56"/>
+  <path d="M49 104c25-36 70-55 134-56 57-1 91 16 101 50-39 15-84 20-135 17-42-3-75-6-100-11z" fill="#CDD6CC" opacity=".52"/>
+  <path d="M49 104c25-36 70-55 134-56 57-1 91 16 101 50-39 15-84 20-135 17-42-3-75-6-100-11z" fill="none" stroke="#71857E" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+  <path d="M67 102c33-25 72-36 118-35 39 1 69 11 90 30" fill="none" stroke="#9AAB9B" stroke-width="1" stroke-dasharray="3 5" stroke-linecap="round" opacity=".65"/>
+  <circle cx="75" cy="98" r="6" fill="#9C866B" opacity=".72"/>
+  <path d="M75 104l10 10M75 104l-8 10" fill="none" stroke="#526254" stroke-width="2" stroke-linecap="round" opacity=".74"/>
+  <path d="M84 114h28M91 108l-7 6 7 6" fill="none" stroke="#526254" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity=".55"/>
+  <path d="M112 115c20 0 39 1 58 4" fill="none" stroke="#B79D80" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+  <circle cx="291" cy="64" r="2.4" fill="#B66D5C" opacity=".72"/>
+</svg>

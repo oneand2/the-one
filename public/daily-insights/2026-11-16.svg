@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="一辆车在冲突前转向另一条路的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F2F0E8"/>
+  <path d="M36 110c64-12 124-13 181-5 38 5 71 4 101-4" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".7"/>
+  <path d="M89 83h104l18 20H72z" fill="#B79D80" opacity=".5"/>
+  <path d="M89 83h104l18 20H72zM101 82V57h67v25M112 57l-10-11M157 57l10-11" fill="none" stroke="#526254" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
+  <circle cx="101" cy="105" r="14" fill="#CDD6CC" opacity=".85"/>
+  <circle cx="183" cy="105" r="14" fill="#CDD6CC" opacity=".85"/>
+  <circle cx="101" cy="105" r="8" fill="none" stroke="#526254" stroke-width="1.2" opacity=".72"/>
+  <circle cx="183" cy="105" r="8" fill="none" stroke="#526254" stroke-width="1.2" opacity=".72"/>
+  <path d="M211 98c23-22 44-33 64-34" fill="none" stroke="#9AAB9B" stroke-width="1.2" stroke-linecap="round" opacity=".62"/>
+  <path d="M218 98c18-9 30-7 37 5" fill="none" stroke="#71857E" stroke-width="1.2" stroke-linecap="round" opacity=".56"/>
+  <path d="M280 40v60M272 53l8-13 8 13" fill="none" stroke="#526254" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity=".65"/>
+  <circle cx="282" cy="104" r="2.5" fill="#B66D5C" opacity=".7"/>
+</svg>

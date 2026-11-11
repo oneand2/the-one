@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" role="img" aria-label="落沟后的骑者忽然回马离去的极简插画">
+  <rect width="360" height="136" rx="15" fill="#F3F1E9"/>
+  <path d="M35 109c71-7 137-4 198 8" fill="none" stroke="#CDD6CC" stroke-width="1" opacity=".72"/>
+  <path d="M43 91c25 10 49 12 74 4 14-5 27-5 40 0" fill="none" stroke="#9AAB9B" stroke-width="1.1" stroke-linecap="round" opacity=".52"/>
+  <path d="M160 80c12-20 32-29 60-25 23 3 37 15 42 35l-10 18h-17l-3-17h-39l-7 17h-17z" fill="#CDD6CC" opacity=".75"/>
+  <path d="M160 80c12-20 32-29 60-25 23 3 37 15 42 35M169 108l-9-28M186 108l7-17h39l3 17M252 108l10-18" fill="none" stroke="#526254" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+  <path d="M259 76c12-15 24-19 34-11 6 5 4 14-5 18l-25 10" fill="#B79D80" opacity=".55"/>
+  <path d="M259 76c12-15 24-19 34-11 6 5 4 14-5 18l-25 10M279 66l-1-11M286 67l5-9" fill="none" stroke="#526254" stroke-width="1.45" stroke-linecap="round" opacity=".75"/>
+  <circle cx="211" cy="39" r="7" fill="#9C866B" opacity=".6"/>
+  <path d="M208 47l-8 23 25 4M201 57l-15 7" fill="none" stroke="#526254" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" opacity=".7"/>
+  <path d="M287 45c-9-8-19-9-29-2" fill="none" stroke="#B66D5C" stroke-width="1.1" stroke-linecap="round" opacity=".55"/>
+  <circle cx="252" cy="46" r="2.3" fill="#B66D5C" opacity=".68"/>
+</svg>

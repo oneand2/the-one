@@ -1,0 +1,13 @@
+Noto Serif SC — Regular (400)
+
+Copyright (c) 2017–2024 Adobe (http://www.adobe.com/).
+Distributed under the SIL Open Font License 1.1; see OFL.txt.
+
+Source: Google Fonts official repository
+https://github.com/google/fonts/tree/main/ofl/notoserifsc
+https://raw.githubusercontent.com/google/fonts/main/ofl/notoserifsc/NotoSerifSC%5Bwght%5D.ttf
+Source SHA-256: 050080d9255a86808f2945bffac582b31ef32bc36411ce29563b4961670c66f9
+
+Converted with fontTools 4.68.0: instantiate wght=400, then lossless WOFF2 compression.
+Full upstream character coverage retained; this is not a daily-edition subset.
+Output SHA-256: 75d0a0ac3cbb1878e5e446584b6e1e547e20c851dcd5561d77d2750ad11d640d

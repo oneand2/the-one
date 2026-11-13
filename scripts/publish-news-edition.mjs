@@ -155,7 +155,7 @@ export async function prepare(issue, date, options, cloud) {
       if (!files.has(key)) {
         n += bytes.length;
         requireThat(n <= MAX_EDITION, '单期图片总量超过 64 MiB');
-        files.set(key, { bytes, type: MIME[ext] });
+        files.set(key, { bytes, type: MIME[ext], stored: photo.src.startsWith(MEDIA) });
       }
       info = { size, key };
       seen.set(photo.src, info);
@@ -184,8 +184,10 @@ function contentOf(row) {
 }
 const readRow = async (db, date) => checked(await db.from(TABLE).select('issue_date,lunar,description,stories,cover,published_at,revision').eq('issue_date', date).maybeSingle(), '读取刊期失败');
 async function verifyImages(db, files, upload) {
-  for (const [key, { bytes, type }] of files) {
-    if (upload) {
+  for (const [key, { bytes, type, stored }] of files) {
+    // A cloud reference was already downloaded and hash-checked by prepare().
+    // Recheck its bytes below without uploading the unchanged original again.
+    if (upload && !stored) {
       const { error } = await db.storage.from(BUCKET).upload(key, bytes, { contentType: type, upsert: false, cacheControl: '31536000' });
       // Concurrent attempts may have stored this immutable object already.
       if (error && !['Duplicate','ResourceAlreadyExists','KeyAlreadyExists'].includes(error.error || error.code) &&

@@ -6,6 +6,7 @@
 - Use the installed `frontend-design` skill alongside it for general design craft; where the two conflict, `the-one-design` wins.
 - The user does not need to mention either skill explicitly. Skip this default only when the user explicitly requests a different design workflow or says not to use it.
 - If the task is only backend work, a small functional fix with no meaningful visual judgment, or a code review that does not involve UI design, this default does not apply.
+- 用户多次反馈字体粗细不一致。每次制作或修改 UI，必须主动检查同一标题和同级文字的实际字体、字重与中文逐字回退；本项目统一 400，不只核对 CSS 数值。新闻标题使用覆盖日常新增中文的同一 Regular 字体，避免局部子集、字体合成或缺字回退造成一行内粗细混杂；交付前检查移动端实际页面。
 
 ## Publishing changes
 
@@ -24,5 +25,5 @@
 
 ## 《见天地》新闻编刊
 
-- 编写或修改 `sites/yijian-daily` 下任何刊期的新闻，先读该站 `README.md` 的“每条新闻都要讲清前因后果”。头版、选读和短讯均须交代读者理解事件所需的起因、转折及实际影响，并核对关键事实的来源与截稿时间。
+- 编写或修改《见天地》任何刊期的新闻，先读 `sites/yijian-daily/README.md` 的编刊规范。头版、选读须交代读者理解事件所需的起因、转折及实际影响；短讯只写简短的核心事实，一般一段、1–3 句，不要求铺陈前因后果，不为补背景而扩写。三种版面均须核对关键事实的来源与截稿时间；每日新闻任务同样遵守。
 - 《见天地》用云端作为刊期档案。用 `scripts/publish-news-edition.mjs` 从标准输入交稿，来源和图片署名一并入库，真实配图直接写入项目的私有对象存储；不要在电脑上逐日保存 JSON、照片或生成离线 HTML。旧的 `news:publish` 维护另一栏目，不用于本报。

@@ -22,6 +22,8 @@ public/news
 !sites/yijian-daily/dist/tokens.css
 !sites/yijian-daily/dist/paper.css
 !sites/yijian-daily/dist/paper.js
+!sites/yijian-daily/dist/fonts/
+!sites/yijian-daily/dist/fonts/**
 !scripts/
 !scripts/deploy/
 !scripts/deploy/prepare-runtime.mjs

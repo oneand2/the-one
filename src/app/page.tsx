@@ -133,7 +133,9 @@ const HomeContent: React.FC = () => {
 
   useEffect(() => {
     if (window.__THEONE_IOS_EMBED__) setEmbedFromNative(true);
-    window.scrollTo(0, 0);
+    const section = document.getElementById(window.location.hash.slice(1));
+    if (section) section.scrollIntoView();
+    else window.scrollTo(0, 0);
     void prefetchDailyHexagram();
   }, []);
 
@@ -288,7 +290,7 @@ const HomeContent: React.FC = () => {
               <div className="max-w-md mx-auto relative">
                 {visitedTabs.has('guanshi') && (
                 <div data-ios-tab-pane="guanshi" className={activeTab === 'guanshi' ? 'block' : 'hidden'} aria-hidden={activeTab !== 'guanshi'}>
-                  <GuanShiView />
+                  <GuanShiView initialDate={searchParams.get('date')} embedded={isIOSEmbed} />
                 </div>
               )}
               {visitedTabs.has('wendao') && (

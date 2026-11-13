@@ -17,6 +17,12 @@
 /.codex-work/
 /tmp/
 /output/
+# The newspaper archive lives in Supabase. Do not commit local exports/staging.
+/sites/yijian-daily/editions/
+/sites/yijian-daily/dist/photos/
+/sites/yijian-daily/dist/stories.js
+/sites/yijian-daily/dist/covers.json
+/sites/yijian-daily/*-????-??-??.html
 /supabase/.temp/
 /mockups/**/node_modules/
 /app-store-assets/**/*.xcarchive/

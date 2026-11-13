@@ -1,0 +1,81 @@
+.card {
+  display: block;
+  padding: 18px 20px;
+  border: 1px solid rgb(0 0 0 / var(--ui-alpha-hairline));
+  border-radius: 22px;
+  background: var(--ui-color-warm-white);
+  color: var(--ui-color-lunar-ink);
+  text-decoration: none;
+  transition: border-color var(--ui-motion-fast) var(--ui-motion-bezier);
+}
+
+.masthead,
+.brand,
+.action {
+  display: flex;
+  align-items: center;
+}
+
+.masthead {
+  justify-content: space-between;
+  gap: var(--ui-space-sm);
+  margin-bottom: var(--ui-space-sm);
+}
+
+.brand {
+  gap: var(--ui-space-xs);
+  font: 400 15px/1.4 var(--ui-font-kaiti);
+  color: var(--ui-color-stone600);
+  letter-spacing: .08em;
+}
+
+.brand img {
+  width: 15px;
+  height: 15px;
+}
+
+.issue {
+  color: var(--ui-color-auth-muted);
+  font: 400 11px/1.5 var(--ui-font-sans);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.headline {
+  margin: 0;
+  font: 400 19px/1.5 var(--ui-font-serif);
+  color: var(--ui-color-lunar-text);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.action {
+  gap: 3px;
+  margin-top: var(--ui-space-xs);
+  color: var(--ui-color-stone500);
+  font: 400 12px/1.5 var(--ui-font-sans);
+  letter-spacing: .04em;
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--ui-color-stone500);
+  outline-offset: 3px;
+}
+
+@media (min-width: 640px) {
+  .card { padding-inline: var(--ui-space-lg); }
+}
+
+@media (hover: hover) {
+  .card:hover {
+    border-color: var(--ui-color-stone300);
+  }
+
+  .card:hover .action {
+    color: var(--ui-color-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card { transition: none; }
+}

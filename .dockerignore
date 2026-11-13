@@ -13,6 +13,15 @@
 !content/**
 !public/
 !public/**
+public/news
+!sites/
+!sites/yijian-daily/
+!sites/yijian-daily/dist/
+!sites/yijian-daily/dist/index.html
+!sites/yijian-daily/dist/mark.svg
+!sites/yijian-daily/dist/tokens.css
+!sites/yijian-daily/dist/paper.css
+!sites/yijian-daily/dist/paper.js
 !scripts/
 !scripts/deploy/
 !scripts/deploy/prepare-runtime.mjs

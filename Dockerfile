@@ -35,6 +35,8 @@ COPY package.json package-lock.json ./
 COPY next.config.ts tsconfig.json postcss.config.mjs ./
 COPY questions.json mbti_final_cleaned.json ./
 COPY public ./public
+# The reader is static; issue bodies and photos are fetched from private storage at runtime.
+COPY sites/yijian-daily/dist/ ./public/news/
 COPY content ./content
 COPY src ./src
 

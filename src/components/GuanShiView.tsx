@@ -6,6 +6,7 @@ import { LunarCalendarCard } from '@/components/LunarCalendarCard';
 import { ZiwuLiuzhuClock } from '@/components/ZiwuLiuzhuClock';
 import { DateSegmentSelect } from '@/components/DateSegmentSelect';
 import { DailyInsightsView } from '@/components/DailyInsightsView';
+import { NewsEditionCard } from '@/components/NewsEditionCard';
 
 /** 今日见闻开栏年份，日期选择器下限 */
 const INSIGHTS_START_YEAR = 2026;
@@ -25,15 +26,18 @@ function shanghaiYmd(date = new Date()) {
 }
 
 /**
- * 见天地：日期 → 黄历 → 子午流注 → 今日见闻
- * 新闻板块已下线，代码保留在 WorldNewsView.tsx，取得资质后可恢复。
+ * 见天地：日期 → 黄历 → 子午流注 → 今日见闻（新闻刊期、见闻正文）
  */
-export const GuanShiView: React.FC = () => {
+export const GuanShiView: React.FC<{ initialDate?: string | null; embedded?: boolean }> = ({ initialDate, embedded }) => {
   const today = useMemo(() => shanghaiYmd(), []);
 
-  const [selectedDate, setSelectedDate] = useState<string>(
-    () => `${today.year}-${pad(today.month)}-${pad(today.day)}`
-  );
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const current = `${today.year}-${pad(today.month)}-${pad(today.day)}`;
+    if (!initialDate || !/^\d{4}-\d{2}-\d{2}$/.test(initialDate)
+      || initialDate < `${INSIGHTS_START_YEAR}-01-01` || initialDate > current) return current;
+    const [year, month, day] = initialDate.split('-').map(Number);
+    return month >= 1 && month <= 12 && day >= 1 && day <= getDaysInMonth(year, month) ? initialDate : current;
+  });
 
   const parts = useMemo(() => {
     const [year, month, day] = selectedDate.split('-').map(Number);
@@ -68,7 +72,7 @@ export const GuanShiView: React.FC = () => {
       className="w-full"
     >
       {/* 三段式日期选择器 */}
-      <div className="mb-10">
+      <div className="mb-6">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-4">
             <span className="text-xs font-sans text-stone-400 uppercase tracking-wider">选择日期</span>
@@ -119,12 +123,16 @@ export const GuanShiView: React.FC = () => {
       <ZiwuLiuzhuClock />
 
       {/* 今日见闻 */}
-      <div className="mb-4 mt-9 flex items-center gap-3">
-        <span className="font-sans text-[10px] tracking-[0.34em] text-stone-400">今日见闻</span>
-        <span className="h-px flex-1 bg-stone-200/80" />
-      </div>
-
-      <DailyInsightsView date={selectedDate} />
+      <section aria-labelledby="daily-readings" className="mt-9">
+        <div className="mb-4 flex items-center gap-3">
+          <h2 id="daily-readings" style={{ scrollMarginTop: '10rem' }} className="font-sans text-[10px] font-normal tracking-[0.34em] text-stone-400">今日见闻</h2>
+          <span aria-hidden="true" className="h-px flex-1 bg-stone-200/80" />
+        </div>
+        <div className="grid gap-6">
+          <NewsEditionCard selectedDate={selectedDate} embedded={embedded} />
+          <DailyInsightsView date={selectedDate} />
+        </div>
+      </section>
 
       {/* 声明 */}
       <motion.div

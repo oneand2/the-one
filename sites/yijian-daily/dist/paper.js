@@ -425,7 +425,7 @@
   const main = document.getElementById('content');
   main.removeAttribute('aria-busy');
   main.innerHTML = error.status === 404
-    ? '<div class="empty"><p>请使用管理员账号登录后阅读。</p><a class="read" id="paper-login" href="/login">前往登录</a></div>'
+    ? '<div class="empty"><p>此刊期暂未开放。</p></div>'
     : '<div class="empty"><p>暂时无法读取刊期。</p><button type="button" class="read">重新读取</button></div>';
   main.querySelector('button')?.addEventListener('click', () => location.reload());
   const login = document.getElementById('paper-login');

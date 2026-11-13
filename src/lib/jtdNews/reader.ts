@@ -1,4 +1,3 @@
-import { getAdminUser } from '@/lib/admin/access';
 import { createAdminClient } from '@/utils/supabase/admin';
 
 export const readerHeaders = {
@@ -7,12 +6,9 @@ export const readerHeaders = {
   'X-Content-Type-Options': 'nosniff',
 };
 
-// Apply the same reader access check to the archive, articles and photos.
-export async function canReadPaper(request: Request) {
-  if (process.env.NODE_ENV === 'development' &&
-      ['localhost', '127.0.0.1', '[::1]'].includes(new URL(request.url).hostname)) return true;
-  if (!request.headers.has('cookie')) return false;
-  return Boolean(await getAdminUser());
+// Published editions are readable by every visitor through the server API.
+export async function canReadPaper(_request: Request) {
+  return true;
 }
 
 export function validIssueDate(value: string | null): value is string {

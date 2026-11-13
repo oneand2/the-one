@@ -67,7 +67,9 @@ test('private newspaper reader restricts every data and media read to a publishe
 
   queries = [];
   Object.assign(process.env, { NODE_ENV: 'production' });
-  assert.equal((await read('cover=' + day)).status, 404);
-  assert.equal((await image(req(mediaPath), context)).status, 404);
-  assert.equal(queries.length, 0);
+  rows = [{ issue_date: day, cover: { title: '头版', photo: mediaPath } }];
+  assert.equal((await read('cover=' + day)).status, 200);
+  rows = [{ issue_date: day }];
+  assert.equal((await image(req(mediaPath), context)).status, 200);
+  assert.ok(queries.length > 0);
 });

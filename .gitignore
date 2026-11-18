@@ -57,6 +57,8 @@ yarn-error.log*
 
 # Daily content jobs write prompts and Codex output here.
 .codex-run/
+__pycache__/
+*.pyc
 
 # vercel
 .vercel

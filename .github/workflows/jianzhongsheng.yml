@@ -1,0 +1,134 @@
+name: 每日续写见众生
+
+on:
+  schedule:
+    # 03:00 Asia/Shanghai = 19:00 UTC on the previous calendar day. Shanghai has no DST.
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-jianzhongsheng
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  main-only:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse runs outside main
+        run: |
+          echo "每日续写见众生只在 main 上运行。" >&2
+          exit 1
+
+  edit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Prepare Codex prompt
+        run: |
+          set -euo pipefail
+          mkdir -p .codex-run
+          python3 scripts/automation/content_automation.py preface \
+            jianzhongsheng \
+            .github/automation/prompts/jianzhongsheng.txt \
+            .codex-run/prompt.txt
+
+      - name: Run Codex
+        uses: ./.github/actions/codex-exec
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .codex-run/prompt.txt
+          output-file: .codex-run/result.json
+          codex-args: '["--ask-for-approval","never"]'
+
+      - name: Collect content changes
+        run: |
+          set -euo pipefail
+          python3 scripts/automation/content_automation.py collect \
+            jianzhongsheng .codex-run/result.json .codex-run/changes.patch
+          status=$(python3 scripts/automation/content_automation.py print-field .codex-run/result.json status)
+          if [ "$status" = "failed" ]; then
+            python3 scripts/automation/content_automation.py write-summary \
+              --title "每日续写见众生" \
+              --result .codex-run/result.json \
+              --line "模型报告失败。未推送 main，未触发部署。"
+            exit 1
+          fi
+
+      - name: Upload Codex result
+        uses: actions/upload-artifact@v4
+        with:
+          name: jianzhongsheng-${{ github.run_id }}
+          path: |
+            .codex-run/result.json
+            .codex-run/changes.patch
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Write failure summary
+        if: failure()
+        run: |
+          if [ -f .codex-run/summary-written ]; then
+            exit 0
+          fi
+          python3 scripts/automation/content_automation.py write-summary \
+            --title "每日续写见众生" \
+            --result .codex-run/result.json \
+            --line "任务在完成前失败。未推送 main，未触发部署。"
+
+  publish:
+    needs: edit
+    if: needs.edit.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Download Codex result
+        uses: actions/download-artifact@v4
+        with:
+          name: jianzhongsheng-${{ github.run_id }}
+          path: .codex-run
+
+      - name: Commit, push, and deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash scripts/automation/publish-jianzhongsheng.sh .codex-run/changes.patch .codex-run/result.json

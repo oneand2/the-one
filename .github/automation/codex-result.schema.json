@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["status", "summary_markdown"],
+  "properties": {
+    "status": {
+      "type": "string",
+      "enum": ["ready", "already_live", "needs_publish", "published", "failed"]
+    },
+    "summary_markdown": { "type": "string", "minLength": 1 },
+    "date": { "type": "string" },
+    "issue_date": { "type": "string" },
+    "commit_message": { "type": "string" },
+    "week_file": { "type": "string" },
+    "titles": { "type": "array", "items": { "type": "string" } },
+    "links": { "type": "array", "items": { "type": "string" } }
+  }
+}

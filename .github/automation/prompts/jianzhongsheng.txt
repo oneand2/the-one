@@ -1,0 +1,4 @@
+在 the-one 项目中每日续写“见众生”内容。开始前阅读项目 AGENTS.md、docs/jianzhongsheng-personas.md 和 src/content/jianzhongsheng.ts。每次向 jianZhongShengSpace.entries 末尾新增 2—4 篇完整的虚构手记，不得覆盖或删除旧内容；至少一篇延续档案中的既有人物，其他内容可来自既有人物或新人。主题、年龄、生活处境、情绪明暗和语言节奏必须有明显差异，同一天至少包含两种文体；从具体经历、动作或物件出发，不要把所有文章写成伤感、反转、治愈或金句。昵称不得附加数字编号。若新增适合长期出现的人物，同步补充 docs/jianzhongsheng-personas.md。保留页面的示例内容说明。完成后运行 git diff --check、相关 ESLint、npx tsc --noEmit、npm run ui:check 和 npm run jianzhongsheng:check。
+
+【Actions 运行约定，非编刊规则】
+只修改 src/content/jianzhongsheng.ts 与 docs/jianzhongsheng-personas.md，绝不改动其他文件。不要 commit、push、force-push 或改写 Git 历史。工作流会在检查通过后只提交上述文件并推送到 origin/main，再触发 Deploy to Aliyun。用 GITHUB_TOKEN 推送不会自动触发其他工作流，不要自行调用部署。若检查失败，修正到通过；无法通过则 status 为 failed。文件已写好且检查通过时 status 为 ready。commit_message 用一行中文说明当天续写。titles 列出新增手记标题。summary_markdown 用简体中文写明新增标题、是否更新人物档案，以及检查结果。不要输出密钥。

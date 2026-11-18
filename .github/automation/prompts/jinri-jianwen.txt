@@ -1,0 +1,35 @@
+每天北京时间 07:00，检查并维护“见天地”中的“今日见闻”，确保当天有内容和插画在线；按现行“每天一则、七天一份周稿”的体例工作。禁止再生成或写入 world_news、news_items；禁止再做“时、地、物”三条体例。
+
+开始前必须完整读取，并严格按其中规则执行（以仓库内现行规范为准）：
+1. AGENTS.md
+2. docs/jinri-jianwen-content-guide.md
+3. docs/daily-insights-illustration-style.md
+4. scripts/publish-daily-insights.ts（了解校验规则）
+工作目录是仓库根目录，日期使用北京时间 YYYY-MM-DD。
+
+一、先核对，不重复发布：
+- 查 content/ 下最新的 *-week.json，判断今天是否已被某份周稿覆盖；查 daily_insights 中今天是否恰有一条；查 public/daily-insights/今天.svg 及生产站对应 SVG 是否可访问（https://www.the-one-and-the-two.com/daily-insights/YYYY-MM-DD.svg）。
+- 若今天已被覆盖、数据库有今天一条、插画线上可访问，则视为已完成：只核对并报告今天的标题与出处，不得重新选题、覆盖文件、提交或发布。
+- 若周稿和插画已存在、但数据库缺少今天，诊断原因（例如此前发布中断），在确认代码已部署后用现有周稿重跑正式发布补齐，不改内容。
+
+二、需要新周稿时（今天没有被任何已发布周稿覆盖，即上一份周稿的七天已经用完）：
+- 以今天为 startDate，写一份新周稿 content/YYYY-MM-DD-week.json，正好七则，对应今天起连续七天；格式沿用最近一份周稿与规范中的“周稿格式”。中国四则、外国三则，用 origin 标记，周首与周末为中国内容，外国内容不连续（发布脚本会校验并排序）。
+- 选题前查阅 content/ 中已有周稿，避免与近期标题、故事和出处重复。用网页搜索与可靠底本核对原文，原文须从可核查的底本转录；每则 sources 写明完整书目信息与可访问链接；不得猜测或编造出处与原文。标题、译文长度、文风、选题、真实性、宗教文化边界全部按规范执行。
+- 为七天分别新建 public/daily-insights/YYYY-MM-DD.svg（文件名只用日期），按插画规范，根据各自正文重新构图，不得套用模板或残留前稿元素，不得出现文字或 logo。
+- 用 apply_patch 创建文件；正常情况下不改代码。
+
+三、发布前校验（仅在第二步新建周稿时由你执行到 dry-run 为止）：
+- 确认七张 SVG XML 合法，日期与周稿一一对应。
+- 运行 npm run insights:publish -- --file content/YYYY-MM-DD-week.json --dry-run；任何校验失败都必须修正后重试，不得降低标准。
+- 查看 git status，绝不改动工作区已有的无关文件（例如未提交的 package.json）。只留下这份周稿 JSON 和七张 SVG。
+- 不要 commit、push、force-push，也不要运行不带 --dry-run 的 insights:publish。用 GITHUB_TOKEN 推送不会触发 Deploy to Aliyun。工作流只提交这份周稿和七张 SVG，推送到 origin/main，等待 Deploy to Aliyun 成功并确认今天的生产 SVG 可访问后，才正式写入 daily_insights。远端已领先、补丁冲突或目标内容无法干净叠加上去时，工作流会停止并报告，不会强行覆盖或 force-push。
+- 若只是数据库缺少今天、周稿和插画已在仓库中：不要改文件。status 设为 needs_publish，week_file 指向现有周稿。
+- 任一步失败时不要留下半成品文件。status 设为 failed，并具体说明失败点。此前已上线的内容应继续可见。
+
+读取 daily_insights 时使用仓库根目录 .env.local 里的 NEXT_PUBLIC_SUPABASE_URL 与 NEXT_PUBLIC_SUPABASE_ANON_KEY，只可读取，不能写入，也不要打印这两个值。
+
+若今天已经在线且核对通过：status 为 already_live，不要改文件。
+若需要入库（新建周稿且 dry-run 已通过，或只补数据库）：status 为 needs_publish。
+date 为今天的北京时间 YYYY-MM-DD。week_file 为覆盖今天的 content/YYYY-MM-DD-week.json。titles 按日期顺序列出七则标题。
+
+完成后用简体中文写入 summary_markdown：日期、今天这一则的标题和出处；若新建了周稿，再列出七天的标题与出处、插画路径；若只是核对，说明已在线、未重复发布。不要写入密钥。

@@ -55,6 +55,11 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Daily content jobs write prompts and Codex output here.
+.codex-run/
+__pycache__/
+*.pyc
+
 # vercel
 .vercel
 

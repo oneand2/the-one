@@ -1,0 +1,139 @@
+name: 《见天地》新闻
+
+on:
+  schedule:
+    # 08:00 Asia/Shanghai = 00:00 UTC on the same calendar day. Shanghai has no DST.
+    - cron: "0 0 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-jiantiandi-news
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  main-only:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Refuse runs outside main
+        run: |
+          echo "《见天地》新闻只在 main 上运行。" >&2
+          exit 1
+
+  edit:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Write Supabase environment
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 scripts/automation/content_automation.py write-env .env.local \
+            NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY
+
+      - name: Prepare Codex prompt
+        run: |
+          set -euo pipefail
+          mkdir -p .codex-run
+          python3 scripts/automation/content_automation.py preface \
+            jiantiandi-news \
+            .github/automation/prompts/jiantiandi-news.txt \
+            .codex-run/prompt.txt
+
+      - name: Run Codex
+        uses: ./.github/actions/codex-exec
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .codex-run/prompt.txt
+          output-file: .codex-run/result.json
+          codex-args: '["--search","--ask-for-approval","never"]'
+
+      - name: Require a completed result
+        run: |
+          set -euo pipefail
+          python3 scripts/automation/content_automation.py assert-result \
+            jiantiandi-news .codex-run/result.json
+          status=$(python3 scripts/automation/content_automation.py print-field .codex-run/result.json status)
+          if [ "$status" = "failed" ]; then
+            python3 scripts/automation/content_automation.py write-summary \
+              --title "《见天地》新闻" \
+              --result .codex-run/result.json \
+              --line "模型报告未出刊。"
+            exit 1
+          fi
+
+      - name: Upload Codex result
+        uses: actions/upload-artifact@v4
+        with:
+          name: jiantiandi-news-${{ github.run_id }}
+          path: .codex-run/result.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Write failure summary
+        if: failure()
+        run: |
+          if [ -f .codex-run/summary-written ]; then
+            exit 0
+          fi
+          python3 scripts/automation/content_automation.py write-summary \
+            --title "《见天地》新闻" \
+            --result .codex-run/result.json \
+            --line "任务在出刊前失败。没有提交 Git。"
+
+  verify:
+    needs: edit
+    if: needs.edit.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Download Codex result
+        uses: actions/download-artifact@v4
+        with:
+          name: jiantiandi-news-${{ github.run_id }}
+          path: .codex-run
+
+      - name: Verify the published edition
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: bash scripts/automation/verify-news-job.sh .codex-run/result.json

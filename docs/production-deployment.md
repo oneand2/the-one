@@ -2,6 +2,8 @@
 
 生产域名：https://www.the-one-and-the-two.com 。应用代码提交 `main` 后，GitHub Actions 自动发布到现有 ECS；不需要手动构建或上传。纯文档提交会先核对线上应用是否已是最新，有待发布的应用修改仍会继续发布。
 
+每日内容任务里，见众生和今日见闻由 `github-actions[bot]` 推到 `main`。这种推送不会再触发下面的 `push` 工作流，所以那两个任务会在推送后用 `workflow_dispatch` 调用本工作流。手动触发始终走完整构建和发布。新闻刊期直接写入 Supabase，不经过这里。详见 README 的「每日内容自动化」。
+
 ## 架构与优化
 
 ECS 保留现有 Nginx 容器、80/443 端口、证书挂载、Docker 网络和生产环境变量。数据库继续使用现有 Supabase。Next.js 使用 standalone 输出，最终镜像只包含 Node 运行时、追踪到的运行依赖、服务端产物及公开资源。开发依赖、源文件和 `.next/cache` 不进入运行镜像。`.dockerignore` 使用构建输入白名单。

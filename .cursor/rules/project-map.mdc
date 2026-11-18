@@ -39,6 +39,7 @@ alwaysApply: true
 - `android/`：Capacitor 使用的原生 Android 壳。
 - `ios/`：原生 SwiftUI iOS 项目。
 - `docs/` 和根目录 `*.md`：功能说明、部署说明、验证指南和历史实现文档。
+- `.github/workflows/`：阿里云部署，以及北京时间 03:00 见众生、07:00 今日见闻、08:00《见天地》三个定时任务。提示词在 `.github/automation/prompts/`。见众生与今日见闻推送 `main` 后用 `workflow_dispatch` 调用 `Deploy to Aliyun`，因为 `GITHUB_TOKEN` 推送不会触发其他工作流。新闻直接写入 Supabase，不提交 Git。
 
 ## 路由形态
 
@@ -74,6 +75,11 @@ alwaysApply: true
 - 见天地能量卡片不再提供「占问前程」入口。
 - 决行藏（`src/components/JueXingCangView.tsx`）仍可读 `juexingcang-qiancheng-pending`，以 `importData.qiancheng` 发起占问并流式渲染「个人格局 / 全年大势 / 前程指引」。
 - 三级新闻漏斗：① 标题库 `news_items` ② `src/utils/newsRetrieval.ts` 关键词扩展+近一年匹配 Top N ③ 命中条目原文链接溯源。解析工具 `src/utils/newsItems.ts`。建表脚本 `src/app/api/world-news/news-items-schema.sql`。
+
+## 每日内容
+
+- 03:00 见众生、07:00 今日见闻、08:00《见天地》由 GitHub Actions 运行 Codex（`gpt-5.6-sol`，high）。手动入口在各工作流的 `workflow_dispatch`，且只在 `main` 上执行。
+- 所需 secrets：`OPENAI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`。仓库 Actions 权限需要 Read and write。
 
 ## 常用命令
 

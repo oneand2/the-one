@@ -78,7 +78,7 @@ alwaysApply: true
 
 ## 每日内容
 
-- 03:00 见众生、07:00 今日见闻、08:00《见天地》由 GitHub Actions 运行 Codex（`gpt-5.6-sol`，high）。手动入口在各工作流的 `workflow_dispatch`，且只在 `main` 上执行。
+- 03:00 见众生、07:00 今日见闻、08:00《见天地》由 GitHub Actions 调用 OpenAI Responses API（模型 `gpt-5.6-sol`，推理强度 high；托管 web_search，加上仓库内的本地 shell 与 apply_patch）。不使用 Codex。手动入口在各工作流的 `workflow_dispatch`，且只在 `main` 上执行。
 - 所需 secrets：`OPENAI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`。仓库 Actions 权限需要 Read and write。
 
 ## 常用命令

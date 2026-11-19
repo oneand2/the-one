@@ -49,9 +49,11 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 编刊规则在 `.github/automation/prompts/`。手动运行：打开 Actions，选择对应工作流，在 `main` 上 Run workflow。
 
+模型步骤由 `scripts/automation/openai_content_runner.py` 调用 OpenAI Responses API（`https://api.openai.com/v1/responses`），不经过 Codex。默认模型是 `gpt-5.6-sol`，推理强度 `high`，写在工作流的 `CONTENT_MODEL` 和 `CONTENT_REASONING_EFFORT` 里，不是新的 secret。运行器把托管 `web_search`、本地 shell 和 `apply_patch` 串成工具循环：模型可以读仓库、检索并打开公开页面、改允许的文件、运行检查和出刊脚本；提交、推送、部署和见闻入库仍由原来的后续步骤完成。《见天地》继续只写入 Supabase 和图片桶。shell 子进程拿不到 API 密钥、GitHub 令牌和 Supabase 密钥。
+
 需要配置的 Actions secrets：
 
-- `OPENAI_API_KEY`：三个任务的 Codex（模型 `gpt-5.6-sol`，推理强度 high）
+- `OPENAI_API_KEY`：三个任务的 Responses API，包括托管网页检索。不需要另配搜索密钥。
 - `NEXT_PUBLIC_SUPABASE_URL`：今日见闻与《见天地》
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`：今日见闻只读核对
 - `SUPABASE_SERVICE_ROLE_KEY`：今日见闻入库与《见天地》出刊

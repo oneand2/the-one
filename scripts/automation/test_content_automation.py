@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local checks for the daily content automation. Does not call Codex or production."""
+"""Local checks for the daily content automation. Does not call the live API or production."""
 
 from __future__ import annotations
 
@@ -228,7 +228,14 @@ class AutomationTests(unittest.TestCase):
             self.assertIn(cron, text)
             self.assertIn("workflow_dispatch:", text)
             self.assertIn("cancel-in-progress: false", text)
-            self.assertIn("gpt-5.6-sol", (ROOT / ".github/actions/codex-exec/action.yml").read_text(encoding="utf-8"))
+            self.assertIn("openai_content_runner.py", text)
+            self.assertIn("CONTENT_MODEL: gpt-5.6-sol", text)
+            self.assertIn("CONTENT_REASONING_EFFORT: high", text)
+            self.assertNotIn("openai/codex-action", text)
+            self.assertNotIn("codex-exec", text)
+            self.assertNotIn("codex exec", text)
+        self.assertFalse((ROOT / ".github/actions/codex-exec/action.yml").exists())
+        self.assertIn("不要调用 Codex", prompt)
 
     def test_real_week_files_do_not_overlap(self) -> None:
         content = ROOT / "content"

@@ -11,7 +11,12 @@ inputs:
     description: File that receives the final Codex message
     required: true
   codex-args:
-    description: JSON array of extra arguments forwarded to codex exec
+    description: |
+      JSON array of extra arguments forwarded to `codex exec`.
+      Only flags listed by `codex exec --help` are valid. `--ask-for-approval`
+      and `--search` belong to the interactive CLI and fail `codex exec`.
+      Leave this empty: non-interactive exec already uses approval=never, and
+      this action sets the model, effort, and sandbox.
     required: false
     default: "[]"
 runs:

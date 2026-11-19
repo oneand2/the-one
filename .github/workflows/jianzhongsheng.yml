@@ -46,7 +46,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Prepare Codex prompt
+      - name: Prepare prompt
         run: |
           set -euo pipefail
           mkdir -p .codex-run
@@ -55,14 +55,17 @@ jobs:
             .github/automation/prompts/jianzhongsheng.txt \
             .codex-run/prompt.txt
 
-      # `codex exec` rejects `--ask-for-approval` and `--search`. Non-interactive
-      # exec already uses approval=never; the action sets model, effort, and sandbox.
-      - name: Run Codex
-        uses: ./.github/actions/codex-exec
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .codex-run/prompt.txt
-          output-file: .codex-run/result.json
+      # Responses API tool loop: hosted web_search plus local shell and apply_patch.
+      # CONTENT_MODEL is the documented default, not a new secret. GITHUB_TOKEN is
+      # blank so the model cannot use the workflow token.
+      - name: Run OpenAI content agent
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CONTENT_MODEL: gpt-6.2-sol
+          CONTENT_REASONING_EFFORT: high
+          GITHUB_TOKEN: ""
+          GH_TOKEN: ""
+        run: python3 scripts/automation/openai_content_runner.py --task jianzhongsheng --prompt .codex-run/prompt.txt --output .codex-run/result.json
 
       - name: Collect content changes
         run: |
@@ -78,15 +81,17 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Codex result
+      - name: Upload agent result
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jianzhongsheng-${{ github.run_id }}
           path: |
             .codex-run/result.json
             .codex-run/changes.patch
+            .codex-run/runner.log
           retention-days: 14
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Write failure summary
         if: failure()
@@ -123,7 +128,7 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Download Codex result
+      - name: Download agent result
         uses: actions/download-artifact@v4
         with:
           name: jianzhongsheng-${{ github.run_id }}

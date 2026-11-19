@@ -67,9 +67,9 @@ def load_result(path: Path) -> dict:
     try:
         data = json.loads(text)
     except json.JSONDecodeError as error:
-        raise ContentError(f"Codex 结果不是 JSON：{error}") from error
+        raise ContentError(f"任务结果不是 JSON：{error}") from error
     if not isinstance(data, dict):
-        raise ContentError("Codex 结果不是 JSON 对象")
+        raise ContentError("任务结果不是 JSON 对象")
     status = data.get("status")
     if status not in STATUSES:
         raise ContentError(f"无法识别的 status：{status}")
@@ -387,6 +387,7 @@ def shanghai_clock() -> str:
 def preface(task: str, clock: str) -> str:
     common = (
         "这是 GitHub Actions 上的无人值守运行。当前工作目录就是仓库根目录，不要使用 /home/box 或其他机器路径。"
+        "模型通过 OpenAI Responses API 使用 web_search、fetch_url、read_file、read_daily_insights、本地 shell 和 apply_patch，不要调用 Codex。"
         f"北京时间以系统时钟为准，此刻是 {clock}。"
         "最终消息只能是符合调用方 schema 的 JSON 对象，不要在 JSON 前后附加别的文字。"
         "summary_markdown 用简体中文。不要打印密钥、令牌、环境变量或 .env 内容。"

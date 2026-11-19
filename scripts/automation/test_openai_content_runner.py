@@ -218,7 +218,7 @@ class RunnerLoopTests(unittest.TestCase):
             prompt="写一则手记，最后只返回 JSON。",
             output_path=output,
             repo=repo,
-            model="gpt-5.6-sol",
+            model="gpt-6.2-sol",
             effort="high",
             max_turns=4,
             api_key="sk-test-example-value",
@@ -265,7 +265,7 @@ class RunnerLoopTests(unittest.TestCase):
             self.assertEqual(seen[1]["input"][0]["type"], "shell_call_output")
             self.assertIn("ok", seen[1]["input"][0]["output"][0]["stdout"])
             self.assertNotIn(config.api_key, config.log_path.read_text(encoding="utf-8"))
-            self.assertIn("gpt-5.6-sol", config.log_path.read_text(encoding="utf-8"))
+            self.assertIn("gpt-6.2-sol", config.log_path.read_text(encoding="utf-8"))
 
     def test_invalid_json_is_sent_back_for_correction(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

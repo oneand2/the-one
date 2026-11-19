@@ -61,7 +61,7 @@ jobs:
       - name: Run OpenAI content agent
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          CONTENT_MODEL: gpt-5.6-sol
+          CONTENT_MODEL: gpt-6.2-sol
           CONTENT_REASONING_EFFORT: high
           GITHUB_TOKEN: ""
           GH_TOKEN: ""

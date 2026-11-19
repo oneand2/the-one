@@ -229,7 +229,7 @@ class AutomationTests(unittest.TestCase):
             self.assertIn("workflow_dispatch:", text)
             self.assertIn("cancel-in-progress: false", text)
             self.assertIn("openai_content_runner.py", text)
-            self.assertIn("CONTENT_MODEL: gpt-5.6-sol", text)
+            self.assertIn("CONTENT_MODEL: gpt-6.2-sol", text)
             self.assertIn("CONTENT_REASONING_EFFORT: high", text)
             self.assertNotIn("openai/codex-action", text)
             self.assertNotIn("codex-exec", text)

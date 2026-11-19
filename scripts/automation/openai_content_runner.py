@@ -4,7 +4,7 @@
 This replaces Codex for the unattended GitHub Actions jobs. A turn looks like:
 
 1. Send the task prompt to ``POST https://api.openai.com/v1/responses`` with
-   ``gpt-5.6-sol`` (override with ``CONTENT_MODEL``) and high reasoning effort.
+   ``gpt-6.2-sol`` (override with ``CONTENT_MODEL``) and high reasoning effort.
 2. Let the API perform hosted ``web_search`` (live pages, same ``OPENAI_API_KEY``).
 3. Execute any local ``shell`` or ``apply_patch`` calls, and the small
    functions ``read_file``, ``fetch_url``, and ``read_daily_insights``.
@@ -42,7 +42,7 @@ from content_agent_tools import (
 from content_automation import ContentError, assert_task_status, load_result, redact
 
 API_URL = "https://api.openai.com/v1/responses"
-DEFAULT_MODEL = "gpt-5.6-sol"
+DEFAULT_MODEL = "gpt-6.2-sol"
 DEFAULT_EFFORT = "high"
 EFFORTS = {"none", "low", "medium", "high", "xhigh", "max"}
 TRANSIENT_HTTP = {408, 409, 429, 500, 502, 503, 504}

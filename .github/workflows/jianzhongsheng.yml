@@ -55,13 +55,14 @@ jobs:
             .github/automation/prompts/jianzhongsheng.txt \
             .codex-run/prompt.txt
 
+      # `codex exec` rejects `--ask-for-approval` and `--search`. Non-interactive
+      # exec already uses approval=never; the action sets model, effort, and sandbox.
       - name: Run Codex
         uses: ./.github/actions/codex-exec
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: .codex-run/prompt.txt
           output-file: .codex-run/result.json
-          codex-args: '["--ask-for-approval","never"]'
 
       - name: Collect content changes
         run: |

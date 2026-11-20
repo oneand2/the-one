@@ -218,14 +218,14 @@ class AutomationTests(unittest.TestCase):
         prompt = build_prompt("jiantiandi-news", ROOT / ".github/automation/prompts/jiantiandi-news.txt", "2026-11-18 08:00 CST")
         self.assertIn(standard, prompt)
         self.assertNotIn("/home/box/codex-workspace", prompt)
-        workflows = {
-            "jianzhongsheng.yml": 'cron: "0 19 * * *"',
-            "jinri-jianwen.yml": 'cron: "0 23 * * *"',
-            "jiantiandi-news.yml": 'cron: "0 0 * * *"',
-        }
-        for name, cron in workflows.items():
+        workflows = ("jianzhongsheng.yml", "jinri-jianwen.yml", "jiantiandi-news.yml")
+        for name in workflows:
             text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
-            self.assertIn(cron, text)
+            if name == "jianzhongsheng.yml":
+                self.assertIn('cron: "0 19 * * *"', text)
+            else:
+                self.assertNotIn("schedule:", text)
+                self.assertNotIn("cron:", text)
             self.assertIn("workflow_dispatch:", text)
             self.assertIn("cancel-in-progress: false", text)
             self.assertIn("openai_content_runner.py", text)

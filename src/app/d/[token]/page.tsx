@@ -5,11 +5,20 @@ import { findPrivateDownload, formatSize } from '@/lib/privateDownloads';
 
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: '见天地 安卓版 1.0',
-  robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
-  referrer: 'no-referrer',
-};
+const defaultNotes = [
+  '1. 下载后打开安装包；如提示，请允许浏览器或文件管理器“安装未知应用”。',
+  '2. 华为 / 荣耀（鸿蒙）手机若拦截安装，请在设置中暂时关闭“纯净模式”后再装。',
+  '3. 打开 App，轻点“轻点准备线路”，再轻点连接并允许建立 VPN。',
+];
+
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const item = findPrivateDownload((await params).token);
+  return {
+    title: item?.title ?? '下载',
+    robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
+    referrer: 'no-referrer',
+  };
+}
 
 export default async function PrivateDownloadPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -53,9 +62,7 @@ export default async function PrivateDownloadPage({ params }: { params: Promise<
 
         <section className="mt-6 rounded-2xl border border-stone-200 bg-white/80 p-6 text-sm font-normal leading-7 text-stone-600">
           <h2 className="mb-2 text-sm font-normal text-stone-800">安装说明</h2>
-          <p>1. 下载后打开安装包；如提示，请允许浏览器或文件管理器“安装未知应用”。</p>
-          <p>2. 华为 / 荣耀（鸿蒙）手机若拦截安装，请在设置中暂时关闭“纯净模式”后再装。</p>
-          <p>3. 打开 App，轻点“轻点准备线路”，再轻点连接并允许建立 VPN。</p>
+          {(item.notes ?? defaultNotes).map((note) => <p key={note}>{note}</p>)}
         </section>
       </div>
     </main>

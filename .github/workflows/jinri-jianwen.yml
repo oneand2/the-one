@@ -1,9 +1,6 @@
 name: 今日见闻
 
 on:
-  schedule:
-    # 07:00 Asia/Shanghai = 23:00 UTC on the previous calendar day. Shanghai has no DST.
-    - cron: "0 23 * * *"
   workflow_dispatch:
 
 concurrency:

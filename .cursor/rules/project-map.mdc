@@ -39,7 +39,7 @@ alwaysApply: true
 - `android/`：Capacitor 使用的原生 Android 壳。
 - `ios/`：原生 SwiftUI iOS 项目。
 - `docs/` 和根目录 `*.md`：功能说明、部署说明、验证指南和历史实现文档。
-- `.github/workflows/`：阿里云部署，以及北京时间 03:00 见众生、07:00 今日见闻、08:00《见天地》三个定时任务。提示词在 `.github/automation/prompts/`。见众生与今日见闻推送 `main` 后用 `workflow_dispatch` 调用 `Deploy to Aliyun`，因为 `GITHUB_TOKEN` 推送不会触发其他工作流。新闻直接写入 Supabase，不提交 Git。
+- `.github/workflows/`：阿里云部署，以及北京时间 03:00 见众生定时任务。今日见闻与《见天地》已停用定时触发，只保留手动 `workflow_dispatch`。提示词在 `.github/automation/prompts/`。见众生与今日见闻推送 `main` 后用 `workflow_dispatch` 调用 `Deploy to Aliyun`，因为 `GITHUB_TOKEN` 推送不会触发其他工作流。新闻直接写入 Supabase，不提交 Git。
 
 ## 路由形态
 
@@ -78,7 +78,7 @@ alwaysApply: true
 
 ## 每日内容
 
-- 03:00 见众生、07:00 今日见闻、08:00《见天地》由 GitHub Actions 调用 OpenAI Responses API（模型 `gpt-6.2-sol`，推理强度 high；托管 web_search，加上仓库内的本地 shell 与 apply_patch）。不使用 Codex。手动入口在各工作流的 `workflow_dispatch`，且只在 `main` 上执行。
+- 03:00 见众生由 GitHub Actions 定时调用 OpenAI Responses API（模型 `gpt-6.2-sol`，推理强度 high；托管 web_search，加上仓库内的本地 shell 与 apply_patch）。今日见闻与《见天地》不再定时运行，需要时用各自的 `workflow_dispatch` 在 `main` 上手动执行。不使用 Codex。
 - 所需 secrets：`OPENAI_API_KEY`、`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`。仓库 Actions 权限需要 Read and write。
 
 ## 常用命令

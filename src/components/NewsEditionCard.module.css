@@ -41,10 +41,24 @@
   text-align: end;
 }
 
+/* 整句锁在简体宋体 Regular 上。字体栈里的日文明朝没有「剧」「标」这类简体专用字，
+   有的字走明朝、缺的字再落到更粗的黑体，一行里就会粗细不一。 */
+@font-face {
+  font-family: "Songti SC Text";
+  src: local("Songti SC Regular"), local("STSongti-SC-Regular"), local("Songti SC"), local("STSong");
+  font-weight: 400;
+  font-style: normal;
+}
+
 .headline {
   margin: 0;
-  font: 400 19px/1.5 var(--ui-font-serif);
   color: var(--ui-color-lunar-text);
+  font-family: "Songti SC Text", "Songti SC", "STSong", "SimSun", serif;
+  font-size: 19px;
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
+  line-height: 1.5;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }

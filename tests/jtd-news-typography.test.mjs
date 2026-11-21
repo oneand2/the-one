@@ -22,3 +22,19 @@ test('news serif ships a complete regular face rather than a daily text subset',
   const missing = [...new Set(samples)].filter(character => !font.hasGlyphForCodePoint(character.codePointAt(0)));
   assert.deepEqual(missing, [], 'Every headline character must come from the same regular face.');
 });
+
+test('homepage news headline uses simplified songti regular, not a partial mincho', () => {
+  const css = readFileSync(new URL('../src/components/NewsEditionCard.module.css', import.meta.url), 'utf8');
+  const headline = css.slice(css.indexOf('.headline {'));
+  const rule = headline.slice(0, headline.indexOf('}'));
+  assert.match(css, /local\("Songti SC Regular"\)/);
+  assert.match(css, /local\("STSongti-SC-Regular"\)/);
+  assert.match(rule, /font-family:\s*"Songti SC Text", "Songti SC", "STSong", "SimSun", serif/);
+  assert.match(rule, /font-weight:\s*400/);
+  assert.match(rule, /font-synthesis:\s*none/);
+  assert.doesNotMatch(css, /Hiragino Mincho/);
+  assert.doesNotMatch(css, /JTD News Serif|noto-serif-sc/);
+  assert.match(css, /\.brand\s*\{[^}]*var\(--ui-font-kaiti\)/);
+  assert.match(css, /\.issue\s*\{[^}]*var\(--ui-font-sans\)/);
+  assert.match(css, /font:\s*400 12px\/1\.5 var\(--ui-font-sans\)/);
+});

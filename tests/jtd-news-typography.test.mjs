@@ -18,7 +18,18 @@ test('news serif ships a complete regular face rather than a daily text subset',
     + '甬舟铁路金塘海底隧道舟山侧完成掘进6.27公里'
     + '上海龙美术馆展出约150件作品，回顾1979至1989'
     + '创业板指收涨3.11%，光通信股领涨'
-    + '俄乌就新一轮大规模换俘达成原则协议Qwen4-Max';
+    + '俄乌就新一轮大规模换俘达成原则协议Qwen4-Max'
+    + '人工智能股抛售加剧，标普500与道指进入回调，纳指年内转跌';
   const missing = [...new Set(samples)].filter(character => !font.hasGlyphForCodePoint(character.codePointAt(0)));
   assert.deepEqual(missing, [], 'Every headline character must come from the same regular face.');
+});
+
+test('homepage news card headline uses that same regular face', () => {
+  const css = readFileSync(new URL('../src/components/NewsEditionCard.module.css', import.meta.url), 'utf8');
+  const headline = css.slice(css.indexOf('.headline {'));
+  const rule = headline.slice(0, headline.indexOf('}'));
+  assert.match(rule, /font-family:\s*"JTD News Serif", var\(--ui-font-serif\)/);
+  assert.match(rule, /font-weight:\s*400/);
+  assert.match(rule, /font-synthesis:\s*none/);
+  assert.match(css, /url\("\/news\/fonts\/noto-serif-sc-400\.woff2"\)/);
 });

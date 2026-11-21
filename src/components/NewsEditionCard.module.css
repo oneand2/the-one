@@ -41,10 +41,25 @@
   text-align: end;
 }
 
+/* 汉字、数字和标点共用这一套 Regular。系统宋体往往没有配套拉丁字形，
+   「500」会落到更粗的西文回退，标题一行里就粗细不一。 */
+@font-face {
+  font-family: "JTD News Serif";
+  src: url("/news/fonts/noto-serif-sc-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 .headline {
   margin: 0;
-  font: 400 19px/1.5 var(--ui-font-serif);
   color: var(--ui-color-lunar-text);
+  font-family: "JTD News Serif", var(--ui-font-serif);
+  font-size: 19px;
+  font-weight: 400;
+  font-style: normal;
+  font-synthesis: none;
+  line-height: 1.5;
   overflow-wrap: anywhere;
   text-wrap: balance;
 }

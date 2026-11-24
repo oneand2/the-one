@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>百年孤独 · 布恩迪亚家族图谱</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Subtle aged parchment grain & warm vignette overlays -->
+  <div class="parchment-grain" aria-hidden="true"></div>
+  <div class="parchment-vignette" aria-hidden="true"></div>
+
+  <!-- Ambient drifting yellow butterflies (Mauricio Babilonia motif) -->
+  <div class="ambient-butterflies" aria-hidden="true">
+    <svg class="butterfly bf-1" viewBox="0 0 40 32" width="32" height="26">
+      <g class="bf-wings">
+        <path class="bf-wing-l" d="M20 15 C14 3, 2 2, 3 13 C3.5 19, 12 20, 19 17 C12 20, 6 26, 11 29 C15 31, 19 25, 20 19 Z"/>
+        <path class="bf-wing-r" d="M20 15 C26 3, 38 2, 37 13 C36.5 19, 28 20, 21 17 C28 20, 34 26, 29 29 C25 31, 21 25, 20 19 Z"/>
+        <path class="bf-body" d="M20 10 L20 24 M19 11 C17 8, 16 7, 15 7 M21 11 C23 8, 24 7, 25 7"/>
+      </g>
+    </svg>
+    <svg class="butterfly bf-2" viewBox="0 0 40 32" width="22" height="18">
+      <g class="bf-wings">
+        <path class="bf-wing-l" d="M20 15 C14 3, 2 2, 3 13 C3.5 19, 12 20, 19 17 C12 20, 6 26, 11 29 C15 31, 19 25, 20 19 Z"/>
+        <path class="bf-wing-r" d="M20 15 C26 3, 38 2, 37 13 C36.5 19, 28 20, 21 17 C28 20, 34 26, 29 29 C25 31, 21 25, 20 19 Z"/>
+        <path class="bf-body" d="M20 10 L20 24 M19 11 C17 8, 16 7, 15 7 M21 11 C23 8, 24 7, 25 7"/>
+      </g>
+    </svg>
+    <svg class="butterfly bf-3" viewBox="0 0 40 32" width="26" height="21">
+      <g class="bf-wings">
+        <path class="bf-wing-l" d="M20 15 C14 3, 2 2, 3 13 C3.5 19, 12 20, 19 17 C12 20, 6 26, 11 29 C15 31, 19 25, 20 19 Z"/>
+        <path class="bf-wing-r" d="M20 15 C26 3, 38 2, 37 13 C36.5 19, 28 20, 21 17 C28 20, 34 26, 29 29 C25 31, 21 25, 20 19 Z"/>
+        <path class="bf-body" d="M20 10 L20 24 M19 11 C17 8, 16 7, 15 7 M21 11 C23 8, 24 7, 25 7"/>
+      </g>
+    </svg>
+  </div>
+
+  <!-- Top Archival Header -->
+  <header class="top-bar">
+    <div class="brand">
+      <div class="brand-emblem" aria-hidden="true">
+        <svg viewBox="0 0 40 32" width="28" height="22">
+          <path class="bf-wing-l" d="M20 15 C14 3, 2 2, 3 13 C3.5 19, 12 20, 19 17 C12 20, 6 26, 11 29 C15 31, 19 25, 20 19 Z"/>
+          <path class="bf-wing-r" d="M20 15 C26 3, 38 2, 37 13 C36.5 19, 28 20, 21 17 C28 20, 34 26, 29 29 C25 31, 21 25, 20 19 Z"/>
+          <path class="bf-body" d="M20 10 L20 24 M19 11 C17 8, 16 7, 15 7 M21 11 C23 8, 24 7, 25 7"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1 class="site-title">百年孤独 · 布恩迪亚家族图谱</h1>
+        <p class="site-subtitle">剧照来自 Netflix《百年孤独》</p>
+      </div>
+    </div>
+
+    <div class="header-controls">
+      <div class="search-wrap" id="search-wrap">
+        <svg class="search-icon" viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M12.8 12.8 L17 17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          placeholder="搜索姓名或称谓，如“上校”“第二”“奥雷里亚诺”…"
+          autocomplete="off"
+          aria-label="搜索家族成员"
+          aria-expanded="false"
+          aria-controls="search-dropdown"
+        >
+        <button type="button" id="search-clear" class="search-clear" aria-label="清空搜索" hidden>×</button>
+        <ul id="search-dropdown" class="search-dropdown" role="listbox" hidden></ul>
+      </div>
+
+      <div class="view-actions">
+        <button type="button" id="btn-zoom-out" class="icon-btn" title="缩小" aria-label="缩小视图">−</button>
+        <button type="button" id="btn-zoom-in" class="icon-btn" title="放大" aria-label="放大视图">+</button>
+        <button type="button" id="btn-reset" class="reset-btn" title="重置视图至完整家族树">
+          <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+            <path d="M4 10a6 6 0 1 0 1.6-4.1L3.5 8M3.5 4v4h4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span>重置视图</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Interactive Stage -->
+  <main class="stage" id="stage">
+    <div class="canvas-wrap" id="canvas-wrap" aria-label="布恩迪亚家族七代关系图，支持拖拽平移和滚轮缩放">
+      <svg id="tree-svg" class="tree-svg" role="img" aria-label="布恩迪亚家族关系图谱">
+        <defs id="svg-defs"></defs>
+        <g id="viewport">
+          <g id="layer-strata"></g>
+          <g id="layer-edges"></g>
+          <g id="layer-edges-active"></g>
+          <g id="layer-edge-labels"></g>
+          <g id="layer-nodes"></g>
+          <g id="layer-butterflies"></g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Floating Legend (Bottom-Left) -->
+    <aside class="legend-card" id="legend-card" aria-label="关系图例">
+      <div class="legend-header">
+        <span class="legend-title">羊皮卷图例</span>
+        <button type="button" id="legend-toggle" class="legend-toggle" aria-expanded="true" title="收起或展开图例">收起</button>
+      </div>
+      <div class="legend-body" id="legend-body">
+        <div class="legend-section">
+          <div class="legend-item">
+            <span class="legend-line line-parent"></span>
+            <span>亲子</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line line-spouse"></span>
+            <span>夫妻</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line line-lover"></span>
+            <span>情人 / 恋人</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line line-twin"></span>
+            <span>双胞胎</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line line-adopted"></span>
+            <span>养女</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-line line-friend"></span>
+            <span>挚友</span>
+          </div>
+        </div>
+        <div class="legend-divider"></div>
+        <div class="legend-nodes">
+          <div class="legend-item">
+            <span class="legend-node-dot dot-family"></span>
+            <span>布恩迪亚家族</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-node-dot dot-outsider"></span>
+            <span>配偶 / 情人 / 外人</span>
+          </div>
+        </div>
+        <p class="legend-hint">点击人物查看详情 · 拖拽平移 · 滚轮缩放</p>
+      </div>
+    </aside>
+
+    <!-- Archival Detail Panel (Right on desktop, Bottom sheet on narrow screens) -->
+    <aside class="detail-panel" id="detail-panel" aria-label="人物详情" aria-hidden="true">
+      <div class="detail-inner">
+        <div class="detail-handle" aria-hidden="true"></div>
+        <button type="button" class="detail-close" id="detail-close" aria-label="关闭人物详情">
+          <svg viewBox="0 0 20 20" width="16" height="16">
+            <path d="M5 5 L15 15 M15 5 L5 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <div class="detail-scroll" id="detail-content"></div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

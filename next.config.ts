@@ -12,7 +12,10 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   async redirects() {
-    return [{ source: "/news", destination: "/news/index.html", permanent: false }];
+    return [
+      { source: "/news", destination: "/news/index.html", permanent: false },
+      { source: "/bainian", destination: "/bainian/index.html", permanent: false },
+    ];
   },
   // 静态资源与 JS 分片长期缓存，用户第二次进入时从浏览器缓存加载
   // 注意：仅生产环境启用 immutable 长缓存；开发环境长缓存会导致改动后浏览器仍加载旧分片
